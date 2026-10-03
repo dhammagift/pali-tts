@@ -99,8 +99,9 @@ PRATHAM_RULES = [
     (re.compile(r'ɲɲ'), 'ɲːj'),  # round 5: ɲːj beat ɲː and nɲː
     (re.compile(r'(?<![ɲ])ɲ(?![ɲːjcɟ])'), 'ɲj'),
     (re.compile(r'ŋ(?=[ ,.?!]|$)'), 'ŋŋ'),  # round 8: ŋŋ is the velar ṁ (ङ) without the "-g" the voice adds to ŋ
-    # round 9: an unstressed medial ʌ is dropped Hindi-style (viharati -> "viharti"); open a survives
-    (re.compile(r'(?<!ˈ)ʌ(?=[^\sʌaeoiuɪʊˈ,.?!]+ˈ?[ʌaeoiuɪʊ])'), 'a'),
+    # round 9: an unstressed medial ʌ is dropped Hindi-style (viharati -> "viharti"); open a survives.
+    # Not before c (round 11): after open a the voice softens c to "shch" (dhammacakka -> "dhammashchakka").
+    (re.compile(r'(?<!ˈ)ʌ(?!c)(?=[^\sʌaeoiuɪʊˈ,.?!]+ˈ?[ʌaeoiuɪʊ])'), 'a'),
 ]
 
 

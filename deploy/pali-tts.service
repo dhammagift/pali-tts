@@ -1,0 +1,15 @@
+[Unit]
+Description=Pali TTS (Piper + pali_ipa) for Dhamma.Gift, localhost:3011
+After=network.target
+
+[Service]
+WorkingDirectory=/var/www/pali-tts
+ExecStart=/var/www/pali-tts/.venv/bin/python tts_server.py --port 3011
+Restart=on-failure
+# Shares a 2-vCPU box with production: low priority and hard caps.
+Nice=10
+CPUQuota=150%
+MemoryMax=700M
+
+[Install]
+WantedBy=multi-user.target
