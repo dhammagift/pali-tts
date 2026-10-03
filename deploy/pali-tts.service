@@ -9,7 +9,7 @@ Restart=on-failure
 # Shares a 2-vCPU box with production: low priority and hard caps.
 Nice=10
 CPUQuota=150%
-MemoryMax=700M
+MemoryMax=900M
 
 [Install]
 WantedBy=multi-user.target
