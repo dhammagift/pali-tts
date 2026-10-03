@@ -7,8 +7,9 @@ GET  /health, /voices
 Reachable from the internet through Apache/Cloudflare (like Google's TTS API): CORS is open and each
 client IP gets RATE_LIMIT requests per minute (CF-Connecting-IP / X-Forwarded-For).
 mp3 files are cached on disk by sha1(voice + rules version + rate + text): a re-read sutta costs no CPU.
+The cache is capped (--cache-mb): least recently played files go first, popular suttas stay.
 Voices load on first use and at most MAX_LOADED stay in memory (~130 MB each).
-Usage: .venv/bin/python tts_server.py [--port 3011] [--max-loaded 3]
+Usage: .venv/bin/python tts_server.py [--port 3011] [--max-loaded 3] [--cache-mb 300]
 """
 import argparse
 import base64
@@ -45,12 +46,50 @@ args = argparse.ArgumentParser()
 args.add_argument('--port', type=int, default=3011)
 args.add_argument('--host', default='127.0.0.1')
 args.add_argument('--max-loaded', type=int, default=3, help='voices kept in memory (~130 MB each)')
+args.add_argument('--cache-mb', type=int, default=300, help='mp3 cache size cap')
 args = args.parse_args()
 MAX_LOADED = args.max_loaded
 MODELS = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'models')
 busy = threading.Semaphore(2)  # 2 vCPU: more parallel syntheses only slow each other down
 loaded, load_lock = {}, threading.Lock()  # insertion order = least recently used first
 hits, hits_lock = {}, threading.Lock()  # ip -> (window start minute, count)
+
+
+def prune_cache(folder, cap_bytes):
+    """Drop least recently used mp3 (mtime is refreshed on every hit) until the cache is 90% of the cap."""
+    files = []
+    for name in os.listdir(folder):
+        try:
+            st = os.stat(os.path.join(folder, name))
+            files.append((st.st_mtime, st.st_size, name))
+        except FileNotFoundError:
+            pass
+    total = sum(f[1] for f in files)
+    if total <= cap_bytes:
+        return 0
+    removed = 0
+    for _, size, name in sorted(files):
+        if total <= cap_bytes * 0.9:
+            break
+        try:
+            os.remove(os.path.join(folder, name))
+            total -= size
+            removed += 1
+        except FileNotFoundError:
+            pass
+    return removed
+
+
+writes, writes_lock = 0, threading.Lock()
+
+
+def note_write():
+    global writes
+    with writes_lock:
+        writes += 1
+        due = writes % 50 == 0
+    if due:  # every 50 new files; listing a few thousand names is cheap
+        threading.Thread(target=prune_cache, args=(CACHE, args.cache_mb * 2 ** 20), daemon=True).start()
 
 
 def rate_limited(ip):
@@ -151,16 +190,20 @@ class Handler(BaseHTTPRequestHandler):
             return self.reply(400, {'error': {'message': 'empty text'}})
         key = hashlib.sha1(f'{VOICES[vid][0]}|{RULES_VERSION}|{rate:.2f}|{text}'.encode()).hexdigest()
         path = os.path.join(CACHE, key + '.mp3')
-        if not os.path.exists(path):
+        if os.path.exists(path):
+            os.utime(path)  # recently played: keep it longer
+        else:
             with busy:
                 mp3 = synth(text, vid, rate)
             tmp = path + '.tmp'
             open(tmp, 'wb').write(mp3)
             os.replace(tmp, path)
+            note_write()
         self.reply(200, {'audioContent': base64.b64encode(open(path, 'rb').read()).decode()})
 
     def log_message(self, fmt, *a):  # keep journald quiet: one line per synthesis is enough
         pass
 
 
+prune_cache(CACHE, args.cache_mb * 2 ** 20)
 ThreadingHTTPServer((args.host, args.port), Handler).serve_forever()
