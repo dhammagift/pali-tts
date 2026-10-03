@@ -1,0 +1,10 @@
+cache/
+data/
+models/
+out/
+.playwright/
+.playwright-cli/
+__pycache__/
+site/index.html
+.venv/
+votes/

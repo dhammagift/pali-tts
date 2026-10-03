@@ -1,0 +1,73 @@
+[
+ {
+  "id": "sn56.11",
+  "audio": "sn/sn56/sn56.11_pi_puriso_jiv.mp3",
+  "text": "sutta/sn/sn56/sn56.11_root-pli-ms.json"
+ },
+ {
+  "id": "dn22-2a",
+  "audio": "dn/dn2.9/dn2.9-2a.mp3",
+  "text": "sutta/dn/dn22_root-pli-ms.json",
+  "keys": "^dn22:2\\."
+ },
+ {
+  "id": "bu-pm-Pc1",
+  "audio": "bu-pm/Pc1.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "keys": "^pli-tv-bu-pm:66\\."
+ },
+ {
+  "id": "bu-pm-Pc2",
+  "audio": "bu-pm/Pc2.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "keys": "^pli-tv-bu-pm:67\\."
+ },
+ {
+  "id": "bu-pm-Pc3",
+  "audio": "bu-pm/Pc3.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "keys": "^pli-tv-bu-pm:68\\."
+ },
+ {
+  "id": "bu-pm-Pc4",
+  "audio": "bu-pm/Pc4.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "keys": "^pli-tv-bu-pm:69\\."
+ },
+ {
+  "id": "bu-pm-Pc5",
+  "audio": "bu-pm/Pc5.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "keys": "^pli-tv-bu-pm:70\\."
+ },
+ {
+  "id": "bu-pm-Pc6",
+  "audio": "bu-pm/Pc6.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "keys": "^pli-tv-bu-pm:71\\."
+ },
+ {
+  "id": "bu-pm-Pc7",
+  "audio": "bu-pm/Pc7.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "keys": "^pli-tv-bu-pm:72\\."
+ },
+ {
+  "id": "bu-pm-Pc8",
+  "audio": "bu-pm/Pc8.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "keys": "^pli-tv-bu-pm:73\\."
+ },
+ {
+  "id": "bu-pm-Pc9",
+  "audio": "bu-pm/Pc9.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "keys": "^pli-tv-bu-pm:74\\."
+ },
+ {
+  "id": "bu-pm-Pc10",
+  "audio": "bu-pm/Pc10.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "keys": "^pli-tv-bu-pm:75\\."
+ }
+]
