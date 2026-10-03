@@ -98,7 +98,7 @@ def to_ipa(text, stress=True, full_a=False, final_m=False, lang='hi'):
 PRATHAM_RULES = [
     (re.compile(r'ɲɲ'), 'ɲːj'),  # round 5: ɲːj beat ɲː and nɲː
     (re.compile(r'(?<![ɲ])ɲ(?![ɲːjcɟ])'), 'ɲj'),
-    (re.compile(r'ŋ(?=[ ,.?!]|$)'), 'ŋː'),
+    (re.compile(r'ŋ(?=[ ,.?!]|$)'), 'n'),  # rounds 5-7: ŋ, ŋː, ŋɡ, nasal vowel, ɴ, ɳ all worse; n, m only "ok"
 ]
 
 
