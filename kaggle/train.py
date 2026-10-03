@@ -43,6 +43,8 @@ sh('nvidia-smi --query-gpu=name,memory.total --format=csv')
 if not os.path.exists(f'{W}/piper1-gpl'):
     sh(f'git clone -q --depth 1 https://github.com/OHF-Voice/piper1-gpl.git {W}/piper1-gpl')
 os.chdir(f'{W}/piper1-gpl')
+# legacy TorchScript exporter: torch >= 2.9 defaults to dynamo, which cannot trace VITS (run v4 died there)
+sh("sed -i 's/torch.onnx.export(/torch.onnx.export(dynamo=False, /' src/piper/train/export_onnx.py")
 sh("pip install -q cython scikit-build 'cmake<4' ninja onnx onnxscript -e '.[train]'")
 sh('bash build_monotonic_align.sh && python setup.py build_ext --inplace -q')
 if not os.path.exists(f'{W}/rohan.ckpt'):
