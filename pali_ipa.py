@@ -102,6 +102,9 @@ PRATHAM_RULES = [
     # round 9: an unstressed medial ʌ is dropped Hindi-style (viharati -> "viharti"); open a survives.
     # Not before c (round 11): after open a the voice softens c to "shch" (dhammacakka -> "dhammashchakka").
     (re.compile(r'(?<!ˈ)ʌ(?!c)(?=[^\sʌaeoiuɪʊˈ,.?!]+ˈ?[ʌaeoiuɪʊ])'), 'a'),
+    # round 12 (3 takes each): a single c between vowels still came out as "shch" 2 times of 3;
+    # doubled cc was right every time
+    (re.compile(r'(?<=[ʌaeoiuɪʊː])c(?=[ʌaeoiuɪʊːˈ])'), 'cc'),
 ]
 
 
@@ -166,4 +169,5 @@ if __name__ == '__main__':
     assert to_script('āḷāro', 'telu') == 'ఆళారో', to_script('āḷāro', 'telu')
     assert tune(to_ipa('ñāṇa paññā evaṁ', stress=False)) == 'ɲjaːɳə pəɲːjaː eːʋəŋŋ', tune(to_ipa('ñāṇa paññā evaṁ', stress=False))
     assert tune(to_ipa('pañca sañjāti', stress=False)) == 'pəɲcə səɲɟaːtɪ'
+    assert tune(to_ipa('Dhammacakka vacī cakkhu', full_a=True)) == 'dʰammʌccˈʌkkʌ ʋˈʌcciː cˈʌkkʰʊ'  # word-initial c untouched
     print('ok')
