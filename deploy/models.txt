@@ -1,0 +1,7 @@
+# Voices the TTS service uses: <file stem> <path in rhasspy/piper-voices on HuggingFace>
+hi_IN-pratham-medium  hi/hi_IN/pratham/medium
+en_GB-alan-medium     en/en_GB/alan/medium
+en_US-norman-medium   en/en_US/norman/medium
+en_US-kathleen-low    en/en_US/kathleen/low
+ru_RU-irina-medium    ru/ru_RU/irina/medium
+ru_RU-ruslan-medium   ru/ru_RU/ruslan/medium
