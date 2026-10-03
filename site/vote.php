@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $raw = file_get_contents('php://input', false, null, 0, 4096);
     $v = json_decode($raw, true);
     $ok = is_array($v)
-        && preg_match('/^[a-z0-9]{1,8}$/', $v['phrase'] ?? '')
+        && preg_match('/^[A-Za-z0-9_.-]{1,40}$/', $v['phrase'] ?? '')
         && in_array($v['kind'] ?? '', ['rating', 'words', 'comment'], true);
     if (!$ok) { http_response_code(400); exit('{"error":"bad answer"}'); }
     if (is_file($file) && filesize($file) > 5 * 1024 * 1024) { http_response_code(507); exit('{"error":"full"}'); }

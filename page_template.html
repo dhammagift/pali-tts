@@ -48,7 +48,7 @@ section.done{border-color:var(--good)}
 </main>
 <script>
 const DATA = __DATA__;
-const API = 'vote.php?round=' + DATA.round;
+const API = (DATA.api || 'vote.php') + '?round=' + DATA.round;
 const $ = (s, el = document) => el.querySelector(s);
 let state = {};
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);

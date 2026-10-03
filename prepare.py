@@ -58,8 +58,10 @@ def main(manifest, outdir):
     for it in items:
         mp3 = fetch(AUDIO_URL + it['audio'], f'cache/audio/{it["audio"]}')
         root = json.load(open(fetch(TEXT_URL + it['text'], f'cache/text/{it["text"]}'), encoding='utf-8'))
+        lo, hi = it.get('range', (0, 10 ** 6))  # top-level section numbers, e.g. pm:65..75 = Pācittiya chapter 1
         segs = [(k, v) for k, v in root.items()
-                if v.strip() and not TITLE_KEY.search(k) and re.search(it.get('keys', ''), k)]
+                if v.strip() and not TITLE_KEY.search(k) and re.search(it.get('keys', ''), k)
+                and lo <= int(k.split(':')[1].split('.')[0]) <= hi]
         raw = f'cache/wav/{it["id"]}.wav'
         os.makedirs('cache/wav/dn', exist_ok=True)
         ffmpeg('-i', mp3, '-ac', '1', '-ar', '48000', raw)  # DeepFilterNet wants 48 kHz

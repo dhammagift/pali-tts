@@ -1,0 +1,34 @@
+[
+ {
+  "id": "bu-pj",
+  "audio": "bu-pm/Bu-pj.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "range": [
+   8,
+   13
+  ]
+ },
+ {
+  "id": "bu-ss",
+  "audio": "bu-pm/Bu-ss.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "range": [
+   14,
+   28
+  ]
+ },
+ {
+  "id": "bu-pc1vag",
+  "audio": "bu-pm/Bu-pc1vag.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "range": [
+   65,
+   75
+  ]
+ },
+ {
+  "id": "sn12.2",
+  "audio": "sn/sn12/sn12.2_pi_puriso_jiv.mp3",
+  "text": "sutta/sn/sn12/sn12.2_root-pli-ms.json"
+ }
+]
