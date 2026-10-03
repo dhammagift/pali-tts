@@ -23,8 +23,9 @@ import numpy as np
 from piper import PiperVoice, SynthesisConfig
 
 from pali_ipa import to_ipa, tune
+from respell import respell
 
-RULES_VERSION = 'r12'  # bump when pali_ipa rules change, so cached mp3 are not reused
+RULES_VERSION = 'r13'  # bump when pali_ipa rules change, so cached mp3 are not reused
 MAX_CHARS = 2000
 MAX_LOADED = 3
 VOICES = {  # id -> (model file, language); 'pi' voices are fed our Pali IPA
@@ -70,7 +71,7 @@ def synth(text, vid, rate):
             ipa = tune(to_ipa(sent, full_a=True))
             phonemes = [list(ipa)] if ipa.strip(' ,.?!') else []
         else:
-            phonemes = [p for p in voice.phonemize(sent) if p]
+            phonemes = [p for p in voice.phonemize(respell(sent, lang)) if p]  # Pali words in a translation
         for ph in phonemes:
             parts.append(voice.phoneme_ids_to_audio(voice.phonemes_to_ids(ph), cfg))
         if phonemes:
