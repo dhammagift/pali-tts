@@ -7,9 +7,10 @@ GET  /health, /voices
 Reachable from the internet through Apache/Cloudflare (like Google's TTS API): CORS is open and each
 client IP gets RATE_LIMIT requests per minute (CF-Connecting-IP / X-Forwarded-For).
 mp3 files are cached on disk by sha1(voice + rules version + rate + text): a re-read sutta costs no CPU.
-The cache is capped (--cache-mb): least recently played files go first, popular suttas stay.
+The cache is capped (--cache-mb) and also shrinks when the disk runs low (--min-free-mb): least recently
+played files go first, popular suttas stay.
 Voices load on first use and at most MAX_LOADED stay in memory (~130 MB each).
-Usage: .venv/bin/python tts_server.py [--port 3011] [--max-loaded 3] [--cache-mb 300]
+Usage: .venv/bin/python tts_server.py [--port 3011] [--max-loaded 3] [--cache-mb 1000] [--min-free-mb 1500]
 """
 import argparse
 import base64
@@ -18,6 +19,7 @@ import json
 import os
 import re
 import subprocess
+import shutil
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -46,7 +48,8 @@ args = argparse.ArgumentParser()
 args.add_argument('--port', type=int, default=3011)
 args.add_argument('--host', default='127.0.0.1')
 args.add_argument('--max-loaded', type=int, default=3, help='voices kept in memory (~130 MB each)')
-args.add_argument('--cache-mb', type=int, default=300, help='mp3 cache size cap')
+args.add_argument('--cache-mb', type=int, default=1000, help='mp3 cache size cap')
+args.add_argument('--min-free-mb', type=int, default=1500, help='shrink the cache while the disk has less free')
 args = args.parse_args()
 MAX_LOADED = args.max_loaded
 MODELS = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'models')
@@ -55,8 +58,9 @@ loaded, load_lock = {}, threading.Lock()  # insertion order = least recently use
 hits, hits_lock = {}, threading.Lock()  # ip -> (window start minute, count)
 
 
-def prune_cache(folder, cap_bytes):
-    """Drop least recently used mp3 (mtime is refreshed on every hit) until the cache is 90% of the cap."""
+def prune_cache(folder, cap_bytes, min_free_bytes=0):
+    """Drop least recently used mp3 (mtime is refreshed on every hit) until the cache is 90% of the cap,
+    and further while the disk has less than min_free_bytes free (the servers are short on space)."""
     files = []
     for name in os.listdir(folder):
         try:
@@ -65,11 +69,13 @@ def prune_cache(folder, cap_bytes):
         except FileNotFoundError:
             pass
     total = sum(f[1] for f in files)
-    if total <= cap_bytes:
+    shortfall = max(0, min_free_bytes - shutil.disk_usage(folder).free)
+    if total <= cap_bytes and not shortfall:
         return 0
+    target = min(cap_bytes * 0.9, total - shortfall * 1.1)
     removed = 0
     for _, size, name in sorted(files):
-        if total <= cap_bytes * 0.9:
+        if total <= target:
             break
         try:
             os.remove(os.path.join(folder, name))
@@ -89,7 +95,8 @@ def note_write():
         writes += 1
         due = writes % 50 == 0
     if due:  # every 50 new files; listing a few thousand names is cheap
-        threading.Thread(target=prune_cache, args=(CACHE, args.cache_mb * 2 ** 20), daemon=True).start()
+        threading.Thread(target=prune_cache, args=(CACHE, args.cache_mb * 2 ** 20, args.min_free_mb * 2 ** 20),
+                         daemon=True).start()
 
 
 def rate_limited(ip):
@@ -205,5 +212,5 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
 
-prune_cache(CACHE, args.cache_mb * 2 ** 20)
+prune_cache(CACHE, args.cache_mb * 2 ** 20, args.min_free_mb * 2 ** 20)
 ThreadingHTTPServer((args.host, args.port), Handler).serve_forever()
