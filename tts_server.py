@@ -2,12 +2,13 @@
 
 Pali (voice "pratham", the default) goes through our IAST->IPA rules; translation voices (alan, norman,
 kathleen: English; irina, ruslan: Russian) use Piper's own espeak phonemizer.
-POST /synthesize  body: {"text": "...", "voice": "pratham", "rate": 1.0}   (localhost only; dg-fastify
-                  proxies /api/tts/pali)
+POST /synthesize  body: {"text": "...", "voice": "pratham", "rate": 1.0}
 GET  /health, /voices
+Reachable from the internet through Apache/Cloudflare (like Google's TTS API): CORS is open and each
+client IP gets RATE_LIMIT requests per minute (CF-Connecting-IP / X-Forwarded-For).
 mp3 files are cached on disk by sha1(voice + rules version + rate + text): a re-read sutta costs no CPU.
 Voices load on first use and at most MAX_LOADED stay in memory (~130 MB each).
-Usage: .venv/bin/python tts_server.py [--port 3011]
+Usage: .venv/bin/python tts_server.py [--port 3011] [--max-loaded 3]
 """
 import argparse
 import base64
@@ -17,6 +18,7 @@ import os
 import re
 import subprocess
 import threading
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import numpy as np
@@ -27,7 +29,7 @@ from respell import respell
 
 RULES_VERSION = 'r14'  # bump when pali_ipa rules change, so cached mp3 are not reused
 MAX_CHARS = 2000
-MAX_LOADED = 3
+RATE_LIMIT = 60  # requests per client IP per minute
 VOICES = {  # id -> (model file, language); 'pi' voices are fed our Pali IPA
     'pratham': ('hi_IN-pratham-medium', 'pi'),
     'alan': ('en_GB-alan-medium', 'en'),
@@ -41,10 +43,26 @@ SENTENCE = re.compile(r'(?<=[.?!;:])\s+')
 
 args = argparse.ArgumentParser()
 args.add_argument('--port', type=int, default=3011)
+args.add_argument('--host', default='127.0.0.1')
+args.add_argument('--max-loaded', type=int, default=3, help='voices kept in memory (~130 MB each)')
 args = args.parse_args()
+MAX_LOADED = args.max_loaded
 MODELS = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'models')
 busy = threading.Semaphore(2)  # 2 vCPU: more parallel syntheses only slow each other down
 loaded, load_lock = {}, threading.Lock()  # insertion order = least recently used first
+hits, hits_lock = {}, threading.Lock()  # ip -> (window start minute, count)
+
+
+def rate_limited(ip):
+    # ponytail: fixed one-minute window in memory, reset on restart; enough for one small server
+    minute = int(time.time() // 60)
+    with hits_lock:
+        if len(hits) > 10000:
+            hits.clear()
+        start, count = hits.get(ip, (minute, 0))
+        count = count + 1 if start == minute else 1
+        hits[ip] = (minute, count)
+        return count > RATE_LIMIT
 os.makedirs(CACHE, exist_ok=True)
 
 
@@ -83,13 +101,30 @@ def synth(text, vid, rate):
 
 
 class Handler(BaseHTTPRequestHandler):
+    def cors(self):
+        self.send_header('access-control-allow-origin', '*')
+        self.send_header('access-control-allow-methods', 'GET, POST, OPTIONS')
+        self.send_header('access-control-allow-headers', 'content-type')
+        self.send_header('access-control-max-age', '86400')
+
     def reply(self, code, obj):
         body = json.dumps(obj).encode()
         self.send_response(code)
         self.send_header('content-type', 'application/json')
         self.send_header('content-length', str(len(body)))
+        self.send_header('cache-control', 'no-store')
+        self.cors()
         self.end_headers()
         self.wfile.write(body)
+
+    def do_OPTIONS(self):  # CORS preflight for JSON POSTs from other sites
+        self.send_response(204)
+        self.cors()
+        self.end_headers()
+
+    def client_ip(self):
+        fwd = self.headers.get('cf-connecting-ip') or (self.headers.get('x-forwarded-for') or '').split(',')[0]
+        return fwd.strip() or self.client_address[0]
 
     def do_GET(self):
         if self.path == '/health':
@@ -101,6 +136,8 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if self.path != '/synthesize':
             return self.reply(404, {'error': {'message': 'not found'}})
+        if rate_limited(self.client_ip()):
+            return self.reply(429, {'error': {'message': 'Too many requests, try again shortly'}})
         try:
             req = json.loads(self.rfile.read(min(int(self.headers.get('content-length', 0)), 64 * 1024)))
             text = str(req.get('text', ''))[:MAX_CHARS]
@@ -126,4 +163,4 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
 
-ThreadingHTTPServer(('127.0.0.1', args.port), Handler).serve_forever()
+ThreadingHTTPServer((args.host, args.port), Handler).serve_forever()
