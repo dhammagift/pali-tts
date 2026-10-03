@@ -93,6 +93,21 @@ def to_ipa(text, stress=True, full_a=False, final_m=False, lang='hi'):
     return re.sub(r' ([,.?!])', r'\1', s).strip(' ,')
 
 
+# Piper hi_IN pratham, listening round 4: plain ɲ comes out as "n" (ñāṇa -> "nana"), ɲɲ as "n"
+# (abhiññā -> "abhinā"), a word-final ŋ as a literal "n-g". These spellings won.
+PRATHAM_RULES = [
+    (re.compile(r'ɲɲ'), 'ɲː'),
+    (re.compile(r'(?<![ɲ])ɲ(?![ɲːcɟ])'), 'ɲj'),
+    (re.compile(r'ŋ(?=[ ,.?!]|$)'), 'ŋː'),
+]
+
+
+def tune(ipa, rules=PRATHAM_RULES):
+    for rx, rep in rules:
+        ipa = rx.sub(rep, ipa)
+    return ipa
+
+
 DEVA_C = {'kh': 'ख', 'gh': 'घ', 'ch': 'छ', 'jh': 'झ', 'ṭh': 'ठ', 'ḍh': 'ढ', 'th': 'थ', 'dh': 'ध', 'ph': 'फ', 'bh': 'भ',
           'ḷh': 'ळ्ह', 'k': 'क', 'g': 'ग', 'ṅ': 'ङ', 'c': 'च', 'j': 'ज', 'ñ': 'ञ', 'ṭ': 'ट', 'ḍ': 'ड', 'ṇ': 'ण',
           't': 'त', 'd': 'द', 'n': 'न', 'p': 'प', 'b': 'ब', 'm': 'म', 'y': 'य', 'r': 'र', 'l': 'ल', 'ḷ': 'ळ',
@@ -146,4 +161,6 @@ if __name__ == '__main__':
     assert to_script('saṅgho sañjāti') == 'सङ्घो सञ्जाति'
     assert to_script('dhamma', 'knda') == 'ಧಮ್ಮ', to_script('dhamma', 'knda')
     assert to_script('āḷāro', 'telu') == 'ఆళారో', to_script('āḷāro', 'telu')
+    assert tune(to_ipa('ñāṇa paññā evaṁ', stress=False)) == 'ɲjaːɳə pəɲːaː eːʋəŋː', tune(to_ipa('ñāṇa paññā evaṁ', stress=False))
+    assert tune(to_ipa('pañca sañjāti', stress=False)) == 'pəɲcə səɲɟaːtɪ'
     print('ok')
