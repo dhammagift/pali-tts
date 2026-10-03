@@ -8,7 +8,7 @@ import os
 import subprocess
 import sys
 
-SMOKE = os.environ.get('SMOKE', '1') == '1'
+SMOKE = os.environ.get('SMOKE', '0') == '1'
 MAX_TIME = '00:00:20:00' if SMOKE else '00:10:15:00'  # Kaggle sessions stop at 12 h; leave time for export
 W = '/kaggle/working'
 DATA = os.path.dirname(glob.glob('/kaggle/input/**/metadata.csv', recursive=True)[0])
@@ -24,15 +24,26 @@ SAMPLES = [
 
 
 def sh(cmd):
+    """Run a step; on failure keep its output tail in error.txt (the Kaggle log API is hard to reach)."""
     print('+', cmd, flush=True)
-    subprocess.run(cmd, shell=True, check=True)
+    r = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    print(r.stdout[-20000:], flush=True)
+    if r.returncode:
+        open(f'{W}/error.txt', 'w').write(f'$ {cmd}\n\n{r.stdout[-15000:]}')
+        cleanup()
+        sys.exit(r.returncode)
+
+
+def cleanup():
+    # thousands of cache files make the kernel output listing hit Kaggle's API rate limit
+    subprocess.run(f'rm -rf {W}/cache {W}/rohan.ckpt {W}/piper1-gpl', shell=True)
 
 
 sh('nvidia-smi --query-gpu=name,memory.total --format=csv')
 if not os.path.exists(f'{W}/piper1-gpl'):
     sh(f'git clone -q --depth 1 https://github.com/OHF-Voice/piper1-gpl.git {W}/piper1-gpl')
 os.chdir(f'{W}/piper1-gpl')
-sh("pip install -q cython scikit-build 'cmake<4' ninja -e '.[train]'")
+sh("pip install -q cython scikit-build 'cmake<4' ninja onnx onnxscript -e '.[train]'")
 sh('bash build_monotonic_align.sh && python setup.py build_ext --inplace -q')
 if not os.path.exists(f'{W}/rohan.ckpt'):
     sh(f'wget -q -O {W}/rohan.ckpt "{CKPT_URL}"')
@@ -75,5 +86,6 @@ for i, text in enumerate(SAMPLES):
     with wave.open(f'{W}/out/sample{i}.wav', 'wb') as w:
         w.setnchannels(1); w.setsampwidth(2); w.setframerate(22050)
         w.writeframes((audio.clip(-1, 1) * 32767).astype('int16').tobytes())
-sh(f'cp {last} {W}/out/last.ckpt && rm -rf {W}/cache {W}/rohan.ckpt {W}/piper1-gpl')
+sh(f'cp {last} {W}/out/last.ckpt')
+cleanup()
 print('done')
