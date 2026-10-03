@@ -5,7 +5,6 @@ Usage: python survey.py out/survey  -> out/survey/survey.json
 """
 import json
 import os
-import re
 import subprocess
 import sys
 import urllib.request

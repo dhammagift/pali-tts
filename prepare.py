@@ -20,7 +20,7 @@ from pali_ipa import to_ipa
 AUDIO_URL = 'https://raw.githubusercontent.com/dhammagift/audio/HEAD/'
 TEXT_URL = 'https://raw.githubusercontent.com/suttacentral/sc-data/main/sc_bilara_data/root/pli/ms/'
 TITLE_KEY = re.compile(r':(\d+\.)*0(\.\d+)?$')  # x:0.1, x:66.0.2 — titles/headings, often English
-MIN_CUT, MAX_CLIP, MIN_CLIP = 3.0, 14.0, 1.0
+COMMA_CUT, MAX_CLIP, MIN_CLIP = 8.0, 14.0, 1.5
 PAD_IN, PAD_OUT = 0.2, 0.3
 
 
@@ -36,16 +36,18 @@ def ffmpeg(*args):
 
 
 def clips_from_words(words):
-    """Greedy cut: close a clip at a punctuation or segment boundary once it is >= MIN_CUT s,
-    or at any word boundary before it would exceed MAX_CLIP s."""
+    """Greedy cut: close a clip at a sentence end (. ? ! ; : or segment end) once it is >= MIN_CLIP s,
+    at a comma once it is >= COMMA_CUT s, or at any word boundary before it would exceed MAX_CLIP s.
+    (Cutting at commas early split "..., pācittiyaṁ." and glued the tail to the next rule.)"""
     out, cur = [], []
     for i, w in enumerate(words):
         cur.append(w)
         nxt = words[i + 1] if i + 1 < len(words) else None
         dur = w['end'] - cur[0]['start']
-        boundary = nxt is None or nxt['seg'] != w['seg'] or re.search(r'[,.;:?!—’”]$', w['word'])
+        strong = nxt is None or nxt['seg'] != w['seg'] or re.search(r'[.;:?!—][’”]*$', w['word'])
+        weak = re.search(r',[’”]*$', w['word'])
         too_long = nxt is not None and nxt['end'] - cur[0]['start'] > MAX_CLIP
-        if (boundary and dur >= MIN_CUT) or too_long or nxt is None:
+        if (strong and dur >= MIN_CLIP) or (weak and dur >= COMMA_CUT) or too_long or nxt is None:
             out.append(cur)
             cur = []
     return out

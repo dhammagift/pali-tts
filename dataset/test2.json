@@ -30,5 +30,10 @@
   "id": "sn12.2",
   "audio": "sn/sn12/sn12.2_pi_puriso_jiv.mp3",
   "text": "sutta/sn/sn12/sn12.2_root-pli-ms.json"
+ },
+ {
+  "id": "sn56.11",
+  "audio": "sn/sn56/sn56.11_pi_puriso_jiv.mp3",
+  "text": "sutta/sn/sn56/sn56.11_root-pli-ms.json"
  }
 ]
