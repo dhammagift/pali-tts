@@ -98,7 +98,9 @@ def to_ipa(text, stress=True, full_a=False, final_m=False, lang='hi'):
 PRATHAM_RULES = [
     (re.compile(r'ɲɲ'), 'ɲːj'),  # round 5: ɲːj beat ɲː and nɲː
     (re.compile(r'(?<![ɲ])ɲ(?![ɲːjcɟ])'), 'ɲj'),
-    (re.compile(r'ŋ(?=[ ,.?!]|$)'), 'n'),  # rounds 5-7: ŋ, ŋː, ŋɡ, nasal vowel, ɴ, ɳ all worse; n, m only "ok"
+    (re.compile(r'ŋ(?=[ ,.?!]|$)'), 'ŋŋ'),  # round 8: ŋŋ is the velar ṁ (ङ) without the "-g" the voice adds to ŋ
+    # round 9: an unstressed medial ʌ is dropped Hindi-style (viharati -> "viharti"); open a survives
+    (re.compile(r'(?<!ˈ)ʌ(?=[^\sʌaeoiuɪʊˈ,.?!]+ˈ?[ʌaeoiuɪʊ])'), 'a'),
 ]
 
 
@@ -161,6 +163,6 @@ if __name__ == '__main__':
     assert to_script('saṅgho sañjāti') == 'सङ्घो सञ्जाति'
     assert to_script('dhamma', 'knda') == 'ಧಮ್ಮ', to_script('dhamma', 'knda')
     assert to_script('āḷāro', 'telu') == 'ఆళారో', to_script('āḷāro', 'telu')
-    assert tune(to_ipa('ñāṇa paññā evaṁ', stress=False)) == 'ɲjaːɳə pəɲːjaː eːʋən', tune(to_ipa('ñāṇa paññā evaṁ', stress=False))
+    assert tune(to_ipa('ñāṇa paññā evaṁ', stress=False)) == 'ɲjaːɳə pəɲːjaː eːʋəŋŋ', tune(to_ipa('ñāṇa paññā evaṁ', stress=False))
     assert tune(to_ipa('pañca sañjāti', stress=False)) == 'pəɲcə səɲɟaːtɪ'
     print('ok')
