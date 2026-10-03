@@ -1,0 +1,854 @@
+[
+ {
+  "id": "Bi-nid",
+  "audio": "bi-pm/Bi-nid.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 31.8,
+  "min": 1.7,
+  "marked": "",
+  "range": [
+   5,
+   7
+  ]
+ },
+ {
+  "id": "Bi-np1",
+  "audio": "bi-pm/Bi-np1.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 37.4,
+  "min": 0.2,
+  "marked": "",
+  "range": [
+   38,
+   38
+  ]
+ },
+ {
+  "id": "Bi-np10",
+  "audio": "bi-pm/Bi-np10.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 30.5,
+  "min": 0.3,
+  "marked": "",
+  "range": [
+   47,
+   47
+  ]
+ },
+ {
+  "id": "Bi-np1vag",
+  "audio": "bi-pm/Bi-np1vag.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 35.7,
+  "min": 2.0,
+  "marked": "",
+  "range": [
+   37,
+   47
+  ]
+ },
+ {
+  "id": "Bi-np2",
+  "audio": "bi-pm/Bi-np2.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 32.7,
+  "min": 0.2,
+  "marked": "",
+  "range": [
+   39,
+   39
+  ]
+ },
+ {
+  "id": "Bi-np2vag",
+  "audio": "bi-pm/Bi-np2vag.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 37.6,
+  "min": 7.1,
+  "marked": "",
+  "range": [
+   48,
+   57
+  ]
+ },
+ {
+  "id": "Bi-np3vag",
+  "audio": "bi-pm/Bi-np3vag.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 37.1,
+  "min": 3.5,
+  "marked": "",
+  "range": [
+   58,
+   68
+  ]
+ },
+ {
+  "id": "Bi-np4",
+  "audio": "bi-pm/Bi-np4.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 30.9,
+  "min": 0.1,
+  "marked": "",
+  "range": [
+   41,
+   41
+  ]
+ },
+ {
+  "id": "Bi-np8",
+  "audio": "bi-pm/Bi-np8.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 31.4,
+  "min": 0.3,
+  "marked": "",
+  "range": [
+   45,
+   45
+  ]
+ },
+ {
+  "id": "Bi-np9",
+  "audio": "bi-pm/Bi-np9.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 30.3,
+  "min": 0.3,
+  "marked": "",
+  "range": [
+   46,
+   46
+  ]
+ },
+ {
+  "id": "Bi-pc10vag",
+  "audio": "bi-pm/Bi-pc10vag.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 38.9,
+  "min": 1.0,
+  "marked": "",
+  "range": [
+   166,
+   175
+  ]
+ },
+ {
+  "id": "Bi-pc14vag",
+  "audio": "bi-pm/Bi-pc14vag.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 31.6,
+  "min": 3.0,
+  "marked": "",
+  "range": [
+   206,
+   215
+  ]
+ },
+ {
+  "id": "Bi-pc15vag",
+  "audio": "bi-pm/Bi-pc15vag.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 31.2,
+  "min": 4.2,
+  "marked": "",
+  "range": [
+   216,
+   225
+  ]
+ },
+ {
+  "id": "Bi-pc16vag",
+  "audio": "bi-pm/Bi-pc16vag.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 37.1,
+  "min": 2.9,
+  "marked": "",
+  "range": [
+   226,
+   236
+  ]
+ },
+ {
+  "id": "Bi-pc1vag",
+  "audio": "bi-pm/Bi-pc1vag.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 39.4,
+  "min": 1.7,
+  "marked": "",
+  "range": [
+   69,
+   79
+  ]
+ },
+ {
+  "id": "Bi-pc2vag",
+  "audio": "bi-pm/Bi-pc2vag.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 39.2,
+  "min": 1.7,
+  "marked": "",
+  "range": [
+   80,
+   89
+  ]
+ },
+ {
+  "id": "Bi-pc3vag",
+  "audio": "bi-pm/Bi-pc3vag.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 35.6,
+  "min": 1.5,
+  "marked": "",
+  "range": [
+   90,
+   99
+  ]
+ },
+ {
+  "id": "Bi-pc4vag",
+  "audio": "bi-pm/Bi-pc4vag.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 37.3,
+  "min": 2.0,
+  "marked": "",
+  "range": [
+   100,
+   109
+  ]
+ },
+ {
+  "id": "Bi-pc5vag",
+  "audio": "bi-pm/Bi-pc5vag.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 30.8,
+  "min": 1.4,
+  "marked": "",
+  "range": [
+   110,
+   119
+  ]
+ },
+ {
+  "id": "Bi-pc7vag",
+  "audio": "bi-pm/Bi-pc7vag.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 35.7,
+  "min": 1.4,
+  "marked": "",
+  "range": [
+   130,
+   139
+  ]
+ },
+ {
+  "id": "Bi-pc8vag",
+  "audio": "bi-pm/Bi-pc8vag.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 35.6,
+  "min": 2.3,
+  "marked": "",
+  "range": [
+   140,
+   152
+  ]
+ },
+ {
+  "id": "Bi-pc9vag",
+  "audio": "bi-pm/Bi-pc9vag.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 37.8,
+  "min": 1.4,
+  "marked": "",
+  "range": [
+   153,
+   165
+  ]
+ },
+ {
+  "id": "Bi-pd",
+  "audio": "bi-pm/Bi-pd.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 35.9,
+  "min": 1.8,
+  "marked": "",
+  "range": [
+   237,
+   246
+  ]
+ },
+ {
+  "id": "Bi-pd1",
+  "audio": "bi-pm/Bi-pd1.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 34.2,
+  "min": 0.4,
+  "marked": "",
+  "range": [
+   238,
+   238
+  ]
+ },
+ {
+  "id": "Bi-pd2-8",
+  "audio": "bi-pm/Bi-pd2-8.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 33.7,
+  "min": 1.3,
+  "marked": "",
+  "range": [
+   239,
+   245
+  ]
+ },
+ {
+  "id": "Bi-pj1-4",
+  "audio": "bi-pm/Bi-pj1-4.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 30.5,
+  "min": 2.1,
+  "marked": "",
+  "range": [
+   9,
+   12
+  ]
+ },
+ {
+  "id": "Bi-pj1",
+  "audio": "bi-pm/Bi-pj1.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 34.9,
+  "min": 0.2,
+  "marked": "",
+  "range": [
+   9,
+   9
+  ]
+ },
+ {
+  "id": "Bi-pj2",
+  "audio": "bi-pm/Bi-pj2.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 36.4,
+  "min": 0.5,
+  "marked": "",
+  "range": [
+   10,
+   10
+  ]
+ },
+ {
+  "id": "Bi-pj4",
+  "audio": "bi-pm/Bi-pj4.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 34.9,
+  "min": 0.7,
+  "marked": "",
+  "range": [
+   12,
+   12
+  ]
+ },
+ {
+  "id": "Bi-sk1vag",
+  "audio": "bi-pm/Bi-sk1vag.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 36.5,
+  "min": 1.0,
+  "marked": "",
+  "range": [
+   247,
+   257
+  ]
+ },
+ {
+  "id": "Bi-sk2vag",
+  "audio": "bi-pm/Bi-sk2vag.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 38.3,
+  "min": 0.8,
+  "marked": "",
+  "range": [
+   258,
+   267
+  ]
+ },
+ {
+  "id": "Bi-sk3vag",
+  "audio": "bi-pm/Bi-sk3vag.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 37.7,
+  "min": 0.8,
+  "marked": "",
+  "range": [
+   268,
+   277
+  ]
+ },
+ {
+  "id": "Bi-sk4vag",
+  "audio": "bi-pm/Bi-sk4vag.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 38.2,
+  "min": 0.9,
+  "marked": "",
+  "range": [
+   278,
+   287
+  ]
+ },
+ {
+  "id": "Bi-sk5vag",
+  "audio": "bi-pm/Bi-sk5vag.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 38.2,
+  "min": 0.8,
+  "marked": "",
+  "range": [
+   288,
+   297
+  ]
+ },
+ {
+  "id": "Bi-sk6vag",
+  "audio": "bi-pm/Bi-sk6vag.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 37.3,
+  "min": 0.9,
+  "marked": "",
+  "range": [
+   298,
+   307
+  ]
+ },
+ {
+  "id": "Bi-sk7vag",
+  "audio": "bi-pm/Bi-sk7vag.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 34.6,
+  "min": 2.2,
+  "marked": "",
+  "range": [
+   308,
+   323
+  ]
+ },
+ {
+  "id": "Bi-ss",
+  "audio": "bi-pm/Bi-ss.mp3",
+  "text": "vinaya/pli-tv-bi-pm_root-pli-ms.json",
+  "snr_db": 33.7,
+  "min": 16.3,
+  "marked": "",
+  "range": [
+   18,
+   36
+  ]
+ },
+ {
+  "id": "Bu-as",
+  "audio": "bu-pm/Bu-as.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "snr_db": 40.7,
+  "min": 1.9,
+  "marked": "best",
+  "range": [
+   245,
+   254
+  ]
+ },
+ {
+  "id": "Bu-ay",
+  "audio": "bu-pm/Bu-ay.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "snr_db": 34.7,
+  "min": 2.0,
+  "marked": "best",
+  "range": [
+   29,
+   32
+  ]
+ },
+ {
+  "id": "Bu-nid",
+  "audio": "bu-pm/Bu-nid.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "snr_db": 43.2,
+  "min": 1.7,
+  "marked": "best",
+  "range": [
+   5,
+   7
+  ]
+ },
+ {
+  "id": "Bu-np1vag",
+  "audio": "bu-pm/Bu-np1vag.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "snr_db": 35.5,
+  "min": 6.2,
+  "marked": "best",
+  "range": [
+   33,
+   43
+  ]
+ },
+ {
+  "id": "Bu-np2vag",
+  "audio": "bu-pm/Bu-np2vag.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "snr_db": 32.7,
+  "min": 2.5,
+  "marked": "best",
+  "range": [
+   44,
+   53
+  ]
+ },
+ {
+  "id": "Bu-np3vag",
+  "audio": "bu-pm/Bu-np3vag.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "snr_db": 31.0,
+  "min": 4.0,
+  "marked": "best",
+  "range": [
+   54,
+   64
+  ]
+ },
+ {
+  "id": "Bu-pbkc1var",
+  "audio": "bu-pm/Bu-pbkc1var.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "snr_db": 40.7,
+  "min": 3.8,
+  "marked": "best",
+  "range": [
+   1,
+   4
+  ]
+ },
+ {
+  "id": "Bu-pbkrn",
+  "audio": "bu-pm/Bu-pbkrn.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "snr_db": 45.1,
+  "min": 0.9,
+  "marked": "best",
+  "range": [
+   1,
+   4
+  ]
+ },
+ {
+  "id": "Bu-pc1vag",
+  "audio": "bu-pm/Bu-pc1vag.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "snr_db": 38.6,
+  "min": 1.2,
+  "marked": "best",
+  "range": [
+   65,
+   75
+  ]
+ },
+ {
+  "id": "Bu-pc2vag",
+  "audio": "bu-pm/Bu-pc2vag.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "snr_db": 35.0,
+  "min": 1.9,
+  "marked": "best",
+  "range": [
+   76,
+   85
+  ]
+ },
+ {
+  "id": "Bu-pc3vag",
+  "audio": "bu-pm/Bu-pc3vag.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "snr_db": 40.5,
+  "min": 1.6,
+  "marked": "best",
+  "range": [
+   86,
+   95
+  ]
+ },
+ {
+  "id": "Bu-pc4vag",
+  "audio": "bu-pm/Bu-pc4vag.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "snr_db": 43.9,
+  "min": 2.3,
+  "marked": "",
+  "range": [
+   96,
+   105
+  ]
+ },
+ {
+  "id": "Bu-pc5vag",
+  "audio": "bu-pm/Bu-pc5vag.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "snr_db": 42.5,
+  "min": 2.3,
+  "marked": "",
+  "range": [
+   106,
+   115
+  ]
+ },
+ {
+  "id": "Bu-pc6vag",
+  "audio": "bu-pm/Bu-pc6vag.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "snr_db": 41.1,
+  "min": 1.7,
+  "marked": "",
+  "range": [
+   116,
+   125
+  ]
+ },
+ {
+  "id": "Bu-pc7vag",
+  "audio": "bu-pm/Bu-pc7vag.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "snr_db": 42.4,
+  "min": 3.6,
+  "marked": "",
+  "range": [
+   126,
+   135
+  ]
+ },
+ {
+  "id": "Bu-pc8vag",
+  "audio": "bu-pm/Bu-pc8vag.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "snr_db": 37.0,
+  "min": 3.1,
+  "marked": "",
+  "range": [
+   136,
+   147
+  ]
+ },
+ {
+  "id": "Bu-pc9vag",
+  "audio": "bu-pm/Bu-pc9vag.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "snr_db": 38.5,
+  "min": 3.1,
+  "marked": "",
+  "range": [
+   148,
+   158
+  ]
+ },
+ {
+  "id": "Bu-pd",
+  "audio": "bu-pm/Bu-pd.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "snr_db": 34.0,
+  "min": 2.6,
+  "marked": "",
+  "range": [
+   159,
+   164
+  ]
+ },
+ {
+  "id": "Bu-pj",
+  "audio": "bu-pm/Bu-pj.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "snr_db": 36.9,
+  "min": 2.6,
+  "marked": "",
+  "range": [
+   8,
+   13
+  ]
+ },
+ {
+  "id": "Bu-sk1vag",
+  "audio": "bu-pm/Bu-sk1vag.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "snr_db": 35.5,
+  "min": 1.0,
+  "marked": "",
+  "range": [
+   165,
+   175
+  ]
+ },
+ {
+  "id": "Bu-sk2vag",
+  "audio": "bu-pm/Bu-sk2vag.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "snr_db": 42.1,
+  "min": 0.9,
+  "marked": "",
+  "range": [
+   176,
+   186
+  ]
+ },
+ {
+  "id": "Bu-sk3vag",
+  "audio": "bu-pm/Bu-sk3vag.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "snr_db": 39.7,
+  "min": 0.9,
+  "marked": "",
+  "range": [
+   187,
+   198
+  ]
+ },
+ {
+  "id": "Bu-sk4vag",
+  "audio": "bu-pm/Bu-sk4vag.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "snr_db": 41.0,
+  "min": 1.1,
+  "marked": "",
+  "range": [
+   199,
+   208
+  ]
+ },
+ {
+  "id": "Bu-sk5vag",
+  "audio": "bu-pm/Bu-sk5vag.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "snr_db": 40.1,
+  "min": 0.9,
+  "marked": "",
+  "range": [
+   209,
+   218
+  ]
+ },
+ {
+  "id": "Bu-sk6vag",
+  "audio": "bu-pm/Bu-sk6vag.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "snr_db": 38.2,
+  "min": 1.0,
+  "marked": "",
+  "range": [
+   219,
+   228
+  ]
+ },
+ {
+  "id": "Bu-sk7vag",
+  "audio": "bu-pm/Bu-sk7vag.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "snr_db": 33.5,
+  "min": 2.2,
+  "marked": "",
+  "range": [
+   229,
+   244
+  ]
+ },
+ {
+  "id": "Bu-ss",
+  "audio": "bu-pm/Bu-ss.mp3",
+  "text": "vinaya/pli-tv-bu-pm_root-pli-ms.json",
+  "snr_db": 34.2,
+  "min": 9.8,
+  "marked": "",
+  "range": [
+   14,
+   28
+  ]
+ },
+ {
+  "id": "dn2.9-11d1dukkham",
+  "audio": "dn/dn2.9/dn2.9-11d1dukkham.mp3",
+  "text": "sutta/dn/dn22_root-pli-ms.json",
+  "snr_db": 45.2,
+  "min": 7.2,
+  "marked": "best",
+  "range": [
+   17,
+   18
+  ]
+ },
+ {
+  "id": "dn2.9-11d2samudayo",
+  "audio": "dn/dn2.9/dn2.9-11d2samudayo.mp3",
+  "text": "sutta/dn/dn22_root-pli-ms.json",
+  "snr_db": 42.0,
+  "min": 4.4,
+  "marked": "best",
+  "range": [
+   19,
+   19
+  ]
+ },
+ {
+  "id": "dn2.9-11d3nirodho",
+  "audio": "dn/dn2.9/dn2.9-11d3nirodho.mp3",
+  "text": "sutta/dn/dn22_root-pli-ms.json",
+  "snr_db": 40.4,
+  "min": 4.2,
+  "marked": "best",
+  "range": [
+   20,
+   20
+  ]
+ },
+ {
+  "id": "dn2.9-11d4maggo",
+  "audio": "dn/dn2.9/dn2.9-11d4maggo.mp3",
+  "text": "sutta/dn/dn22_root-pli-ms.json",
+  "snr_db": 42.0,
+  "min": 5.8,
+  "marked": "best",
+  "range": [
+   21,
+   21
+  ]
+ },
+ {
+  "id": "dn2.9-12",
+  "audio": "dn/dn2.9/dn2.9-12.mp3",
+  "text": "sutta/dn/dn22_root-pli-ms.json",
+  "snr_db": 43.4,
+  "min": 2.2,
+  "marked": "best",
+  "range": [
+   22,
+   22
+  ]
+ },
+ {
+  "id": "sn22.33_pi_puriso_jiv",
+  "audio": "sn/sn22/sn22.33_pi_puriso_jiv.mp3",
+  "text": "sutta/sn/sn22/sn22.33_root-pli-ms.json",
+  "snr_db": 35.0,
+  "min": 2.3,
+  "marked": "best"
+ },
+ {
+  "id": "sn36.5_pi_puriso_jiv",
+  "audio": "sn/sn36/sn36.5_pi_puriso_jiv.mp3",
+  "text": "sutta/sn/sn36/sn36.5_root-pli-ms.json",
+  "snr_db": 35.5,
+  "min": 1.6,
+  "marked": ""
+ },
+ {
+  "id": "sn56.11_pi_puriso_jiv",
+  "audio": "sn/sn56/sn56.11_pi_puriso_jiv.mp3",
+  "text": "sutta/sn/sn56/sn56.11_root-pli-ms.json",
+  "snr_db": 32.6,
+  "min": 8.7,
+  "marked": "best"
+ }
+]
