@@ -33,8 +33,10 @@ from respell import respell
 RULES_VERSION = 'r15'  # bump when pali_ipa rules change, so cached mp3 are not reused
 MAX_CHARS = 2000
 RATE_LIMIT = 60  # requests per client IP per minute
-VOICES = {  # id -> (model file, language); 'pi' voices are fed our Pali IPA
+VOICES = {  # id -> (model file, language); 'pi*' voices are fed our Pali IPA
     'pratham': ('hi_IN-pratham-medium', 'pi'),
+    # the owner's own voice, fine-tuned on their readings (v1, epoch 179: round 13); trained on plain to_ipa
+    'dg': ('pali_dg-medium', 'pi-own'),
     'alan': ('en_GB-alan-medium', 'en'),
     'norman': ('en_US-norman-medium', 'en'),
     'kathleen': ('en_US-kathleen-low', 'en'),
@@ -127,12 +129,13 @@ def synth(text, vid, rate):
     """Sentence by sentence (VITS degrades on very long inputs), short pauses between."""
     voice, lang = get_voice(vid), VOICES[vid][1]
     sr = voice.config.sample_rate
-    # Pali: our tuned pace (length 1.15 at rate 1); translations: the voice's own pace
+    # pratham: our tuned pace (length 1.15 at rate 1); own voice and translations: the recorded pace
     cfg = SynthesisConfig(length_scale=(1.15 if lang == 'pi' else 1.0) / rate, noise_scale=0.6, noise_w_scale=0.7)
     parts = []
     for sent in SENTENCE.split(text.strip()):
-        if lang == 'pi':
-            ipa = tune(to_ipa(sent, full_a=True))
+        if lang.startswith('pi'):
+            ipa = to_ipa(sent, full_a=True)
+            ipa = tune(ipa) if lang == 'pi' else ipa  # pratham's fixes would only confuse the own voice
             phonemes = [list(ipa)] if ipa.strip(' ,.?!') else []
         else:
             phonemes = [p for p in voice.phonemize(respell(sent, lang)) if p]  # Pali words in a translation
@@ -141,6 +144,8 @@ def synth(text, vid, rate):
         if phonemes:
             parts.append(np.zeros(int(sr * 0.35), dtype=np.float32))
     pcm = np.concatenate(parts) if parts else np.zeros(sr // 4, dtype=np.float32)
+    if lang == 'pi-own' and np.abs(pcm).max() > 0:  # its recordings were quiet: comes out ~16 dB under pratham
+        pcm = pcm * (0.9 / np.abs(pcm).max())
     return subprocess.run(['ffmpeg', '-loglevel', 'error', '-f', 'f32le', '-ar', str(sr), '-ac', '1', '-i', '-',
                            '-b:a', '64k', '-f', 'mp3', '-'], input=pcm.astype(np.float32).tobytes(),
                           capture_output=True, check=True).stdout
