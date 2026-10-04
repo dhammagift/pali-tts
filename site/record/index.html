@@ -43,6 +43,9 @@ body.prompt h1,body.prompt details,body.prompt .meter,body.prompt #hint,body.pro
 body.prompt #recBtn,body.prompt #stopBtn,body.prompt #playBtn,body.prompt #todoBtn,body.prompt #hideBtn,
 body.nomic .meter,body.nomic #recBtn,body.nomic #stopBtn,body.nomic #playBtn,body.nomic label{display:none}
 body.prompt #showBtn{display:inline-block}
+body.prompt #hint.warn,body.prompt #hint.rec{display:block}
+#nomicNote{display:none;color:var(--bad);font-weight:600;margin-bottom:8px}
+body.nomic #nomicNote{display:block}
 body.prompt #text{font-size:2rem;min-height:40vh;cursor:pointer;user-select:none}
 body.prompt #prevBtn,body.prompt #nextBtn{flex:1;padding:16px;font-size:1.2rem}
 @media (max-width:600px){body.prompt #text{font-size:1.6rem}}
@@ -67,6 +70,7 @@ body.prompt #prevBtn,body.prompt #nextBtn{flex:1;padding:16px;font-size:1.2rem}
   <button id="start">Включить микрофон (записывать здесь)</button>
   <button id="textOnly">Только текст (записываю в другом приложении)</button>
   <div id="ui" hidden>
+    <div id="nomicNote">🎙 Запись не идёт: режим «только текст» (пишете в другом приложении)</div>
     <div class="meta"><span id="pos"></span><span id="sid"></span><span id="status"></span></div>
     <div id="text"></div>
     <div class="meter"><div id="level"></div></div>
@@ -220,10 +224,11 @@ async function stop() {
   if (lastUrl) URL.revokeObjectURL(lastUrl);
   lastUrl = URL.createObjectURL(blob);
   const secs = bufs.reduce((s, b) => s + b.length, 0) / ctx.sampleRate;
-  if (peak > 0.98) return hint('Перегруз (красный): отодвиньтесь или убавьте усиление и запишите заново.', true), show();
-  if (peak < 0.08) return hint('Очень тихо: придвиньтесь или прибавьте усиление и запишите заново.', true), show();
-  if (secs < 1) return hint('Слишком коротко.', true), show();
-  hint(`Пик ${Math.round(peak * 100)}%, ${secs.toFixed(1)} с`);
+  if (secs < 1) return hint('Слишком коротко, не сохранено.', true), show();
+  // A loud or quiet take is still saved (levels get evened out later): losing it silently was worse
+  if (peak > 0.98) hint('Записано, но был перегруз: отодвиньтесь немного. Можно перезаписать (R).', true);
+  else if (peak < 0.08) hint('Записано, но тихо: придвиньтесь немного. Можно перезаписать (R).', true);
+  else hint(`Записано: пик ${Math.round(peak * 100)}%, ${secs.toFixed(1)} с`);
   if ($('auto').checked) {
     save(idx, blob);
     if (idx === i && i < script.length - 1) { i++; show(); }
