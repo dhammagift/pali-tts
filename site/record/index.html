@@ -44,7 +44,7 @@ label{color:var(--mute);font-size:.9rem;display:flex;gap:6px;align-items:center;
 <li>Тихая комната, без эха (лучше с мебелью, шторами). Без вентилятора, холодильника рядом.</li>
 <li>Один и тот же микрофон и одно расстояние (15–20 см) во всех сессиях. Чуть сбоку от рта, чтобы «п»/«пх» не дули.</li>
 <li>Обычная спокойная речь, как при чтении вслух. Не петь, не скандировать. Ровный темп.</li>
-<li>Перед словами и после — полсекунды тишины. Ошиблись — <kbd>R</kbd> и заново.</li>
+<li>Перед словами и после — полсекунды тишины. Ошиблись — <kbd>R</kbd> и заново. К любой записанной фразе можно вернуться стрелками, прослушать (<kbd>P</kbd>) и перезаписать.</li>
 <li>Индикатор: зелёный — хорошо, красный — слишком громко (отодвиньтесь). Обработка звука в браузере здесь выключена: так и нужно.</li>
 <li>Фразы идут по пользе: первые 300 (~22 мин) — главные, остальные улучшают голос дальше. Записывайте частями: стало шумно — просто прервитесь, прогресс сохранён на сервере.</li>
 </ul>
@@ -94,7 +94,7 @@ function show() {
   $('sid').textContent = line.id;
   $('status').textContent = done.has(line.id) ? '✓ записано' : '';
   $('done').style.width = (100 * done.size / script.length) + '%';
-  $('playBtn').disabled = !lastWav || lastWav.idx !== i;
+  $('playBtn').disabled = !(lastWav && lastWav.idx === i) && !done.has(line.id);
   try { localStorage.setItem('rec_pos', i); } catch (e) {}
 }
 
@@ -132,7 +132,11 @@ async function toggle() {
   } else show();
 }
 
-function play() { if (lastUrl) new Audio(lastUrl).play(); }
+// this session's take of the line if there is one, else the one saved on the server
+function play() {
+  if (lastWav && lastWav.idx === i) new Audio(lastUrl).play();
+  else if (done.has(script[i].id)) new Audio(api('&play=' + encodeURIComponent(script[i].id))).play();
+}
 
 $('start').onclick = async () => {
   if (!KEY) return alert('Откройте ссылку с ключом (?k=…)');

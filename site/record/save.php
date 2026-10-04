@@ -1,5 +1,5 @@
 <?php
-// Own-voice recording sessions. GET ?k= -> ids already recorded; POST ?k=&id= with a WAV body -> takes/<id>.flac.
+// Own-voice recording sessions. GET ?k= -> ids already recorded; GET ?k=&play=<id> -> that take; POST ?k=&id= with a WAV body -> takes/<id>.flac.
 // The key (record.key, not in git) keeps strangers from filling the disk through this public page.
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
@@ -23,6 +23,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     unlink($tmp);
     if ($rc) { http_response_code(500); exit(json_encode(['error' => 'ffmpeg failed', 'log' => $log])); }
     exit('{"ok":true}');
+}
+
+if (isset($_GET['play'])) {  // a saved take, to check an old recording before re-recording it
+    $f = "$dir/" . str_replace(':', '_', (string)$_GET['play']) . '.flac';
+    if (!preg_match('/^[a-z0-9.:-]{1,40}$/', $_GET['play']) || !is_file($f)) { http_response_code(404); exit('{"error":"no take"}'); }
+    header('Content-Type: audio/flac');
+    header('Content-Length: ' . filesize($f));
+    readfile($f);
+    exit;
 }
 
 $ids = [];
