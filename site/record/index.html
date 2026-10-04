@@ -298,7 +298,8 @@ async function stop() {
 function play() {
   if (lastWav && lastWav.idx === i) new Audio(lastUrl).play();
   else if (pending.has(script[i].id)) new Audio(URL.createObjectURL(pending.get(script[i].id).blob)).play();
-  else if (done.has(script[i].id)) new Audio(api('&play=' + encodeURIComponent(script[i].id))).play();
+  // fresh URL every time: the browser kept playing its cached first take after a re-record
+  else if (done.has(script[i].id)) new Audio(api('&play=' + encodeURIComponent(script[i].id) + '&v=' + Date.now())).play();
 }
 
 async function load() {
