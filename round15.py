@@ -28,6 +28,7 @@ VARIANTS = [  # id, label, transform of pratham's current IPA
     ('b', 'конечные долгие с двойной долготой (ːː)', lambda s: re.sub(LONG + END, r'\1ːː', s)),
     ('c', 'все долгие с двойной долготой (ːː)', lambda s: re.sub(LONG, r'\1ːː', s)),
     ('d', 'конечные долгие как два звука (iː → iːi)', lambda s: re.sub(LONG + END, r'\1ː\1', s)),
+    ('e', 'конечные долгие удвоены целиком (iː → iːiː)', lambda s: re.sub(LONG + END, r'\1ː\1ː', s)),
 ]
 pratham = PiperVoice.load('models/hi_IN-pratham-medium.onnx')
 own = PiperVoice.load('models/pali_dg-medium.onnx')
