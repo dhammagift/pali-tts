@@ -46,7 +46,7 @@ label{color:var(--mute);font-size:.9rem;display:flex;gap:6px;align-items:center;
 <li>Обычная спокойная речь, как при чтении вслух. Не петь, не скандировать. Ровный темп.</li>
 <li>Перед словами и после — полсекунды тишины. Ошиблись — <kbd>R</kbd> и заново.</li>
 <li>Индикатор: зелёный — хорошо, красный — слишком громко (отодвиньтесь). Обработка звука в браузере здесь выключена: так и нужно.</li>
-<li>Фразы идут по пользе: даже первые 200–300 уже много дают. Можно записывать частями, прогресс сохраняется на сервере.</li>
+<li>Фразы идут по пользе: первые 300 (~22 мин) — главные, остальные улучшают голос дальше. Записывайте частями: стало шумно — просто прервитесь, прогресс сохранён на сервере.</li>
 </ul>
 </details>
 <div class="card">
@@ -89,7 +89,8 @@ function wavBlob(bufs, rate) {
 function show() {
   const line = script[i];
   $('text').textContent = line.text;
-  $('pos').textContent = `${i + 1} из ${script.length}`;
+  const top = Math.min(300, script.length), topDone = script.slice(0, top).filter(l => done.has(l.id)).length;
+  $('pos').textContent = i < top ? `${i + 1} из ${top} главных (${topDone} готово)` : `${i + 1} из ${script.length}, дополнительные`;
   $('sid').textContent = line.id;
   $('status').textContent = done.has(line.id) ? '✓ записано' : '';
   $('done').style.width = (100 * done.size / script.length) + '%';
