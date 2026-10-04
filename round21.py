@@ -4,6 +4,7 @@ Usage: .venv/bin/python round21.py -> out/r21/*.mp3, out/r21/index.json
 """
 import json
 import os
+import re
 import subprocess
 
 from piper import PiperVoice, SynthesisConfig
@@ -46,9 +47,9 @@ SECTIONS = [
     ('nana', 'Ñāṇañca: «янанча»', '★ где начальное «ñ» звучит как «нь», а не «я»',
      ['Ñāṇañca pana me dassanaṁ udapādi.'],
      [('a', 'как сейчас (ɲj)', lambda s: s),
-      ('b', 'просто ɲ', lambda s: s.replace('ɲjˈaː', 'ɲˈaː', 1)),
-      ('c', 'n + j (nj)', lambda s: s.replace('ɲjˈaː', 'njˈaː', 1)),
-      ('d', 'долгое ɲː', lambda s: s.replace('ɲjˈaː', 'ɲːˈaː', 1))]),
+      ('b', 'просто ɲ', lambda s: re.sub(r'^ɲj', 'ɲ', s)),
+      ('c', 'n + j (nj)', lambda s: re.sub(r'^ɲj', 'nj', s)),
+      ('d', 'долгое ɲː', lambda s: re.sub(r'^ɲj', 'ɲː', s))]),
 ]
 pratham = PiperVoice.load('models/hi_IN-pratham-medium.onnx')
 own = PiperVoice.load('models/pali_dg-medium.onnx')
@@ -68,6 +69,7 @@ for sid, title, note, texts, variants in SECTIONS:
         base = tune(to_ipa(text, full_a=True))
         vs = []
         for vid, label, fn in variants:
+            assert vid == 'a' or fn(base) != base or len(texts) > 1, (sid, vid, base)  # a variant that changes nothing is a bug
             for take in (1, 2):
                 f = f'{sid}{n}.{vid}{take}.mp3'
                 render(pratham, fn(base), LENGTH, f'{OUT}/{f}')
