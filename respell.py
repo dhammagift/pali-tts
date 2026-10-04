@@ -55,8 +55,10 @@ def en_ipa(word, us=False):
 
 
 def is_pali_en(low):
+    # Round 16: our phonemes won for the common plain-spelled words (sutta, Dhamma, bhikkhus); for words
+    # with diacritics (Vārāṇasī, Nibbāna) the respelling was as good or better, so those stay respelled.
     stem = low[:-1] if low.endswith('s') and low[:-1] in EN_PALI_WORDS else low
-    return stem in EN_PALI_WORDS or any(c in PALI_CHARS for c in low) or bool(EN_PALI_HINT.search(low))
+    return stem in EN_PALI_WORDS
 
 
 def en_parts(text, us=False):
@@ -81,7 +83,7 @@ def en_phonemes(voice, text):
     us = voice.config.espeak_voice == 'en-us'
     seq = []
     for kind, val in en_parts(text, us):
-        ph = [p for sent in voice.phonemize(val) for p in sent] if kind == 'text' else list(val)
+        ph = [p for sent in voice.phonemize(respell(val, 'en')) for p in sent] if kind == 'text' else list(val)
         lead = re.match(r'\s*([,.;:?!])', val) if kind == 'text' else None
         if lead and (not ph or ph[0] != lead.group(1)):  # espeak drops a run's leading punctuation: keep the pause
             ph = [lead.group(1), ' '] + ph
@@ -120,4 +122,5 @@ if __name__ == '__main__':
     assert en_ipa('sutta') == 'sˈʊtɐ', en_ipa('sutta')
     assert en_ipa('gotamo') == 'ɡˈəʊtɐməʊ', en_ipa('gotamo')
     assert en_parts('the suttas, monks') == [('text', 'the '), ('ipa', 'sˈʊtɐz'), ('text', ', monks')], en_parts('the suttas, monks')
+    assert [k for k, _ in en_parts('in Vārāṇasī the Dhamma')] == ['text', 'ipa']  # diacritics: respelled
     print('ok')
