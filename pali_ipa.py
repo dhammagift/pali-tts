@@ -110,6 +110,9 @@ PRATHAM_RULES = [
     # round 12 (3 takes each): a single c between vowels still came out as "shch" 2 times of 3;
     # doubled cc was right every time
     (re.compile(r'(?<=[ʌaeoiuɪʊː])c(?=[ʌaeoiuɪʊːˈ])'), 'cc'),
+    # round 18: y after a short vowel glided into it and its syllable was lost (passambhayaṁ ->
+    # "пасамбхам"); doubled jj had no bad take of 8. Not after a long vowel or ɲː (ññ is ɲːj).
+    (re.compile(r'(?<=[ʌaeoiuɪʊ])j(?=[ʌaeoiuɪʊˈ])'), 'jj'),
 ]
 
 
@@ -184,6 +187,8 @@ if __name__ == '__main__':
     assert to_ipa('pītisukhaṁ', full_a=True, heavy_back=True) == 'pˈiːtɪsʊkʰʌŋ', to_ipa('pītisukhaṁ', full_a=True, heavy_back=True)
     assert to_ipa('bhagavato', heavy_back=True) == to_ipa('bhagavato', heavy_back=False)  # nothing heavy to move to
     assert to_ipa('brahmacariyaṁ', full_a=True) == 'bɾʌhmʌcˈʌɾɪjʌŋ'  # heavy syllable two away: stays
+    assert tune(to_ipa('passambhayaṁ', full_a=True)) == 'passˈʌmbʰajjʌŋŋ', tune(to_ipa('passambhayaṁ', full_a=True))
+    assert 'jj' not in tune(to_ipa('kāya paññā', full_a=True))  # after a long vowel / in ññ: untouched
     assert tune(to_ipa('So evamāha', full_a=True)) == 'sˈoː, eːʋamˈaːhʌ', tune(to_ipa('So evamāha', full_a=True))
     assert ', ' not in tune(to_ipa('āyasmā ānando', full_a=True))  # longer words: unchanged
     print('ok')
