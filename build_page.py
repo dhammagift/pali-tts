@@ -4,9 +4,9 @@ import random
 import re
 import time
 
-ROUND = 'r20'
-TITLE = 'Pali TTS — раунд 20: ṭṭh («дичи»)'
-INTRO = ('Две проблемы: «sammādiṭṭhi» → «самма дичи» и «jarāpi» → «japi». Pratham: как сейчас / одно ṭh / долгое / без придыхания / зубное tth, по 2 дубля; твой голос для сравнения. Вперемешку. '
+ROUND = 'r21'
+TITLE = 'Pali TTS — раунд 21: ponobbhavikā, taṇhāya, ñāṇaṁ, paññā'
+INTRO = ('Слова, которые ты услышал неправильно: ponobbhavikā → «бхарика», taṇhāya → «тахая», ñāṇaṁ → «ньан», paññā → «падья». У pratham по 3–4 варианта, по 2 дубля; твой голос для сравнения. Вперемешку. '
          '<b>★ лучший</b> (один на фразу), <b>✓ норм</b>, <b>✗ плохо</b>; <b>нажмите на слово</b>, которое звучит неправильно.')
 idx = json.load(open(f'out/{ROUND}/index.json', encoding='utf-8'))
 ver = int(time.time())
@@ -26,5 +26,8 @@ for sec in idx['sections']:
 
 page = open('page_template.html', encoding='utf-8').read()
 page = page.replace('__TITLE__', TITLE).replace('__INTRO__', INTRO).replace('__DATA__', json.dumps({'round': ROUND, 'phrases': phrases}, ensure_ascii=False))
+# one page per round (site/rNN.html) so an unanswered round is not replaced by the next one;
+# site/index.html stays the latest
+open(f'site/{ROUND}.html', 'w', encoding='utf-8').write(page)
 open('site/index.html', 'w', encoding='utf-8').write(page)
 print('ok', len(phrases), 'phrases')
