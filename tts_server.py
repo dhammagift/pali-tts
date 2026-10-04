@@ -3,6 +3,9 @@
 Pali (voice "pratham", the default) goes through our IAST->IPA rules; translation voices (alan, norman,
 kathleen: English; irina, ruslan: Russian) use Piper's own espeak phonemizer.
 POST /synthesize  body: {"text": "...", "voice": "pratham", "rate": 1.0}
+POST /memo        body: {"segments": [...], "voice", "rate", "delay": s, "end_delay": s, "sound": "gong.mp3"}
+                  -> audio/mpeg: the lines with silences of any length between them (Memo page download;
+                  Google's SSML stops at 10 s pauses)
 GET  /health, /voices
 Reachable from the internet through Apache/Cloudflare (like Google's TTS API): CORS is open and each
 client IP gets RATE_LIMIT requests per minute (CF-Connecting-IP / X-Forwarded-For).
@@ -19,6 +22,7 @@ import json
 import os
 import re
 import subprocess
+import tempfile
 import shutil
 import threading
 import time
@@ -126,6 +130,24 @@ def get_voice(vid):
 
 
 def synth(text, vid, rate):
+    pcm, sr = synth_pcm(text, vid, rate)
+    return encode_mp3(pcm, sr)
+
+
+def encode_mp3(pcm, sr, vbr=False):
+    if not vbr:
+        return subprocess.run(['ffmpeg', '-loglevel', 'error', '-f', 'f32le', '-ar', str(sr), '-ac', '1', '-i', '-',
+                               '-b:a', '64k', '-f', 'mp3', '-'], input=pcm.astype(np.float32).tobytes(),
+                              capture_output=True, check=True).stdout
+    # VBR: long silences cost next to nothing. Into a file, not a pipe: only then can ffmpeg go back and
+    # write the Xing header, without which players show a wrong length and seek badly.
+    with tempfile.NamedTemporaryFile(suffix='.mp3') as f:
+        subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-f', 'f32le', '-ar', str(sr), '-ac', '1', '-i', '-',
+                        '-q:a', '6', f.name], input=pcm.astype(np.float32).tobytes(), check=True)
+        return open(f.name, 'rb').read()
+
+
+def synth_pcm(text, vid, rate):
     """Sentence by sentence (VITS degrades on very long inputs), short pauses between."""
     voice, lang = get_voice(vid), VOICES[vid][1]
     sr = voice.config.sample_rate
@@ -148,9 +170,31 @@ def synth(text, vid, rate):
     pcm = np.concatenate(parts) if parts else np.zeros(sr // 4, dtype=np.float32)
     if lang == 'pi-own' and np.abs(pcm).max() > 0:  # its recordings were quiet: comes out ~16 dB under pratham
         pcm = pcm * (0.9 / np.abs(pcm).max())
-    return subprocess.run(['ffmpeg', '-loglevel', 'error', '-f', 'f32le', '-ar', str(sr), '-ac', '1', '-i', '-',
-                           '-b:a', '64k', '-f', 'mp3', '-'], input=pcm.astype(np.float32).tobytes(),
-                          capture_output=True, check=True).stdout
+    return pcm, sr
+
+
+SOUNDS = '/var/www/html/assets/sounds'
+MEMO_LIMITS = {'segments': 200, 'chars': 20000, 'delay': 300, 'end_delay': 600, 'minutes': 45}
+
+
+def memo_mp3(segments, vid, rate, delay, end_delay, sound):
+    """The Memo page's lines read one after another with `delay` seconds of silence between them, then
+    an optional sound and `end_delay` of silence, as one mp3."""
+    parts, sr = [], None
+    for i, seg in enumerate(segments):
+        pcm, sr = synth_pcm(seg, vid, rate)
+        parts.append(pcm)
+        if i < len(segments) - 1 and delay > 0:
+            parts.append(np.zeros(int(sr * delay), dtype=np.float32))
+        if sum(len(p) for p in parts) > sr * 60 * MEMO_LIMITS['minutes']:
+            raise ValueError(f"longer than {MEMO_LIMITS['minutes']} minutes")
+    if sound:
+        parts.append(np.frombuffer(subprocess.run(
+            ['ffmpeg', '-loglevel', 'error', '-i', os.path.join(SOUNDS, sound), '-f', 'f32le', '-ac', '1', '-ar', str(sr), '-'],
+            capture_output=True, check=True).stdout, dtype=np.float32) * 0.6)
+    if end_delay > 0:
+        parts.append(np.zeros(int(sr * end_delay), dtype=np.float32))
+    return encode_mp3(np.concatenate(parts), sr, vbr=True)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -186,7 +230,45 @@ class Handler(BaseHTTPRequestHandler):
             return self.reply(200, {vid: lang for vid, (_, lang) in VOICES.items()})
         self.reply(404, {'error': {'message': 'not found'}})
 
+    def memo(self):
+        try:
+            req = json.loads(self.rfile.read(min(int(self.headers.get('content-length', 0)), 256 * 1024)))
+            segs = [str(x).strip()[:MAX_CHARS] for x in req.get('segments', []) if str(x).strip()]
+            vid = str(req.get('voice') or 'pratham')
+            rate = min(max(float(req.get('rate', 1.0)), 0.25), 3.0)
+            delay = min(max(float(req.get('delay', 2)), 0), MEMO_LIMITS['delay'])
+            end_delay = min(max(float(req.get('end_delay', 0)), 0), MEMO_LIMITS['end_delay'])
+            sound = str(req.get('sound') or '')
+        except (ValueError, TypeError):
+            return self.reply(400, {'error': {'message': 'bad request'}})
+        if vid not in VOICES:
+            return self.reply(400, {'error': {'message': 'unknown voice'}})
+        if sound and (sound not in ('gong.mp3', 'tick.mp3') or not os.path.exists(os.path.join(SOUNDS, sound))):
+            sound = ''
+        if not segs:
+            return self.reply(400, {'error': {'message': 'empty text'}})
+        if len(segs) > MEMO_LIMITS['segments'] or sum(map(len, segs)) > MEMO_LIMITS['chars']:
+            return self.reply(413, {'error': {'message': f"at most {MEMO_LIMITS['segments']} lines and {MEMO_LIMITS['chars']} characters"}})
+        try:
+            with busy:
+                mp3 = memo_mp3(segs, vid, rate, delay, end_delay, sound)
+        except ValueError as e:
+            return self.reply(413, {'error': {'message': str(e)}})
+        self.send_response(200)
+        self.send_header('content-type', 'audio/mpeg')
+        self.send_header('content-length', str(len(mp3)))
+        self.send_header('cache-control', 'no-store')
+        self.cors()
+        self.end_headers()
+        self.wfile.write(mp3)
+
     def do_POST(self):
+        if self.path == '/memo':
+            # one request of many lines: counts as ten against the per-IP limit
+            ip = self.client_ip()
+            if any(rate_limited(ip) for _ in range(10)):
+                return self.reply(429, {'error': {'message': 'Too many requests, try again shortly'}})
+            return self.memo()
         if self.path != '/synthesize':
             return self.reply(404, {'error': {'message': 'not found'}})
         if rate_limited(self.client_ip()):
