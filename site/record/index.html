@@ -35,6 +35,16 @@ label{color:var(--mute);font-size:.9rem;display:flex;gap:6px;align-items:center;
 #done{height:100%;background:var(--ok);width:0}
 #start{width:100%;padding:16px;font-size:1.1rem}
 @media (max-width:600px){#text{font-size:1.3rem}button{padding:9px 12px}}
+#textOnly{width:100%;margin-top:8px}
+#showBtn{display:none}
+/* prompter: only the phrase and prev/next (owner may record in another app) */
+body.prompt h1,body.prompt details,body.prompt .meter,body.prompt #hint,body.prompt label,body.prompt .bar,
+body.prompt #recBtn,body.prompt #stopBtn,body.prompt #playBtn,body.prompt #todoBtn,body.prompt #hideBtn,
+body.nomic .meter,body.nomic #recBtn,body.nomic #stopBtn,body.nomic #playBtn,body.nomic label{display:none}
+body.prompt #showBtn{display:inline-block}
+body.prompt #text{font-size:2rem;min-height:40vh;cursor:pointer;user-select:none}
+body.prompt #prevBtn,body.prompt #nextBtn{flex:1;padding:16px;font-size:1.2rem}
+@media (max-width:600px){body.prompt #text{font-size:1.6rem}}
 </style>
 </head>
 <body>
@@ -52,7 +62,8 @@ label{color:var(--mute);font-size:.9rem;display:flex;gap:6px;align-items:center;
 </ul>
 </details>
 <div class="card">
-  <button id="start">Включить микрофон</button>
+  <button id="start">Включить микрофон (записывать здесь)</button>
+  <button id="textOnly">Только текст (записываю в другом приложении)</button>
   <div id="ui" hidden>
     <div class="meta"><span id="pos"></span><span id="sid"></span><span id="status"></span></div>
     <div id="text"></div>
@@ -65,6 +76,8 @@ label{color:var(--mute);font-size:.9rem;display:flex;gap:6px;align-items:center;
       <button id="prevBtn">← <kbd>←</kbd></button>
       <button id="nextBtn">→ <kbd>→</kbd></button>
       <button id="todoBtn">к незаписанной</button>
+      <button id="hideBtn">Скрыть управление <kbd>H</kbd></button>
+      <button id="showBtn">Показать управление</button>
     </div>
     <label><input type="checkbox" id="auto" checked> после «стоп» сохранять и переходить к следующей</label>
     <div class="bar"><div id="done"></div></div>
@@ -162,12 +175,34 @@ function play() {
   else if (done.has(script[i].id)) new Audio(api('&play=' + encodeURIComponent(script[i].id))).play();
 }
 
-$('start').onclick = async () => {
-  if (!KEY) return alert('Откройте ссылку с ключом (?k=…)');
+async function load() {
+  if (!KEY) return alert('Откройте ссылку с ключом (?k=…)'), false;
   const [s, d] = await Promise.all([fetch('script.json').then(r => r.json()), fetch(api()).then(r => r.ok ? r.json() : Promise.reject(r.status))])
     .catch(e => (alert('Не удалось загрузить: ' + e), []));
-  if (!s) return;
+  if (!s) return false;
   script = s; done = new Set(d);
+  let saved = 0; try { saved = +localStorage.getItem('rec_pos') || 0; } catch (e) {}
+  i = Math.min(saved, script.length - 1);
+  $('start').hidden = $('textOnly').hidden = true; $('ui').hidden = false;
+  return true;
+}
+
+function prompter(on, remember = true) {
+  document.body.classList.toggle('prompt', on);
+  if (remember) try { localStorage.setItem('rec_prompt', on ? '1' : ''); } catch (e) {}
+}
+
+$('textOnly').onclick = async () => {
+  if (!await load()) return;
+  document.body.classList.add('nomic');
+  $('showBtn').textContent = '🎙 Записывать здесь';
+  prompter(true, false);  // text-only is its own mode, not remembered as hidden controls
+  show();
+};
+
+$('start').onclick = async () => {
+  if (!script.length && !await load()) return;
+  $('ui').hidden = true;
   // browser "voice processing" (noise suppression, AGC, echo cancel) would bake artifacts into the dataset
   const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 } })
     .catch(e => alert('Нет доступа к микрофону: ' + e.message));
@@ -182,9 +217,11 @@ $('start').onclick = async () => {
     if (chunks) { chunks.push(new Float32Array(x)); peak = Math.max(peak, p); }
   };
   src.connect(proc); proc.connect(ctx.destination);  // ponytail: ScriptProcessor is deprecated but works everywhere; AudioWorklet if it ever goes
-  let saved = 0; try { saved = +localStorage.getItem('rec_pos') || 0; } catch (e) {}
-  i = Math.min(saved, script.length - 1);
-  $('start').hidden = true; $('ui').hidden = false;
+  $('ui').hidden = false;
+  document.body.classList.remove('nomic');
+  $('showBtn').textContent = 'Показать управление';
+  let p = false; try { p = !!localStorage.getItem('rec_prompt'); } catch (e) {}
+  prompter(p);
   hint(`Частота ${ctx.sampleRate} Гц. Пробел — начать.`);
   show();
 };
@@ -193,10 +230,22 @@ $('stopBtn').onclick = stop;
 $('playBtn').onclick = play;
 $('prevBtn').onclick = () => { if (!chunks && i > 0) { i--; show(); } };
 $('nextBtn').onclick = () => { if (!chunks && i < script.length - 1) { i++; show(); } };
+$('hideBtn').onclick = () => prompter(true);
+$('showBtn').onclick = () => document.body.classList.contains('nomic') ? $('start').onclick() : prompter(false);
+// prompter: tap the left third of the phrase for the previous one, elsewhere for the next
+$('text').onclick = e => {
+  if (!document.body.classList.contains('prompt')) return;
+  const r = $('text').getBoundingClientRect();
+  (e.clientX - r.left < r.width / 3 ? $('prevBtn') : $('nextBtn')).click();
+};
 $('todoBtn').onclick = () => { const k = script.findIndex(l => !done.has(l.id)); if (k >= 0 && !chunks) { i = k; show(); } };
 document.addEventListener('keydown', e => {
   if ($('ui').hidden || e.target.tagName === 'INPUT') return;
-  if (e.code === 'Space') { e.preventDefault(); start(); }
+  const nomic = document.body.classList.contains('nomic');
+  if (nomic && (e.code === 'Space' || e.key === 'Enter')) { e.preventDefault(); $('nextBtn').click(); }
+  else if (nomic && !['ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+  else if (e.key === 'h' || e.key === 'р') prompter(!document.body.classList.contains('prompt'));
+  else if (e.code === 'Space') { e.preventDefault(); start(); }
   else if (e.key === 'Escape') cancel();
   else if (e.key === 'Enter' && chunks) { e.preventDefault(); stop(); }
   else if (e.key === 'p' || e.key === 'з') play();
