@@ -28,7 +28,7 @@ import numpy as np
 from piper import PiperVoice, SynthesisConfig
 
 from pali_ipa import to_ipa, tune
-from respell import respell
+from respell import en_phonemes, respell
 
 RULES_VERSION = 'r15'  # bump when pali_ipa rules change, so cached mp3 are not reused
 MAX_CHARS = 2000
@@ -137,6 +137,8 @@ def synth(text, vid, rate):
             ipa = to_ipa(sent, full_a=True)
             ipa = tune(ipa) if lang == 'pi' else ipa  # pratham's fixes would only confuse the own voice
             phonemes = [list(ipa)] if ipa.strip(' ,.?!') else []
+        elif lang == 'en':  # Pali words in an English translation get our phonemes (dhamma, sutta)
+            phonemes = [p for p in [en_phonemes(voice, sent)] if p]
         else:
             phonemes = [p for p in voice.phonemize(respell(sent, lang)) if p]  # Pali words in a translation
         for ph in phonemes:
