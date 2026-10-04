@@ -78,8 +78,28 @@ def en_parts(text, us=False):
     return out
 
 
+# Abbreviations of English translations, spelled out: espeak read "Ven." as "ven" plus a sentence-end
+# pause, "i.e." as "eye-ee", "SN 56.11" as "es en fifty six point one one" (owner: Ven. Sariputta ->
+# Venerable Sariputta and so on).
+EN_ABBR = [(re.compile(r'\bVens\.?(?=\s+[A-ZĀĪŪÑ])'), 'Venerables'), (re.compile(r'\bVen\.?(?=\s+[A-ZĀĪŪÑ])'), 'Venerable'),
+           (re.compile(r'\bi\.\s?e\.,?'), 'that is,'), (re.compile(r'\be\.\s?g\.,?'), 'for example,'),
+           (re.compile(r'\bcf\.'), 'compare'), (re.compile(r'\blit\.'), 'literally'), (re.compile(r'\bSkt\.'), 'Sanskrit')]
+EN_BOOKS = {'DN': 'Dīgha Nikāya', 'MN': 'Majjhima Nikāya', 'SN': 'Saṁyutta Nikāya', 'AN': 'Aṅguttara Nikāya',
+            'Snp': 'Sutta Nipāta', 'Dhp': 'Dhammapada', 'Ud': 'Udāna', 'Iti': 'Itivuttaka', 'Thag': 'Theragāthā',
+            'Thig': 'Therīgāthā', 'Kp': 'Khuddakapāṭha'}
+EN_REF = re.compile(r'\b(' + '|'.join(EN_BOOKS) + r')\s?(\d+)(?:\.(\d+))?')
+
+
+def en_expand(text):
+    for rx, full in EN_ABBR:
+        text = rx.sub(full, text)
+    # "SN 56.11" -> "Saṁyutta Nikāya 56, 11": the book's name, the numbers apart, not "56 point 11"
+    return EN_REF.sub(lambda m: f'{EN_BOOKS[m.group(1)]} {m.group(2)}' + (f', {m.group(3)}' if m.group(3) else ''), text)
+
+
 def en_phonemes(voice, text):
     """Phoneme list for a Piper English voice: espeak for the English runs, our phonemes for the Pali words."""
+    text = en_expand(text)
     us = voice.config.espeak_voice == 'en-us'
     seq = []
     for kind, val in en_parts(text, us):
@@ -123,4 +143,7 @@ if __name__ == '__main__':
     assert en_ipa('gotamo') == 'ɡˈəʊtɐməʊ', en_ipa('gotamo')
     assert en_parts('the suttas, monks') == [('text', 'the '), ('ipa', 'sˈʊtɐz'), ('text', ', monks')], en_parts('the suttas, monks')
     assert [k for k, _ in en_parts('in Vārāṇasī the Dhamma')] == ['text', 'ipa']  # diacritics: respelled
+    assert en_expand('There Ven. Sāriputta said, i.e. the Buddha (SN 56.11; MN 10).') == \
+        'There Venerable Sāriputta said, that is, the Buddha (Saṁyutta Nikāya 56, 11; Majjhima Nikāya 10).', en_expand('There Ven. Sāriputta said, i.e. the Buddha (SN 56.11; MN 10).')
+    assert en_expand('he said "Venus" and Seven Sāriputta') == 'he said "Venus" and Seven Sāriputta'  # not inside words
     print('ok')
