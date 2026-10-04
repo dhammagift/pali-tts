@@ -1,5 +1,5 @@
 """Round 21: words the owner heard wrong in SN 56.11 - ponobbhavikā ('бхарика'), taṇhāya ('тахая'),
-ñāṇaṁ ('ньан'), paññā ('падья'). A few IPA variants for pratham each, two takes; own voice for reference.
+ñāṇaṁ ('ньан'), paññā ('падья'), tiparivaṭṭaṁ ('тэпариваттан'), Ñāṇañca ('янанча'). A few IPA variants for pratham each, two takes; own voice for reference.
 Usage: .venv/bin/python round21.py -> out/r21/*.mp3, out/r21/index.json
 """
 import json
@@ -37,6 +37,18 @@ SECTIONS = [
       ('b', 'двойное ɲɲ', lambda s: s.replace('ɲːj', 'ɲɲ')),
       ('c', 'n + ɲ (nɲ)', lambda s: s.replace('ɲːj', 'nɲ')),
       ('d', 'nnj (как «ннь»)', lambda s: s.replace('ɲːj', 'nnj'))]),
+    ('tipari', 'tiparivaṭṭaṁ: «тэпариваттан»', '★ где «ti» звучит как «ти», а не «тэ», и слово целиком',
+     ['Evaṁ tiparivaṭṭaṁ dvādasākāraṁ yathābhūtaṁ ñāṇadassanaṁ.'],
+     [('a', 'как сейчас (ɪ)', lambda s: s),
+      ('b', 'i вместо ɪ в «ti»', lambda s: s.replace('tɪpaɾɪ', 'tipaɾɪ')),
+      ('c', 'i вместо ɪ во всех кратких i', lambda s: s.replace('ɪ', 'i')),
+      ('d', 'i в «ti» + конечное m', lambda s: s.replace('tɪpaɾɪʋˈʌʈʈʌŋŋ', 'tipaɾɪʋˈʌʈʈʌm'))]),
+    ('nana', 'Ñāṇañca: «янанча»', '★ где начальное «ñ» звучит как «нь», а не «я»',
+     ['Ñāṇañca pana me dassanaṁ udapādi.'],
+     [('a', 'как сейчас (ɲj)', lambda s: s),
+      ('b', 'просто ɲ', lambda s: s.replace('ɲjˈaː', 'ɲˈaː', 1)),
+      ('c', 'n + j (nj)', lambda s: s.replace('ɲjˈaː', 'njˈaː', 1)),
+      ('d', 'долгое ɲː', lambda s: s.replace('ɲjˈaː', 'ɲːˈaː', 1))]),
 ]
 pratham = PiperVoice.load('models/hi_IN-pratham-medium.onnx')
 own = PiperVoice.load('models/pali_dg-medium.onnx')
