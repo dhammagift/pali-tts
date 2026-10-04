@@ -134,16 +134,17 @@ def synth(text, vid, rate):
     return encode_mp3(pcm, sr)
 
 
-def encode_mp3(pcm, sr, vbr=False):
-    if not vbr:
-        return subprocess.run(['ffmpeg', '-loglevel', 'error', '-f', 'f32le', '-ar', str(sr), '-ac', '1', '-i', '-',
-                               '-b:a', '64k', '-f', 'mp3', '-'], input=pcm.astype(np.float32).tobytes(),
-                              capture_output=True, check=True).stdout
-    # VBR: long silences cost next to nothing. Into a file, not a pipe: only then can ffmpeg go back and
-    # write the Xing header, without which players show a wrong length and seek badly.
+# MP3 VBR ~40 kbit/s (LAME -q:a 7). Round 19, blind, the same audio: 64, 48 and ~40 sounded alike,
+# 32 (Google's rate) was worse in 3 of 4 lines; ~40 is 37% less traffic and cache than the old 64 CBR.
+MP3_QUALITY = '7'
+
+
+def encode_mp3(pcm, sr):
+    # Into a file, not a pipe: only then can ffmpeg go back and write the Xing header, without which
+    # players show a wrong length for VBR and seek badly. Long silences cost next to nothing in VBR.
     with tempfile.NamedTemporaryFile(suffix='.mp3') as f:
         subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-f', 'f32le', '-ar', str(sr), '-ac', '1', '-i', '-',
-                        '-q:a', '6', f.name], input=pcm.astype(np.float32).tobytes(), check=True)
+                        '-q:a', MP3_QUALITY, f.name], input=pcm.astype(np.float32).tobytes(), check=True)
         return open(f.name, 'rb').read()
 
 
@@ -194,7 +195,7 @@ def memo_mp3(segments, vid, rate, delay, end_delay, sound):
             capture_output=True, check=True).stdout, dtype=np.float32) * 0.6)
     if end_delay > 0:
         parts.append(np.zeros(int(sr * end_delay), dtype=np.float32))
-    return encode_mp3(np.concatenate(parts), sr, vbr=True)
+    return encode_mp3(np.concatenate(parts), sr)
 
 
 class Handler(BaseHTTPRequestHandler):
