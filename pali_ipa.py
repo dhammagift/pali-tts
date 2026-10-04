@@ -113,10 +113,16 @@ PRATHAM_RULES = [
 ]
 
 
+# Round 17: a one-syllable word ending in a vowel before a word starting with one ("So evamāha") came out
+# as "сори эвамаха" in one take of two; a short pause between them was right in both. A glottal stop lost
+# everywhere, and longer words (āyasmā ānando) were fine as they are, so only this case.
+MONO_HIATUS = re.compile(r'(?<![^ ,])([^ ,.?!ʌəaeoiuɪʊ]*ˈ?[ʌəaeoiuɪʊ]ː?) (?=ˈ?[ʌəaeoiuɪʊ])')
+
+
 def tune(ipa, rules=PRATHAM_RULES):
     for rx, rep in rules:
         ipa = rx.sub(rep, ipa)
-    return ipa
+    return MONO_HIATUS.sub(r'\1, ', ipa)
 
 
 DEVA_C = {'kh': 'ख', 'gh': 'घ', 'ch': 'छ', 'jh': 'झ', 'ṭh': 'ठ', 'ḍh': 'ढ', 'th': 'थ', 'dh': 'ध', 'ph': 'फ', 'bh': 'भ',
@@ -178,4 +184,6 @@ if __name__ == '__main__':
     assert to_ipa('pītisukhaṁ', full_a=True, heavy_back=True) == 'pˈiːtɪsʊkʰʌŋ', to_ipa('pītisukhaṁ', full_a=True, heavy_back=True)
     assert to_ipa('bhagavato', heavy_back=True) == to_ipa('bhagavato', heavy_back=False)  # nothing heavy to move to
     assert to_ipa('brahmacariyaṁ', full_a=True) == 'bɾʌhmʌcˈʌɾɪjʌŋ'  # heavy syllable two away: stays
+    assert tune(to_ipa('So evamāha', full_a=True)) == 'sˈoː, eːʋamˈaːhʌ', tune(to_ipa('So evamāha', full_a=True))
+    assert ', ' not in tune(to_ipa('āyasmā ānando', full_a=True))  # longer words: unchanged
     print('ok')
