@@ -1,5 +1,8 @@
 <?php
-// Own-voice recording sessions. GET ?k= -> ids already recorded; GET ?k=&play=<id> -> that take; POST ?k=&id= with a WAV body -> takes/<id>.flac.
+// Own-voice recording sessions. GET ?k= -> ids already recorded; GET ?k=&play=<id> -> that take;
+// POST ?k=&id=&t=&part=&parts= with a slice of a WAV -> takes/<id>.flac once all slices are in.
+// Slices: the proxy in front rejects bodies over ~1 MB (413), and on a bad connection a small piece is
+// cheap to retry. A retried slice just overwrites itself; t (take time) keeps two takes of a line apart.
 // The key (record.key, not in git) keeps strangers from filling the disk through this public page.
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
@@ -11,7 +14,14 @@ if (!hash_equals(trim(file_get_contents('/var/www/pali-tts/record.key')), (strin
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id = (string)($_GET['id'] ?? '');
     if (!preg_match('/^[a-z0-9.:-]{1,40}$/', $id)) { http_response_code(400); exit('{"error":"bad id"}'); }
-    $wav = file_get_contents('php://input', false, null, 0, 20 * 1024 * 1024);
+    $t = preg_replace('/[^0-9]/', '', (string)($_GET['t'] ?? '0'));
+    $part = (int)($_GET['part'] ?? 0); $parts = (int)($_GET['parts'] ?? 1);
+    if ($parts < 1 || $parts > 60 || $part < 0 || $part >= $parts) { http_response_code(400); exit('{"error":"bad part"}'); }
+    $stem = sys_get_temp_dir() . '/take-' . md5($id) . "-$t";
+    file_put_contents("$stem.$part", file_get_contents('php://input', false, null, 0, 1024 * 1024));
+    for ($n = 0; $n < $parts; $n++) if (!is_file("$stem.$n")) exit(json_encode(['ok' => true, 'have' => $n]));
+    $wav = '';
+    for ($n = 0; $n < $parts; $n++) { $wav .= file_get_contents("$stem.$n"); unlink("$stem.$n"); }
     if (strlen($wav) < 1000 || substr($wav, 0, 4) !== 'RIFF' || substr($wav, 8, 4) !== 'WAVE') {
         http_response_code(400); exit('{"error":"not a wav"}');
     }

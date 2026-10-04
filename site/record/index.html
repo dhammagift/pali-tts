@@ -34,6 +34,7 @@ label{color:var(--mute);font-size:.9rem;display:flex;gap:6px;align-items:center;
 .bar{height:6px;background:var(--line);border-radius:3px;margin-top:14px;overflow:hidden}
 #done{height:100%;background:var(--ok);width:0}
 #start{width:100%;padding:16px;font-size:1.1rem}
+#queue{font-size:.85rem;color:var(--accent);margin-top:6px;min-height:1.2em}
 @media (max-width:600px){#text{font-size:1.3rem}button{padding:9px 12px}}
 #textOnly{width:100%;margin-top:8px}
 #showBtn{display:none}
@@ -59,6 +60,7 @@ body.prompt #prevBtn,body.prompt #nextBtn{flex:1;padding:16px;font-size:1.2rem}
 <li><kbd>Пробел</kbd> — запись (во время записи — начать заново), <kbd>Enter</kbd> — стоп и сохранить, <kbd>Esc</kbd> — отменить. Перед словами и после — полсекунды тишины. Уже сохранили с ошибкой — <kbd>R</kbd>: вернуться к ней и записать заново. К любой записанной фразе можно вернуться стрелками, прослушать (<kbd>P</kbd>) и перезаписать.</li>
 <li>Индикатор: зелёный — хорошо, красный — слишком громко (отодвиньтесь). Обработка звука в браузере здесь выключена: так и нужно.</li>
 <li>Фразы идут по пользе: первые 300 (~22 мин) — главные, остальные улучшают голос дальше. Записывайте частями: стало шумно — просто прервитесь, прогресс сохранён на сервере.</li>
+<li>Плохой интернет не страшен: записи встают в очередь (⏳) и отправляются сами, даже после закрытия страницы — откройте её снова, когда появится связь.</li>
 </ul>
 </details>
 <div class="card">
@@ -81,6 +83,7 @@ body.prompt #prevBtn,body.prompt #nextBtn{flex:1;padding:16px;font-size:1.2rem}
     </div>
     <label><input type="checkbox" id="auto" checked> после «стоп» сохранять и переходить к следующей</label>
     <div class="bar"><div id="done"></div></div>
+    <div id="queue"></div>
   </div>
 </div>
 </main>
@@ -108,22 +111,79 @@ function show() {
   const top = Math.min(300, script.length), topDone = script.slice(0, top).filter(l => done.has(l.id)).length;
   $('pos').textContent = i < top ? `${i + 1} из ${top} главных (${topDone} готово)` : `${i + 1} из ${script.length}, дополнительные`;
   $('sid').textContent = line.id;
-  $('status').textContent = done.has(line.id) ? '✓ записано' : '';
+  $('status').textContent = pending.has(line.id) ? '⏳ в очереди' : done.has(line.id) ? '✓ записано' : '';
   $('done').style.width = (100 * done.size / script.length) + '%';
-  $('playBtn').disabled = !(lastWav && lastWav.idx === i) && !done.has(line.id);
+  $('playBtn').disabled = !(lastWav && lastWav.idx === i) && !done.has(line.id) && !pending.has(line.id);
+  queueInfo();
   try { localStorage.setItem('rec_pos', i); } catch (e) {}
 }
 
 function hint(msg, warn) { $('hint').textContent = msg; $('hint').className = warn ? 'warn' : ''; }
 
-async function save(idx, blob) {
-  const id = script[idx].id;
-  $('status').textContent = 'сохраняю…';
-  const r = await fetch(api('&id=' + encodeURIComponent(id)), { method: 'POST', body: blob }).catch(() => null);
-  if (r && r.ok) { done.add(id); if (idx === i) show(); return true; }
-  hint('Не сохранилось: ' + (r ? r.status : 'нет связи') + '. Повторите запись.', true);
-  return false;
+// Upload queue. A take is never lost to a bad connection: it waits in IndexedDB (survives closing the
+// page) and goes up in 512 KB slices (the proxy in front rejects bodies over ~1 MB), retried until it lands.
+const SLICE = 512 * 1024, pending = new Map();  // id -> {t, blob}, the newest take of each line
+let db = null, pumping = false;
+function idb(mode, fn) {
+  return new Promise(res => {
+    if (!db) return res(null);
+    const tx = db.transaction('q', mode), r = fn(tx.objectStore('q'));
+    tx.oncomplete = () => res(r && r.result); tx.onerror = () => res(null);
+  });
 }
+async function openQueue() {
+  db = await new Promise(res => {
+    try {
+      const r = indexedDB.open('pali-rec', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('q', { keyPath: 'id' });
+      r.onsuccess = () => res(r.result); r.onerror = () => res(null);
+    } catch (e) { res(null); }
+  });
+  for (const it of (await idb('readonly', st => st.getAll())) || []) pending.set(it.id, it);
+  pump();
+}
+function queueInfo() {
+  const n = pending.size;
+  $('queue').textContent = n ? `⏳ ждут отправки: ${n}` : '';
+}
+function save(idx, blob) {
+  const it = { id: script[idx].id, t: Date.now(), blob };
+  pending.set(it.id, it);
+  idb('readwrite', st => st.put(it));
+  show(); pump();
+}
+async function upload(it) {
+  const parts = Math.ceil(it.blob.size / SLICE);
+  for (let n = 0; n < parts; n++) {
+    const q = `&id=${encodeURIComponent(it.id)}&t=${it.t}&part=${n}&parts=${parts}`;
+    const r = await fetch(api(q), { method: 'POST', body: it.blob.slice(n * SLICE, (n + 1) * SLICE) }).catch(() => null);
+    if (!r || !r.ok) return r ? r.status : 0;
+  }
+  return 200;
+}
+async function pump() {
+  if (pumping) return;
+  pumping = true;
+  let wait = 2000;
+  while (pending.size) {
+    queueInfo();
+    const it = pending.values().next().value, code = await upload(it);
+    if (code === 200) {
+      if (pending.get(it.id) === it) { pending.delete(it.id); idb('readwrite', st => st.delete(it.id)); }
+      done.add(it.id); wait = 2000; show();
+    } else if (code === 403 || code === 400) {  // will never succeed: keep the take, stop hammering
+      hint(`Сервер отказал (${code}). Записи сохранены в браузере, обновите страницу позже.`, true);
+      break;
+    } else {
+      $('queue').textContent = `⏳ ждут отправки: ${pending.size} · нет связи, повтор через ${wait / 1000} с`;
+      await new Promise(r => setTimeout(r, wait));
+      wait = Math.min(wait * 2, 60000);
+    }
+  }
+  pumping = false; queueInfo();
+}
+addEventListener('online', pump);
+addEventListener('beforeunload', e => { if (pending.size && !db) e.preventDefault(); });
 
 let timer = null;
 function recUi(on) {
@@ -165,13 +225,15 @@ async function stop() {
   if (secs < 1) return hint('Слишком коротко.', true), show();
   hint(`Пик ${Math.round(peak * 100)}%, ${secs.toFixed(1)} с`);
   if ($('auto').checked) {
-    if (await save(idx, blob) && idx === i && i < script.length - 1) { i++; show(); }
+    save(idx, blob);
+    if (idx === i && i < script.length - 1) { i++; show(); }
   } else show();
 }
 
 // this session's take of the line if there is one, else the one saved on the server
 function play() {
   if (lastWav && lastWav.idx === i) new Audio(lastUrl).play();
+  else if (pending.has(script[i].id)) new Audio(URL.createObjectURL(pending.get(script[i].id).blob)).play();
   else if (done.has(script[i].id)) new Audio(api('&play=' + encodeURIComponent(script[i].id))).play();
 }
 
@@ -181,6 +243,7 @@ async function load() {
     .catch(e => (alert('Не удалось загрузить: ' + e), []));
   if (!s) return false;
   script = s; done = new Set(d);
+  await openQueue();
   let saved = 0; try { saved = +localStorage.getItem('rec_pos') || 0; } catch (e) {}
   i = Math.min(saved, script.length - 1);
   $('start').hidden = $('textOnly').hidden = true; $('ui').hidden = false;
@@ -252,7 +315,7 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'r' || e.key === 'к') { if (!chunks && lastWav) { i = lastWav.idx; show(); } start(); }
   else if (e.key === 'ArrowLeft') $('prevBtn').click();
   else if (e.key === 'ArrowRight') $('nextBtn').click();
-  else if (e.key === 'Enter' && lastWav && lastWav.idx === i && !$('auto').checked) save(i, lastWav.blob).then(ok => ok && i < script.length - 1 && (i++, show()));
+  else if (e.key === 'Enter' && lastWav && lastWav.idx === i && !$('auto').checked) { save(i, lastWav.blob); if (i < script.length - 1) { i++; show(); } }
 });
 </script>
 </body>
