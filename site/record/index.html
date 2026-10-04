@@ -34,6 +34,18 @@ label{color:var(--mute);font-size:.9rem;display:flex;gap:6px;align-items:center;
 .bar{height:6px;background:var(--line);border-radius:3px;margin-top:14px;overflow:hidden}
 #done{height:100%;background:var(--ok);width:0}
 #start{width:100%;padding:16px;font-size:1.1rem}
+#uploads{margin-top:8px;font-size:.88rem}
+.up{display:flex;align-items:center;gap:8px;padding:3px 0;color:var(--mute)}
+.up b{font-weight:600;color:var(--fg)}
+.up .ic{flex:none;width:14px;height:14px;border-radius:50%}
+.up.wait .ic{border:2px solid var(--line);border-top-color:var(--accent);animation:spin .8s linear infinite}
+.up.ok .ic{background:var(--ok)}
+.up.ok .ic::after{content:'✓';display:block;color:#fff;font-size:10px;line-height:14px;text-align:center}
+.up.ok .tx{color:var(--ok);font-weight:600}
+.up.fail .ic{background:var(--bad)}
+.up.fail .tx{color:var(--bad)}
+.up.old{opacity:.5}
+@keyframes spin{to{transform:rotate(360deg)}}
 #queue{font-size:.85rem;color:var(--accent);margin-top:6px;min-height:1.2em}
 @media (max-width:600px){#text{font-size:1.3rem}button{padding:9px 12px}}
 #textOnly{width:100%;margin-top:8px}
@@ -88,6 +100,7 @@ body.prompt #prevBtn,body.prompt #nextBtn{flex:1;padding:16px;font-size:1.2rem}
     <label><input type="checkbox" id="auto" checked> после «стоп» сохранять и переходить к следующей</label>
     <div class="bar"><div id="done"></div></div>
     <div id="queue"></div>
+    <div id="uploads"></div>
   </div>
 </div>
 </main>
@@ -144,7 +157,23 @@ async function openQueue() {
     } catch (e) { res(null); }
   });
   for (const it of (await idb('readonly', st => st.getAll())) || []) pending.set(it.id, it);
+  if (!db) hint('⚠ Браузер не даёт хранить очередь: не закрывайте страницу, пока «ждут отправки» не станет пусто.', true);
   pump();
+}
+// Upload log: one row per take - spinner while it goes up, ✓ only when the server says the file is on disk
+const rows = new Map();  // take -> row element
+function logRow(it, state, text) {
+  let el = rows.get(it);
+  if (!el) {
+    el = document.createElement('div');
+    rows.set(it, el);
+    $('uploads').prepend(el);
+    while ($('uploads').children.length > 6) $('uploads').lastChild.remove();
+  }
+  el.className = 'up ' + state;
+  el.innerHTML = `<span class="ic"></span><b></b> <span class="tx"></span>`;
+  el.querySelector('b').textContent = it.id;
+  el.querySelector('.tx').textContent = text;
 }
 function queueInfo() {
   const n = pending.size;
@@ -152,7 +181,10 @@ function queueInfo() {
 }
 function save(idx, blob) {
   const it = { id: script[idx].id, t: Date.now(), blob };
+  const older = pending.get(it.id);
+  if (older) logRow(older, 'old', 'заменена новой записью');
   pending.set(it.id, it);
+  logRow(it, 'wait', 'в очереди…');
   idb('readwrite', st => st.put(it));
   show(); pump();
 }
@@ -160,8 +192,14 @@ async function upload(it) {
   const parts = Math.ceil(it.blob.size / SLICE);
   for (let n = 0; n < parts; n++) {
     const q = `&id=${encodeURIComponent(it.id)}&t=${it.t}&part=${n}&parts=${parts}`;
+    logRow(it, 'wait', parts > 1 ? `отправляется ${n + 1}/${parts}…` : 'отправляется…');
     const r = await fetch(api(q), { method: 'POST', body: it.blob.slice(n * SLICE, (n + 1) * SLICE) }).catch(() => null);
     if (!r || !r.ok) return r ? r.status : 0;
+    if (n === parts - 1) {
+      const j = await r.json().catch(() => ({}));
+      if (!j.saved) return 500;
+      it.secs = j.secs;
+    }
   }
   return 200;
 }
@@ -175,11 +213,14 @@ async function pump() {
     if (code === 200) {
       if (pending.get(it.id) === it) { pending.delete(it.id); idb('readwrite', st => st.delete(it.id)); }
       done.add(it.id); wait = 2000; show();
+      logRow(it, 'ok', `на сервере ✓ ${it.secs} с`);
     } else if (code === 403 || code === 400) {  // will never succeed: keep the take, stop hammering
       hint(`Сервер отказал (${code}). Записи сохранены в браузере, обновите страницу позже.`, true);
+      logRow(it, 'fail', `сервер отказал (${code}), запись хранится в браузере`);
       break;
     } else {
       $('queue').textContent = `⏳ ждут отправки: ${pending.size} · нет связи, повтор через ${wait / 1000} с`;
+      logRow(it, 'fail', `нет связи (${code || 'сеть'}), повтор через ${wait / 1000} с`);
       await new Promise(r => setTimeout(r, wait));
       wait = Math.min(wait * 2, 60000);
     }
@@ -203,10 +244,28 @@ function recUi(on) {
   }
 }
 
+// Android cuts a backgrounded page off the mic (switching apps, screen off): the stream ends or the
+// context suspends and takes come out empty. Check before every take and reconnect if needed.
+let stream = null, watchdog = null;
+async function micAlive() {
+  const t = stream && stream.getAudioTracks()[0];
+  if (!t || t.readyState !== 'live' || t.muted) {
+    hint('Подключаю микрофон заново…', true);
+    if (!await connectMic()) return false;
+  }
+  if (ctx.state !== 'running') await ctx.resume().catch(() => {});
+  return ctx.state === 'running';
+}
+
 // Record always starts from scratch: pressed while recording, the take so far is dropped
-function start() {
+async function start() {
+  if (!await micAlive()) return hint('🎙 Микрофон недоступен: обновите страницу и разрешите микрофон.', true);
   chunks = []; peak = 0;
   recUi(true);
+  clearTimeout(watchdog);
+  watchdog = setTimeout(() => {  // no sound data at all: say so now, not after the reading
+    if (chunks && !chunks.length) { chunks = null; recUi(false); hint('🎙 Микрофон молчит, запись не идёт. Обновите страницу.', true); }
+  }, 1500);
 }
 
 function cancel() {
@@ -224,7 +283,7 @@ async function stop() {
   if (lastUrl) URL.revokeObjectURL(lastUrl);
   lastUrl = URL.createObjectURL(blob);
   const secs = bufs.reduce((s, b) => s + b.length, 0) / ctx.sampleRate;
-  if (secs < 1) return hint('Слишком коротко, не сохранено.', true), show();
+  if (secs < 1) return hint('⚠ Слишком коротко (меньше секунды), не сохранено. Запишите заново.', true), show();
   // A loud or quiet take is still saved (levels get evened out later): losing it silently was worse
   if (peak > 0.98) hint('Записано, но был перегруз: отодвиньтесь немного. Можно перезаписать (R).', true);
   else if (peak < 0.08) hint('Записано, но тихо: придвиньтесь немного. Можно перезаписать (R).', true);
@@ -268,13 +327,14 @@ $('textOnly').onclick = async () => {
   show();
 };
 
-$('start').onclick = async () => {
-  if (!script.length && !await load()) return;
-  $('ui').hidden = true;
+async function connectMic() {
   // browser "voice processing" (noise suppression, AGC, echo cancel) would bake artifacts into the dataset
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 } })
-    .catch(e => alert('Нет доступа к микрофону: ' + e.message));
-  if (!stream) return;
+  const s = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 } })
+    .catch(e => (alert('Нет доступа к микрофону: ' + e.message), null));
+  if (!s) return false;
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  if (ctx) ctx.close().catch(() => {});
+  stream = s;
   ctx = new AudioContext();
   const src = ctx.createMediaStreamSource(stream), proc = ctx.createScriptProcessor(4096, 1, 1);
   proc.onaudioprocess = e => {
@@ -285,6 +345,13 @@ $('start').onclick = async () => {
     if (chunks) { chunks.push(new Float32Array(x)); peak = Math.max(peak, p); }
   };
   src.connect(proc); proc.connect(ctx.destination);  // ponytail: ScriptProcessor is deprecated but works everywhere; AudioWorklet if it ever goes
+  return true;
+}
+
+$('start').onclick = async () => {
+  if (!script.length && !await load()) return;
+  $('ui').hidden = true;
+  if (!await connectMic()) return;
   $('ui').hidden = false;
   document.body.classList.remove('nomic');
   $('showBtn').textContent = 'Показать управление';

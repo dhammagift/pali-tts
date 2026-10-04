@@ -32,7 +32,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exec('ffmpeg -loglevel error -y -f wav -i ' . escapeshellarg($tmp) . ' -c:a flac ' . escapeshellarg($out) . ' 2>&1', $log, $rc);
     unlink($tmp);
     if ($rc) { http_response_code(500); exit(json_encode(['error' => 'ffmpeg failed', 'log' => $log])); }
-    exit('{"ok":true}');
+    if (!is_file($out) || filesize($out) < 1000) { http_response_code(500); exit('{"error":"not written"}'); }
+    // the page shows a take as saved only on this answer: the FLAC is on disk
+    $rate = unpack('V', substr($wav, 28, 4))[1] ?: 1;
+    exit(json_encode(['ok' => true, 'saved' => true, 'secs' => round((strlen($wav) - 44) / $rate, 1)]));
 }
 
 if (isset($_GET['play'])) {  // a saved take, to check an old recording before re-recording it
