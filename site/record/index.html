@@ -23,10 +23,12 @@ details li{margin:.15rem 0}
 #level.clip{background:var(--bad)}
 #hint{min-height:1.5em;font-size:.9rem;color:var(--mute);margin:6px 0 12px}
 #hint.warn{color:var(--bad)}
+#hint.rec{color:var(--accent);font-weight:600}
 .btns{display:flex;gap:8px;flex-wrap:wrap}
 button{font:inherit;padding:10px 16px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer}
 button:disabled{opacity:.45;cursor:default}
 #recBtn{background:var(--accent);color:#fff;border-color:var(--accent);min-width:150px}
+#stopBtn:not(:disabled){border-color:var(--ok);color:var(--ok);font-weight:600}
 kbd{font-size:.78rem;border:1px solid var(--line);border-radius:4px;padding:0 4px;color:var(--mute)}
 label{color:var(--mute);font-size:.9rem;display:flex;gap:6px;align-items:center;margin-top:12px}
 .bar{height:6px;background:var(--line);border-radius:3px;margin-top:14px;overflow:hidden}
@@ -44,7 +46,7 @@ label{color:var(--mute);font-size:.9rem;display:flex;gap:6px;align-items:center;
 <li>Тихая комната, без эха (лучше с мебелью, шторами). Без вентилятора, холодильника рядом.</li>
 <li>Один и тот же микрофон и одно расстояние (15–20 см) во всех сессиях. Чуть сбоку от рта, чтобы «п»/«пх» не дули.</li>
 <li>Обычная спокойная речь, как при чтении вслух. Не петь, не скандировать. Ровный темп.</li>
-<li>Перед словами и после — полсекунды тишины. Ошиблись — <kbd>R</kbd> и заново. К любой записанной фразе можно вернуться стрелками, прослушать (<kbd>P</kbd>) и перезаписать.</li>
+<li><kbd>Пробел</kbd> — запись (во время записи — начать заново), <kbd>Enter</kbd> — стоп и сохранить, <kbd>Esc</kbd> — отменить. Перед словами и после — полсекунды тишины. Уже сохранили с ошибкой — <kbd>R</kbd>: вернуться к ней и записать заново. К любой записанной фразе можно вернуться стрелками, прослушать (<kbd>P</kbd>) и перезаписать.</li>
 <li>Индикатор: зелёный — хорошо, красный — слишком громко (отодвиньтесь). Обработка звука в браузере здесь выключена: так и нужно.</li>
 <li>Фразы идут по пользе: первые 300 (~22 мин) — главные, остальные улучшают голос дальше. Записывайте частями: стало шумно — просто прервитесь, прогресс сохранён на сервере.</li>
 </ul>
@@ -58,6 +60,7 @@ label{color:var(--mute);font-size:.9rem;display:flex;gap:6px;align-items:center;
     <div id="hint"></div>
     <div class="btns">
       <button id="recBtn">● Запись <kbd>Пробел</kbd></button>
+      <button id="stopBtn" disabled>■ Стоп и сохранить <kbd>Enter</kbd></button>
       <button id="playBtn" disabled>▶ Прослушать <kbd>P</kbd></button>
       <button id="prevBtn">← <kbd>←</kbd></button>
       <button id="nextBtn">→ <kbd>→</kbd></button>
@@ -109,15 +112,36 @@ async function save(idx, blob) {
   return false;
 }
 
-async function toggle() {
-  if (!chunks) {                              // start
-    chunks = []; peak = 0;
-    $('text').classList.add('rec'); $('recBtn').textContent = '■ Стоп (Пробел)';
-    hint('Запись… полсекунды тишины, потом читайте');
-    return;
+let timer = null;
+function recUi(on) {
+  $('text').classList.toggle('rec', on);
+  $('recBtn').innerHTML = on ? '↻ Заново <kbd>Пробел</kbd>' : '● Запись <kbd>Пробел</kbd>';
+  $('stopBtn').disabled = !on;
+  clearInterval(timer);
+  if (on) {
+    const t0 = Date.now();
+    const tick = () => $('hint').textContent = (`● Идёт запись, ${((Date.now() - t0) / 1000).toFixed(0)} с. Стоп и сохранить — Enter; заново — Пробел; отмена — Esc`);
+    tick(); timer = setInterval(tick, 500);
+    $('hint').className = 'rec';
   }
-  const bufs = chunks; chunks = null;         // stop
-  $('text').classList.remove('rec'); $('recBtn').innerHTML = '● Запись <kbd>Пробел</kbd>';
+}
+
+// Record always starts from scratch: pressed while recording, the take so far is dropped
+function start() {
+  chunks = []; peak = 0;
+  recUi(true);
+}
+
+function cancel() {
+  if (!chunks) return;
+  chunks = null; recUi(false);
+  hint('Запись отменена, ничего не сохранено.');
+}
+
+async function stop() {
+  if (!chunks) return;
+  const bufs = chunks; chunks = null;
+  recUi(false);
   const blob = wavBlob(bufs, ctx.sampleRate), idx = i;
   lastWav = { idx, blob };
   if (lastUrl) URL.revokeObjectURL(lastUrl);
@@ -164,16 +188,19 @@ $('start').onclick = async () => {
   hint(`Частота ${ctx.sampleRate} Гц. Пробел — начать.`);
   show();
 };
-$('recBtn').onclick = toggle;
+$('recBtn').onclick = start;
+$('stopBtn').onclick = stop;
 $('playBtn').onclick = play;
 $('prevBtn').onclick = () => { if (!chunks && i > 0) { i--; show(); } };
 $('nextBtn').onclick = () => { if (!chunks && i < script.length - 1) { i++; show(); } };
 $('todoBtn').onclick = () => { const k = script.findIndex(l => !done.has(l.id)); if (k >= 0 && !chunks) { i = k; show(); } };
 document.addEventListener('keydown', e => {
   if ($('ui').hidden || e.target.tagName === 'INPUT') return;
-  if (e.code === 'Space') { e.preventDefault(); toggle(); }
+  if (e.code === 'Space') { e.preventDefault(); start(); }
+  else if (e.key === 'Escape') cancel();
+  else if (e.key === 'Enter' && chunks) { e.preventDefault(); stop(); }
   else if (e.key === 'p' || e.key === 'з') play();
-  else if (e.key === 'r' || e.key === 'к') { if (!chunks) { if (lastWav) { i = lastWav.idx; show(); } toggle(); } }
+  else if (e.key === 'r' || e.key === 'к') { if (!chunks && lastWav) { i = lastWav.idx; show(); } start(); }
   else if (e.key === 'ArrowLeft') $('prevBtn').click();
   else if (e.key === 'ArrowRight') $('nextBtn').click();
   else if (e.key === 'Enter' && lastWav && lastWav.idx === i && !$('auto').checked) save(i, lastWav.blob).then(ok => ok && i < script.length - 1 && (i++, show()));
