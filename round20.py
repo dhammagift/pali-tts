@@ -51,6 +51,29 @@ for n, text in enumerate(TEXTS):
     phrases.append({'id': f'p{n}', 'text': text, 'ipa': base, 'script': '', 'variants': vs,
                     'note': '★ где ṭṭh (diṭṭhi, aṭṭhi) звучит как «тх», а не «ч»'})
     print(n, flush=True)
+# Second section: 'jarāpi' read as 'japi' (the open-a rule makes 'ɟaɾ…', and 'aɾ' is swallowed)
+JA_TEXTS = ['Jarāpi dukkhā, maraṇampi dukkhaṁ.', 'Jātipaccayā jarāmaraṇaṁ.']
+JA_VARIANTS = [
+    ('a', 'как сейчас (ɟaɾ…)', lambda s: s),
+    ('b', 'без открытого «а» перед r (ɟʌɾ…)', lambda s: s.replace('ɟaɾˈaː', 'ɟʌɾˈaː')),
+    ('c', 'удвоенное r (ɟaɾɾ…)', lambda s: s.replace('ɟaɾˈaː', 'ɟaɾɾˈaː')),
+    ('d', 'раскатистое r (ɟʌr…)', lambda s: s.replace('ɟaɾˈaː', 'ɟʌrˈaː')),
+]
+ja = []
+for n, text in enumerate(JA_TEXTS):
+    base = tune(to_ipa(text, full_a=True))
+    vs = []
+    for vid, label, fn in JA_VARIANTS:
+        for take in (1, 2):
+            f = f'j{n}.{vid}{take}.mp3'
+            render(pratham, fn(base), LENGTH, f'{OUT}/{f}')
+            vs.append({'id': f'{vid}{take}', 'label': f'pratham: {label} · дубль {take}', 'file': f, 'sent': fn(base)})
+    render(own, to_ipa(text, full_a=True), 1.0 / 0.875, f'{OUT}/j{n}.own.mp3')
+    vs.append({'id': 'own', 'label': 'свой голос, для сравнения', 'file': f'j{n}.own.mp3', 'sent': ''})
+    ja.append({'id': f'j{n}', 'text': text, 'ipa': base, 'script': '', 'variants': vs,
+               'note': '★ где «jarā» звучит полностью: «джара», а не «джа»'})
 json.dump({'round': 'r20', 'sections': [{'id': 'tth', 'title': 'ṭṭh: «дичи» вместо «диттхи»', 'multi_best': False,
-                                          'phrases': phrases}]}, open(f'{OUT}/index.json', 'w', encoding='utf-8'),
+                                          'phrases': phrases},
+                                         {'id': 'jara', 'title': 'jarā: «japi» вместо «jarāpi»', 'multi_best': False,
+                                          'phrases': ja}]}, open(f'{OUT}/index.json', 'w', encoding='utf-8'),
           ensure_ascii=False, indent=1)
