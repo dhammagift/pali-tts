@@ -34,7 +34,7 @@ def normalize(text):
     return text
 
 
-def word_ipa(word, stress=True, full_a=False, final_m=False, lang='hi'):
+def word_ipa(word, stress=True, full_a=False, final_m=False, lang='hi', heavy_back=False):
     prof = PROFILES[lang]
     full = prof.get('A', 'ʌ')
     toks = TOKEN.findall(word)
@@ -66,6 +66,10 @@ def word_ipa(word, stress=True, full_a=False, final_m=False, lang='hi'):
 
         if len(vidx) >= 3:
             s = vidx[-2] if heavy(vidx[-2]) else vidx[-3]
+            # heavy_back: a light antepenult yields to the nearest heavy syllable before it
+            # (pītisukhaṁ -> PĪtisukhaṁ, not pīTIsukhaṁ "пи-ити"; vāRĀṇasī as in Hindi)
+            if heavy_back and not heavy(vidx[-2]) and not heavy(s):
+                s = next((v for v in reversed(vidx[:-3]) if heavy(v)), s)
         elif vidx:
             s = vidx[0]
         else:
@@ -77,7 +81,7 @@ def word_ipa(word, stress=True, full_a=False, final_m=False, lang='hi'):
     return ''.join(x[2] for x in out)
 
 
-def to_ipa(text, stress=True, full_a=False, final_m=False, lang='hi'):
+def to_ipa(text, stress=True, full_a=False, final_m=False, lang='hi', heavy_back=False):
     """full_a: short a as a full vowel everywhere instead of reduced ə (Hindi voices swallow ə).
     final_m: word-final niggahita as m (paṭhamam jhānam) instead of ŋ, which the voices tend to drop."""
     parts = []
@@ -88,7 +92,7 @@ def to_ipa(text, stress=True, full_a=False, final_m=False, lang='hi'):
                 continue
             parts.append(PUNCT[tok])
         else:
-            parts.append(word_ipa(tok, stress, full_a, final_m, lang))
+            parts.append(word_ipa(tok, stress, full_a, final_m, lang, heavy_back))
     s = ' '.join(parts)
     return re.sub(r' ([,.?!])', r'\1', s).strip(' ,')
 
@@ -170,4 +174,6 @@ if __name__ == '__main__':
     assert tune(to_ipa('ñāṇa paññā evaṁ', stress=False)) == 'ɲjaːɳə pəɲːjaː eːʋəŋŋ', tune(to_ipa('ñāṇa paññā evaṁ', stress=False))
     assert tune(to_ipa('pañca sañjāti', stress=False)) == 'pəɲcə səɲɟaːtɪ'
     assert tune(to_ipa('Dhammacakka vacī cakkhu', full_a=True)) == 'dʰammʌccˈʌkkʌ ʋˈʌcciː cˈʌkkʰʊ'  # word-initial c untouched
+    assert to_ipa('pītisukhaṁ', full_a=True, heavy_back=True) == 'pˈiːtɪsʊkʰʌŋ', to_ipa('pītisukhaṁ', full_a=True, heavy_back=True)
+    assert to_ipa('bhagavato', heavy_back=True) == to_ipa('bhagavato')  # no heavy syllable to move to
     print('ok')

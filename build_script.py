@@ -17,7 +17,7 @@ from pali_ipa import TOKEN, normalize
 
 ROOT = '/var/www/html/suttacentral.net/sc-data/sc_bilara_data/root/pli/ms/sutta'
 BOOKS = ['dn', 'mn', 'sn', 'an', 'kn/dhp', 'kn/snp', 'kn/ud', 'kn/iti', 'kn/thag', 'kn/thig', 'kn/kp']
-TARGET_MIN = 100
+TARGET_MIN = 22  # owner: stop at ~300 lines; raise for a bigger set (order stays the same)
 WANT = 4  # a unit stops adding value after this many occurrences
 
 
