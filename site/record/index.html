@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Запись голоса пали</title>
+<style>
+:root{--bg:#faf8f4;--card:#fff;--fg:#222;--mute:#777;--line:#e4dfd6;--accent:#a0522d;--ok:#2e7d32;--bad:#c62828}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b1a18;--card:#262421;--fg:#e8e4dc;--mute:#9a948a;--line:#3a3631;--accent:#e0a070;--ok:#81c784;--bad:#ef9a9a}}
+:root[data-theme="dark"]{--bg:#1b1a18;--card:#262421;--fg:#e8e4dc;--mute:#9a948a;--line:#3a3631;--accent:#e0a070;--ok:#81c784;--bad:#ef9a9a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,sans-serif}
+main{max-width:860px;margin:0 auto;padding:16px}
+h1{font-size:1.3rem;margin:.2rem 0 .6rem}
+details{color:var(--mute);font-size:.92rem;margin-bottom:12px}
+details li{margin:.15rem 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px}
+.meta{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;color:var(--mute);font-size:.88rem}
+#text{font-size:1.65rem;line-height:1.6;margin:18px 0 22px;min-height:5.2em;font-style:italic}
+#text.rec{color:var(--accent)}
+.meter{height:10px;background:var(--line);border-radius:5px;overflow:hidden}
+#level{height:100%;width:0;background:var(--ok);transition:width .05s}
+#level.clip{background:var(--bad)}
+#hint{min-height:1.5em;font-size:.9rem;color:var(--mute);margin:6px 0 12px}
+#hint.warn{color:var(--bad)}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+button{font:inherit;padding:10px 16px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer}
+button:disabled{opacity:.45;cursor:default}
+#recBtn{background:var(--accent);color:#fff;border-color:var(--accent);min-width:150px}
+kbd{font-size:.78rem;border:1px solid var(--line);border-radius:4px;padding:0 4px;color:var(--mute)}
+label{color:var(--mute);font-size:.9rem;display:flex;gap:6px;align-items:center;margin-top:12px}
+.bar{height:6px;background:var(--line);border-radius:3px;margin-top:14px;overflow:hidden}
+#done{height:100%;background:var(--ok);width:0}
+#start{width:100%;padding:16px;font-size:1.1rem}
+@media (max-width:600px){#text{font-size:1.3rem}button{padding:9px 12px}}
+</style>
+</head>
+<body>
+<main>
+<h1>Запись голоса пали</h1>
+<details>
+<summary>Как записывать (прочитайте один раз)</summary>
+<ul>
+<li>Тихая комната, без эха (лучше с мебелью, шторами). Без вентилятора, холодильника рядом.</li>
+<li>Один и тот же микрофон и одно расстояние (15–20 см) во всех сессиях. Чуть сбоку от рта, чтобы «п»/«пх» не дули.</li>
+<li>Обычная спокойная речь, как при чтении вслух. Не петь, не скандировать. Ровный темп.</li>
+<li>Перед словами и после — полсекунды тишины. Ошиблись — <kbd>R</kbd> и заново.</li>
+<li>Индикатор: зелёный — хорошо, красный — слишком громко (отодвиньтесь). Обработка звука в браузере здесь выключена: так и нужно.</li>
+<li>Фразы идут по пользе: даже первые 200–300 уже много дают. Можно записывать частями, прогресс сохраняется на сервере.</li>
+</ul>
+</details>
+<div class="card">
+  <button id="start">Включить микрофон</button>
+  <div id="ui" hidden>
+    <div class="meta"><span id="pos"></span><span id="sid"></span><span id="status"></span></div>
+    <div id="text"></div>
+    <div class="meter"><div id="level"></div></div>
+    <div id="hint"></div>
+    <div class="btns">
+      <button id="recBtn">● Запись <kbd>Пробел</kbd></button>
+      <button id="playBtn" disabled>▶ Прослушать <kbd>P</kbd></button>
+      <button id="prevBtn">← <kbd>←</kbd></button>
+      <button id="nextBtn">→ <kbd>→</kbd></button>
+      <button id="todoBtn">к незаписанной</button>
+    </div>
+    <label><input type="checkbox" id="auto" checked> после «стоп» сохранять и переходить к следующей</label>
+    <div class="bar"><div id="done"></div></div>
+  </div>
+</div>
+</main>
+<script>
+const KEY = new URLSearchParams(location.search).get('k') || '';
+const api = (q = '') => `save.php?k=${encodeURIComponent(KEY)}${q}`;
+const $ = id => document.getElementById(id);
+let script = [], done = new Set(), i = 0, ctx, chunks = null, lastWav = null, lastUrl = null, peak = 0;
+
+function wavBlob(bufs, rate) {
+  const n = bufs.reduce((s, b) => s + b.length, 0), dv = new DataView(new ArrayBuffer(44 + n * 2));
+  const w = (o, s) => [...s].forEach((c, k) => dv.setUint8(o + k, c.charCodeAt(0)));
+  w(0, 'RIFF'); dv.setUint32(4, 36 + n * 2, true); w(8, 'WAVEfmt '); dv.setUint32(16, 16, true);
+  dv.setUint16(20, 1, true); dv.setUint16(22, 1, true); dv.setUint32(24, rate, true);
+  dv.setUint32(28, rate * 2, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true);
+  w(36, 'data'); dv.setUint32(40, n * 2, true);
+  let o = 44;
+  for (const b of bufs) for (const s of b) { dv.setInt16(o, Math.max(-1, Math.min(1, s)) * 0x7fff, true); o += 2; }
+  return new Blob([dv], { type: 'audio/wav' });
+}
+
+function show() {
+  const line = script[i];
+  $('text').textContent = line.text;
+  $('pos').textContent = `${i + 1} из ${script.length}`;
+  $('sid').textContent = line.id;
+  $('status').textContent = done.has(line.id) ? '✓ записано' : '';
+  $('done').style.width = (100 * done.size / script.length) + '%';
+  $('playBtn').disabled = !lastWav || lastWav.idx !== i;
+  try { localStorage.setItem('rec_pos', i); } catch (e) {}
+}
+
+function hint(msg, warn) { $('hint').textContent = msg; $('hint').className = warn ? 'warn' : ''; }
+
+async function save(idx, blob) {
+  const id = script[idx].id;
+  $('status').textContent = 'сохраняю…';
+  const r = await fetch(api('&id=' + encodeURIComponent(id)), { method: 'POST', body: blob }).catch(() => null);
+  if (r && r.ok) { done.add(id); if (idx === i) show(); return true; }
+  hint('Не сохранилось: ' + (r ? r.status : 'нет связи') + '. Повторите запись.', true);
+  return false;
+}
+
+async function toggle() {
+  if (!chunks) {                              // start
+    chunks = []; peak = 0;
+    $('text').classList.add('rec'); $('recBtn').textContent = '■ Стоп (Пробел)';
+    hint('Запись… полсекунды тишины, потом читайте');
+    return;
+  }
+  const bufs = chunks; chunks = null;         // stop
+  $('text').classList.remove('rec'); $('recBtn').innerHTML = '● Запись <kbd>Пробел</kbd>';
+  const blob = wavBlob(bufs, ctx.sampleRate), idx = i;
+  lastWav = { idx, blob };
+  if (lastUrl) URL.revokeObjectURL(lastUrl);
+  lastUrl = URL.createObjectURL(blob);
+  const secs = bufs.reduce((s, b) => s + b.length, 0) / ctx.sampleRate;
+  if (peak > 0.98) return hint('Перегруз (красный): отодвиньтесь или убавьте усиление и запишите заново.', true), show();
+  if (peak < 0.08) return hint('Очень тихо: придвиньтесь или прибавьте усиление и запишите заново.', true), show();
+  if (secs < 1) return hint('Слишком коротко.', true), show();
+  hint(`Пик ${Math.round(peak * 100)}%, ${secs.toFixed(1)} с`);
+  if ($('auto').checked) {
+    if (await save(idx, blob) && idx === i && i < script.length - 1) { i++; show(); }
+  } else show();
+}
+
+function play() { if (lastUrl) new Audio(lastUrl).play(); }
+
+$('start').onclick = async () => {
+  if (!KEY) return alert('Откройте ссылку с ключом (?k=…)');
+  const [s, d] = await Promise.all([fetch('script.json').then(r => r.json()), fetch(api()).then(r => r.ok ? r.json() : Promise.reject(r.status))])
+    .catch(e => (alert('Не удалось загрузить: ' + e), []));
+  if (!s) return;
+  script = s; done = new Set(d);
+  // browser "voice processing" (noise suppression, AGC, echo cancel) would bake artifacts into the dataset
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 } })
+    .catch(e => alert('Нет доступа к микрофону: ' + e.message));
+  if (!stream) return;
+  ctx = new AudioContext();
+  const src = ctx.createMediaStreamSource(stream), proc = ctx.createScriptProcessor(4096, 1, 1);
+  proc.onaudioprocess = e => {
+    const x = e.inputBuffer.getChannelData(0);
+    let p = 0; for (const v of x) p = Math.max(p, Math.abs(v));
+    $('level').style.width = Math.min(100, p * 100) + '%';
+    $('level').className = p > 0.98 ? 'clip' : '';
+    if (chunks) { chunks.push(new Float32Array(x)); peak = Math.max(peak, p); }
+  };
+  src.connect(proc); proc.connect(ctx.destination);  // ponytail: ScriptProcessor is deprecated but works everywhere; AudioWorklet if it ever goes
+  let saved = 0; try { saved = +localStorage.getItem('rec_pos') || 0; } catch (e) {}
+  i = Math.min(saved, script.length - 1);
+  $('start').hidden = true; $('ui').hidden = false;
+  hint(`Частота ${ctx.sampleRate} Гц. Пробел — начать.`);
+  show();
+};
+$('recBtn').onclick = toggle;
+$('playBtn').onclick = play;
+$('prevBtn').onclick = () => { if (!chunks && i > 0) { i--; show(); } };
+$('nextBtn').onclick = () => { if (!chunks && i < script.length - 1) { i++; show(); } };
+$('todoBtn').onclick = () => { const k = script.findIndex(l => !done.has(l.id)); if (k >= 0 && !chunks) { i = k; show(); } };
+document.addEventListener('keydown', e => {
+  if ($('ui').hidden || e.target.tagName === 'INPUT') return;
+  if (e.code === 'Space') { e.preventDefault(); toggle(); }
+  else if (e.key === 'p' || e.key === 'з') play();
+  else if (e.key === 'r' || e.key === 'к') { if (!chunks) { if (lastWav) { i = lastWav.idx; show(); } toggle(); } }
+  else if (e.key === 'ArrowLeft') $('prevBtn').click();
+  else if (e.key === 'ArrowRight') $('nextBtn').click();
+  else if (e.key === 'Enter' && lastWav && lastWav.idx === i && !$('auto').checked) save(i, lastWav.blob).then(ok => ok && i < script.length - 1 && (i++, show()));
+});
+</script>
+</body>
+</html>
