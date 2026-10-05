@@ -4,10 +4,10 @@ import random
 import re
 import time
 
-ROUND = 'es2'
-TITLE = 'espeak-ng: пали, второй проход'
-INTRO = ('Поправки по твоим заметкам к es1 — <b>в самом звуке espeak</b>: запятая без подъёма тона (me, sā, bho), ударение почти не тянет гласную (udānesi, abhisambuddho, dve), r всегда одним ударом, j как «дж», v без «м». '
-         'Фонемы (то, что берёт Piper) не менялись. Где в es1 была жалоба — рядом «как было». Дальше pratham и твой голос по тем же фонемам. <b>✓</b> правильно, <b>✗</b> ошибка; <b>нажмите на слово</b>, если неправильно.')
+ROUND = 'es3'
+TITLE = 'espeak-ng: конечное ṁ'
+INTRO = ('Голос самого espeak, только конечное ṁ (dukkhaṁ, -suṁ, ñāṇaṁ, imasmiṁ, sutaṁ): сейчас звучит как «н». Четыре варианта вперемешку. '
+         '<b>★ лучший</b> — где ṁ звучит как ṁ, не «н» и не «м»; <b>✓ норм</b>, <b>✗ плохо</b>.')
 idx = json.load(open(f'out/{ROUND}/index.json', encoding='utf-8'))
 ver = int(time.time())
 phrases = []
