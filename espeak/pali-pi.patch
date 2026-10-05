@@ -1,0 +1,248 @@
+diff --git a/cmake/data.cmake b/cmake/data.cmake
+index 6dbd0ce..9e05ecc 100644
+--- a/cmake/data.cmake
++++ b/cmake/data.cmake
+@@ -14,7 +14,7 @@ list(APPEND _dict_compile_list
+   mi mk ml mn mr ms mto mt my
+   nci ne nl nog no
+   om or
+-  pap pa piqd pl ps pt py
++  pap pa pi piqd pl ps pt py
+   qdb quc qu qya
+   ro ru rup
+   sd shn si sjn sk sl smj sq sr sv sw
+diff --git a/dictsource/pi_list b/dictsource/pi_list
+new file mode 100644
+index 0000000..59486bb
+--- /dev/null
++++ b/dictsource/pi_list
+@@ -0,0 +1 @@
++// Pali (pi), romanised (IAST). Exceptions list - empty for now: Pali spelling is phonemic.
+diff --git a/dictsource/pi_rules b/dictsource/pi_rules
+new file mode 100644
+index 0000000..bcea4d4
+--- /dev/null
++++ b/dictsource/pi_rules
+@@ -0,0 +1,135 @@
++// Pali (pi): romanised Pali (IAST, as in the Mahāsaṅgīti / SuttaCentral editions).
++// Pali spelling is phonemic, so these rules are letter -> sound, left to right, every vowel sounded.
++// Phonemes from the Hindi table (hi_base): V a: I i: U u: e: e o: o, aspirates with #,
++// retroflexes with a dot (t. d. n. l.), n^ = ñ, N = ṅ.
++
++.L01 k g c j ṭ ḍ t d p b ṅ ñ ṇ n m y r l ḷ v s h   // consonant letters
++.L02 k g c j ṭ ḍ t d p b   // stops that have an aspirate (kh ... bh: one consonant)
++
++.group a
++       a        V
++
++.group ā
++       ā        a:
++
++.group i
++       i        I
++
++.group ī
++       ī        i:
++
++.group u
++       u        U
++
++.group ū
++       ū        u:
++
++.group e
++       e        e:
++       e (L01L01  e        // short before two consonants: metta, seṭṭha
++       e (L02h    e:       // but an aspirate is one: bhāvetha
++
++.group o
++       o        o:
++       o (L01L01  o        // sotthi, ottappa
++       o (L02h    o:       // nirodha
++
++.group k
++       k        k
++       kh       k#
++
++.group g
++       g        g
++       gh       g#
++
++.group ṅ
++       ṅ        N
++
++.group c
++       c        c
++       ch       c#
++
++.group j
++       j        J
++       jh       J#
++
++.group ñ
++       ñ        n^
++
++.group ṭ
++       ṭ        t.
++       ṭh       t.#
++
++.group ḍ
++       ḍ        d.
++       ḍh       d.#
++
++.group ṇ
++       ṇ        n.
++
++.group t
++       t        t
++       th       t#
++
++.group d
++       d        d
++       dh       d#
++
++.group n
++       n        n
++
++.group p
++       p        p
++       ph       p#
++
++.group b
++       b        b
++       bh       b#
++
++.group m
++       m        m
++
++.group y
++       y        j
++
++.group r
++       r        r
++
++.group l
++       l        l
++
++.group ḷ
++       ḷ        l.
++       ḷh       l.H       // no aspirated ḷ in the table: ḷ + h
++
++.group v
++       v        v
++
++.group s
++       s        s
++
++.group h
++       h        H
++
++// niggahita: the nasal of the following consonant's place, ŋ elsewhere
++.group ṃ
++       ṃ        N
++       ṃ (c     n^
++       ṃ (j     n^
++       ṃ (ṭ     n.
++       ṃ (ḍ     n.
++       ṃ (t     n
++       ṃ (d     n
++       ṃ (p     m
++       ṃ (b     m
++
++.group ṁ
++       ṁ        N
++       ṁ (c     n^
++       ṁ (j     n^
++       ṁ (ṭ     n.
++       ṁ (ḍ     n.
++       ṁ (t     n
++       ṁ (d     n
++       ṁ (p     m
++       ṁ (b     m
+diff --git a/espeak-ng-data/lang/inc/pi b/espeak-ng-data/lang/inc/pi
+new file mode 100644
+index 0000000..b103083
+--- /dev/null
++++ b/espeak-ng-data/lang/inc/pi
+@@ -0,0 +1,4 @@
++name Pali
++language pi
++stressRule 16      // penultimate if heavy, else antepenultimate
++stressOpt 5        // no automatic secondary stress
+diff --git a/phsource/ph_pali b/phsource/ph_pali
+new file mode 100644
+index 0000000..550be65
+--- /dev/null
++++ b/phsource/ph_pali
+@@ -0,0 +1,18 @@
++// Pali (pi): the Hindi phonemes, except that the short a is always sounded.
++// Pali spelling is phonemic: no schwa deletion (Hindi's V drops at word end and between consonants).
++
++phoneme V
++  vwl flag1 starttype #@  endtype #@
++  length 140
++  IF thisPh(isNotStressed) THEN
++    length 120
++  ENDIF
++  FMT(vowel/V_3)
++endphoneme
++
++phoneme i:        // Hindi shortens an unstressed ī; Pali keeps every long vowel long
++  vwl lng starttype #i endtype #i
++  length 230
++  IfNextVowelAppend(;)
++  FMT(vowel/i_fnt)
++endphoneme
+diff --git a/phsource/phonemes b/phsource/phonemes
+index dc29974..7581aa2 100644
+--- a/phsource/phonemes
++++ b/phsource/phonemes
+@@ -1976,6 +1976,9 @@ include ph_haitian
+ phonemetable hi hi_base
+ include ph_hindi
+ 
++phonemetable pi hi_base
++include ph_pali
++
+ phonemetable gd base1 // hidden dependency, imports from hi
+ include ph_s_gaelic
+ 
+diff --git a/src/libespeak-ng/dictionary.c b/src/libespeak-ng/dictionary.c
+index 6f0cb9a..ea1fe16 100644
+--- a/src/libespeak-ng/dictionary.c
++++ b/src/libespeak-ng/dictionary.c
+@@ -1237,6 +1237,22 @@ void SetWordStress(Translator *tr, char *output, unsigned int *dictionary_flags,
+ 		}
+ 		break;
+ 
++	case STRESSPOSN_2RH: // LANG=pi
++		// penultimate if heavy, else antepenultimate; a light antepenultimate yields to a heavy syllable just before it
++		if (stressed_syllable == 0) {
++			stressed_syllable = 1;
++			if (vowel_count > 3) {
++				stressed_syllable = vowel_count - 2;
++				if (syllable_weight[stressed_syllable] == 0) {
++					stressed_syllable--;
++					if ((stressed_syllable > 1) && (syllable_weight[stressed_syllable] == 0) && (syllable_weight[stressed_syllable - 1] > 0))
++						stressed_syllable--;
++				}
++			}
++			vowel_stress[stressed_syllable] = STRESS_IS_PRIMARY;
++			max_stress = STRESS_IS_PRIMARY;
++		}
++		break;
+ 	case STRESSPOSN_EU: // LANG=eu. If more than 2 syllables: primary stress in second syllable and secondary on last.
+ 		if ((stressed_syllable == 0) && (vowel_count > 2)) {
+ 			for (ix = 1; ix < vowel_count; ix++) {
+diff --git a/src/libespeak-ng/translate.h b/src/libespeak-ng/translate.h
+index 16defdf..76d0992 100644
+--- a/src/libespeak-ng/translate.h
++++ b/src/libespeak-ng/translate.h
+@@ -365,6 +365,7 @@ typedef struct {
+ #define STRESSPOSN_GREENLANDIC 12
+ #define STRESSPOSN_1SL 13 // 1st syllable, unless 1st vowel is short and 2nd is long
+ #define STRESSPOSN_EU 15 // If more than 2 syllables: primary stress in second syllable and secondary on last.
++#define STRESSPOSN_2RH 16 // penultimate if heavy, else antepenultimate, or the heavy syllable just before a light antepenultimate
+ 
+ typedef struct {
+ // bits0-2  separate words with (1=pause_vshort, 2=pause_short, 3=pause, 4=pause_long 5=[?] phonemme)
