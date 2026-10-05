@@ -1,3 +1,15 @@
+diff --git a/ChangeLog.md b/ChangeLog.md
+index df26477..9d89423 100644
+--- a/ChangeLog.md
++++ b/ChangeLog.md
+@@ -14,6 +14,7 @@ new languages:
+ *  crh (Crimean Tatar) -- Andyvladescu73
+ *  lij (Ligurian) -- Jean Maillard
+ *  mn (Mongolian) -- Battseren Badral
++*  pi (Pali) -- Dhamma.Gift
+ *  ps (Pashto) -- Hanif Rahman
+ *  rup (Aromanian) -- Andy Vladescu
+ 
 diff --git a/cmake/data.cmake b/cmake/data.cmake
 index 6dbd0ce..9e05ecc 100644
 --- a/cmake/data.cmake
@@ -161,6 +173,18 @@ index 0000000..08c3f4e
 +       ṁ (d     n
 +       ṁ (p     m
 +       ṁ (b     m
+diff --git a/docs/languages.md b/docs/languages.md
+index e1be920..2d97e84 100644
+--- a/docs/languages.md
++++ b/docs/languages.md
+@@ -94,6 +94,7 @@ To check, what languages are supported by distributed version, run `espeak-ng --
+ | `trk`       | `nog`             | Turkic                | Nogai                       |                        |
+ | `inc`       | `or`              | Indic                 | Oriya                       |                        |
+ | `cus`       | `om`              | Cushitic              | Oromo                       |                        |
++| `inc`       | `pi`              | Indic                 | Pali                        | Roman (IAST)           |
+ | `roa`       | `pap`             | Romance               | Papiamento                  |                        |
+ | `art`       | `py`              | Constructed           | Pyash                       |                        |
+ | `zlw`       | `pl`              | West Slavic           | Polish                      |                        |
 diff --git a/espeak-ng-data/lang/inc/pi b/espeak-ng-data/lang/inc/pi
 new file mode 100644
 index 0000000..5be36c8
@@ -271,3 +295,14 @@ index 16defdf..76d0992 100644
  
  typedef struct {
  // bits0-2  separate words with (1=pause_vshort, 2=pause_short, 3=pause, 4=pause_long 5=[?] phonemme)
+--- a/tests/language-pronunciation.test
++++ b/tests/language-pronunciation.test
+@@ -250,6 +250,8 @@
+ test_phon pa "p'a+*@t,i s,@nvId#'an de ,a*@t.'ik@l cUR'VnJa vIc r'aS@t.,@*@p,@ti di c'on. b'a*e l'Ik#I;,a H'oI;,a HE
+ p'a+*@t vIc r'aS@t.,@*@p,@ti di c'on. s'Id#i l'oka~ dU'a*a n'VHi~ k'iti J'a~di
+ r'aS@t.,@*@p,@ti di c'on. 'Vpr@t,@k# t@*'ike n'al k'iti J'a~di HE" "ਭਾਰਤੀ ਸੰਵਿਧਾਨ ਦੇ ਆਰਟੀਕਲ 54 ਵਿੱਚ ਰਾਸ਼ਟਰਪਤੀ ਦੀ ਚੋਣ ਬਾਰੇ ਲਿਖਿਆ ਹੋਇਆ ਹੈ। ਭਾਰਤ ਵਿੱਚ ਰਾਸ਼ਟਰਪਤੀ ਦੀ ਚੋਣ ਸਿੱਧੀ ਲੋਕਾਂ ਦੁਆਰਾ ਨਹੀਂ ਕੀਤੀ ਜਾਂਦੀ। ਰਾਸ਼ਟਰਪਤੀ ਦੀ ਚੋਣ ਅਪ੍ਰਤੱਖ ਤਰੀਕੇ ਨਾਲ ਕੀਤੀ ਜਾਂਦੀ ਹੈ।" "Guru"
++test_phon pi "'e:vVNN2 m'e: s'UtVNN2 'e:kVNN2 s'VmVjVNN2 b#'VgVva: ba:*'a:n.VsIjVNN2 vIH'V*VtI; IsIp'VtVne: mIgVd'a:je:" "Evaṁ me sutaṁ ekaṁ samayaṁ bhagavā bārāṇasiyaṁ viharati isipatane migadāye"
++test_phon pi "p'i:tIsUk#VNN2 b@-*VHmVc'V*IjVNN2 dUkk#VnI*o:d#Vg'a:mIni: pVt.'IpVda: s'ott#I" "pītisukhaṁ brahmacariyaṁ dukkhanirodhagāminī paṭipadā sotthi" "stress: penultimate if heavy, else antepenultimate"
+ test_phon pap "t'uR s'eR hum'ano ta n'ase lib'eR_:_: i; igw'al deN dignid'ad_:_: i deN deR'etSo
+ naN ta d'ota k'u Ras'oN_:_: i k'u kons'enSi_:_: i naN mest'eR komp'oRta naN deN spiR'ito di fRateRnid'ad p'a k'u 'otRo" "Tur ser humano ta nace liber y igual den dignidad y den derecho. Nan ta dota cu rason y cu consenshi y nan mester comporta nan den spirito di fraternidad pa cu otro." "Latn"
+ test_phon pl "m'E~Zny b'On^ts;
