@@ -8,7 +8,7 @@
  "enable_gpu": true,
  "enable_internet": true,
  "dataset_sources": [
-  "dhammagift/pali-tts-ears-r28-1791195561"
+  "dhammagift/pali-tts-ears-es8-1791210431"
  ],
  "competition_sources": [],
  "kernel_sources": []
