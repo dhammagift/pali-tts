@@ -4,10 +4,10 @@ import random
 import re
 import time
 
-ROUND = 'es8'
-TITLE = 'espeak-ng: v'
-INTRO = ('Голос самого espeak, только v: «уши» слышат на её месте «м/н» во многих записях es1/es5. 12 фраз с v в разных местах, 4 варианта вперемешку. '
-         '<b>★</b> где v звучит как v (не «м», не пропадает), <b>✓ норм</b>, <b>✗ плохо</b>.')
+ROUND = 'es9'
+TITLE = 'espeak-ng: долгота конечных гласных'
+INTRO = ('По заметке к es8: в sammāvāyāmo конечное o короче, чем ā в vācā. В espeak длина гласной зависела от согласной после неё (как в английском), для пали это выключено. Голос самого espeak, вперемешку. '
+         '<b>★ лучший</b>, <b>✓ норм</b>, <b>✗ плохо</b>.')
 idx = json.load(open(f'out/{ROUND}/index.json', encoding='utf-8'))
 ver = int(time.time())
 phrases = []

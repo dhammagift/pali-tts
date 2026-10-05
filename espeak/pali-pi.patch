@@ -283,6 +283,20 @@ index 6f0cb9a..ea1fe16 100644
  	case STRESSPOSN_EU: // LANG=eu. If more than 2 syllables: primary stress in second syllable and secondary on last.
  		if ((stressed_syllable == 0) && (vowel_count > 2)) {
  			for (ix = 1; ix < vowel_count; ix++) {
+diff --git a/src/libespeak-ng/tr_languages.c b/src/libespeak-ng/tr_languages.c
+index 26158e9..067c836 100644
+--- a/src/libespeak-ng/tr_languages.c
++++ b/src/libespeak-ng/tr_languages.c
+@@ -1346,6 +1346,9 @@ Translator *SelectTranslator(const char *name)
+ 		tr->langopts.numbers2 = NUM2_SWAP_THOUSANDS;
+ 	}
+ 		break;
++	case L('p', 'i'): // Pali
++		SetLengthMods(tr, 3); // all equal: a vowel is long or short by its spelling, not by the consonant after it
++		break;
+ 	case L('p', 'l'): // Polish
+ 	{
+ 		static const short stress_lengths_pl[8] = { 160, 190,  175, 175,  0, 0,  200, 210 };
 diff --git a/src/libespeak-ng/translate.h b/src/libespeak-ng/translate.h
 index 16defdf..76d0992 100644
 --- a/src/libespeak-ng/translate.h
