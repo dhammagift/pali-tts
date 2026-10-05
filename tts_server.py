@@ -59,6 +59,8 @@ args.add_argument('--min-free-mb', type=int, default=1500, help='shrink the cach
 args = args.parse_args()
 MAX_LOADED = args.max_loaded
 MODELS = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'models')
+# a copy without some models (the Hugging Face Space has no own voice) just serves fewer voices
+VOICES = {k: v for k, v in VOICES.items() if os.path.exists(os.path.join(MODELS, v[0] + '.onnx'))}
 busy = threading.Semaphore(2)  # 2 vCPU: more parallel syntheses only slow each other down
 loaded, load_lock = {}, threading.Lock()  # insertion order = least recently used first
 hits, hits_lock = {}, threading.Lock()  # ip -> (window start minute, count)
