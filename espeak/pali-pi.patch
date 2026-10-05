@@ -20,7 +20,7 @@ index 0000000..59486bb
 +// Pali (pi), romanised (IAST). Exceptions list - empty for now: Pali spelling is phonemic.
 diff --git a/dictsource/pi_rules b/dictsource/pi_rules
 new file mode 100644
-index 0000000..bcea4d4
+index 0000000..021fef8
 --- /dev/null
 +++ b/dictsource/pi_rules
 @@ -0,0 +1,135 @@
@@ -119,7 +119,7 @@ index 0000000..bcea4d4
 +       y        j
 +
 +.group r
-+       r        r
++       r        *       // always the tap: Hindi r turned into an English-like r at word ends and before consonants
 +
 +.group l
 +       l        l
@@ -161,20 +161,22 @@ index 0000000..bcea4d4
 +       ṁ (b     m
 diff --git a/espeak-ng-data/lang/inc/pi b/espeak-ng-data/lang/inc/pi
 new file mode 100644
-index 0000000..b103083
+index 0000000..5be36c8
 --- /dev/null
 +++ b/espeak-ng-data/lang/inc/pi
-@@ -0,0 +1,4 @@
+@@ -0,0 +1,6 @@
 +name Pali
 +language pi
 +stressRule 16      // penultimate if heavy, else antepenultimate
 +stressOpt 5        // no automatic secondary stress
++stressLength 200 200 200 200 0 0 210 220   // vowel length comes from the spelling: stress barely lengthens
++intonation 3       // a comma does not raise the pitch (me, sā, bho read level)
 diff --git a/phsource/ph_pali b/phsource/ph_pali
 new file mode 100644
-index 0000000..550be65
+index 0000000..459b321
 --- /dev/null
 +++ b/phsource/ph_pali
-@@ -0,0 +1,18 @@
+@@ -0,0 +1,29 @@
 +// Pali (pi): the Hindi phonemes, except that the short a is always sounded.
 +// Pali spelling is phonemic: no schwa deletion (Hindi's V drops at word end and between consonants).
 +
@@ -192,6 +194,17 @@ index 0000000..550be65
 +  length 230
 +  IfNextVowelAppend(;)
 +  FMT(vowel/i_fnt)
++endphoneme
++
++// Sounds only, the IPA stays Hindi's (Piper voices trained on Hindi know these symbols):
++phoneme J         // j: Hindi's palatal stop sounded odd, use the affricate of "judge"
++  import_phoneme base1/dZ
++  ipa ɟ
++endphoneme
++
++phoneme v         // v: Hindi's approximant came out close to m after a nasal (samaṇena vā)
++  import_phoneme base1/v
++  ipa ʋ
 +endphoneme
 diff --git a/phsource/phonemes b/phsource/phonemes
 index dc29974..7581aa2 100644
