@@ -114,9 +114,21 @@ PRATHAM_RULES = [
     (re.compile(r'(?<=[ʌaeoiuɪʊː])c(?=[ʌaeoiuɪʊːˈ])'), 'cc'),
     # round 18: y after a short vowel glided into it and its syllable was lost (passambhayaṁ ->
     # "пасамбхам"); doubled jj had no bad take of 8. Not after a long vowel or ɲː (ññ is ɲːj).
-    (re.compile(r'(?<=[ʌaeoiuɪʊ])j(?=[ʌaeoiuɪʊˈ])'), 'jj'),
+    # Only after a (rounds 25, 27): after i it hurt - dutiyaṁ, appaṭivattiyaṁ read better with one y.
+    (re.compile(r'(?<=[ʌa])j(?=[ʌaeoiuɪʊˈ])'), 'jj'),
     # round 21: a word-initial ñ came out as "я" (Ñāṇañca -> "янанча"); n + j was the one that worked
     (re.compile(r'(?<![^ ,])ɲj'), 'nj'),
+    # round 25: ñ before c as n (kiñci was right only as "kinci")
+    (re.compile(r'ɲ(?=c)'), 'n'),
+    # round 25: muhuttena - the h between two short u swallowed them; tense u held
+    (re.compile(r'ʊhʊ'), 'uhu'),
+    # round 24: viharati read "viharti" once the open-a rule was gone; an open a in the verb ending
+    # -ati (word-final) brought it back, without the swallowing the general rule caused (round 22)
+    (re.compile(r'ʌ(?=tɪ(?=[ ,.?!:;]|$))'), 'a'),
+    # rounds 24-26: pratham has no word-final [ŋ] (Hindi has it only before k/g): -aṁ as an explicit
+    # "ng" (ŋɡ) was the one heard right; -iṁ as "im" (paccaññāsiṁ, imasmiṁ)
+    (re.compile(r'(?<=[ʌa])ŋŋ(?=[ ,.?!:;]|$)'), 'ŋɡ'),
+    (re.compile(r'(?<=ɪ)ŋŋ(?=[ ,.?!:;]|$)'), 'm'),
 ]
 
 
@@ -186,16 +198,18 @@ if __name__ == '__main__':
     assert to_script('dhamma', 'knda') == 'ಧಮ್ಮ', to_script('dhamma', 'knda')
     assert to_script('āḷāro', 'telu') == 'ఆళారో', to_script('āḷāro', 'telu')
     assert tune(to_ipa('ñāṇa paññā evaṁ', stress=False)) == 'njaːɳə pəɲːjaː eːʋəŋŋ', tune(to_ipa('ñāṇa paññā evaṁ', stress=False))
-    assert tune(to_ipa('pañca sañjāti', stress=False)) == 'pəɲcə səɲɟaːtɪ'
+    assert tune(to_ipa('pañca sañjāti', stress=False)) == 'pəncə səɲɟaːtɪ'
     assert tune(to_ipa('Dhammacakka vacī cakkhu', full_a=True)) == 'dʰʌmmʌccˈʌkkʌ ʋˈʌcciː cˈʌkkʰʊ'  # word-initial c untouched
     assert to_ipa('pītisukhaṁ', full_a=True, heavy_back=True) == 'pˈiːtɪsʊkʰʌŋ', to_ipa('pītisukhaṁ', full_a=True, heavy_back=True)
     assert to_ipa('bhagavato', heavy_back=True) == to_ipa('bhagavato', heavy_back=False)  # nothing heavy to move to
     assert to_ipa('brahmacariyaṁ', full_a=True) == 'bɾʌhmʌcˈʌɾɪjʌŋ'  # heavy syllable two away: stays
-    assert tune(to_ipa('passambhayaṁ', full_a=True)) == 'pʌssˈʌmbʰʌjjʌŋŋ', tune(to_ipa('passambhayaṁ', full_a=True))
+    assert tune(to_ipa('passambhayaṁ', full_a=True)) == 'pʌssˈʌmbʰʌjjʌŋɡ', tune(to_ipa('passambhayaṁ', full_a=True))
     assert 'jj' not in tune(to_ipa('kāya paññā', full_a=True))  # after a long vowel / in ññ: untouched
     assert tune(to_ipa('So evamāha', full_a=True)) == 'sˈoː, eːʋʌmˈaːhʌ', tune(to_ipa('So evamāha', full_a=True))
     assert ', ' not in tune(to_ipa('āyasmā ānando', full_a=True))  # longer words: unchanged
-    assert tune(to_ipa('jarāpi paṭhamaṁ', full_a=True)) == 'ɟʌɾˈaːpɪ pˈʌʈʰʌmʌŋŋ'  # no open a any more (round 22)
+    assert tune(to_ipa('jarāpi paṭhamaṁ', full_a=True)) == 'ɟʌɾˈaːpɪ pˈʌʈʰʌmʌŋɡ'  # no open a any more (round 22)
     assert tune(to_ipa('sammādiṭṭhi …pe… sammāsamādhi', full_a=True)) == 'sʌmmaːdˈɪʈʈʰɪ, pejjˈaːlʌ, sʌmmaːsʌmˈaːdʰɪ', tune(to_ipa('sammādiṭṭhi …pe… sammāsamādhi', full_a=True))
     assert normalize('a ...pa... b') == 'a , peyyāla,  b'
+    assert tune(to_ipa('kiñci muhuttena viharati', full_a=True)) == 'kˈɪncɪ muhuttˈeːnʌ ʋɪhˈʌɾatɪ'  # rounds 24-25
+    assert tune(to_ipa('dutiyaṁ imasmiṁ', full_a=True)) == 'dˈʊtɪjʌŋɡ ɪmˈʌsmɪm'  # one y after i; -aṁ ŋɡ, -iṁ m
     print('ok')
