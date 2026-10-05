@@ -175,10 +175,10 @@ index 0000000..5be36c8
 +intonation 3       // a comma does not raise the pitch (me, sā, bho read level)
 diff --git a/phsource/ph_pali b/phsource/ph_pali
 new file mode 100644
-index 0000000..fe8ae1d
+index 0000000..9076fc2
 --- /dev/null
 +++ b/phsource/ph_pali
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,39 @@
 +// Pali (pi): the Hindi phonemes, except that the short a is always sounded.
 +// Pali spelling is phonemic: no schwa deletion (Hindi's V drops at word end and between consonants).
 +
@@ -204,37 +204,19 @@ index 0000000..fe8ae1d
 +  ipa ɟ
 +endphoneme
 +
-+phoneme v         // v: Hindi's approximant came out close to m after a nasal (samaṇena vā)
-+  CALL base1/v
++phoneme v         // v: Hindi's approximant came out close to m after a nasal (samaṇena vā); listening round: Russian v
++  CALL ru/v
 +  ipa ʋ
-+endphoneme
-+
-+// TEMPORARY candidates for listening round es4 (r and v); remove after the choice
-+phoneme r1
-+  import_phoneme base1/r
-+endphoneme
-+phoneme r2
-+  import_phoneme ru/r
-+endphoneme
-+phoneme r3
-+  import_phoneme es/r
-+endphoneme
-+phoneme r4
-+  import_phoneme hi/r
-+endphoneme
-+phoneme v1
-+  import_phoneme hi/v
-+endphoneme
-+phoneme v2
-+  import_phoneme ru/v
-+endphoneme
-+phoneme v3
-+  import_phoneme it/v
 +endphoneme
 +
 +phoneme N2        // the second half of a word-final ṁ: a long ŋ, written ŋː
 +  CALL base1/N
 +  ipa ː
++endphoneme
++
++phoneme *         // r: Hindi's tap sounded foreign to listeners; the Russian r won the listening round (no "bad" votes)
++  CALL ru/r
++  ipa ɾ
 +endphoneme
 diff --git a/phsource/phonemes b/phsource/phonemes
 index dc29974..7581aa2 100644
