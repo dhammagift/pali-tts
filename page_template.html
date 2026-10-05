@@ -31,6 +31,7 @@ body.reveal .row .label{display:block}
 .row audio{flex:1 1 220px;min-width:0;height:36px}
 .btns{display:flex;gap:6px}
 .btns button{font:inherit;font-size:.88rem;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--chip);color:var(--fg);cursor:pointer;min-height:36px}
+.btns .pl{min-width:40px;font-weight:700}
 .btns button[data-v=best].sel{background:var(--best);border-color:var(--best);color:#111}
 .btns button[data-v=ok].sel{background:var(--good);border-color:var(--good);color:#fff}
 .btns button[data-v=bad].sel{background:var(--bad);border-color:var(--bad);color:#fff}
@@ -96,7 +97,7 @@ function render() {
           <span class="name">${v.letter}</span>
           <audio controls preload="none" src="${v.src}"></audio>
           <span class="btns">
-            <button data-v="best">★ ${p.multi ? 'нравится' : 'лучший'}</button><button data-v="ok">✓ норм</button><button data-v="bad">✗ плохо</button>
+            <button class="pl" title="Слушать / стоп">▶</button><button data-v="best">★ ${p.multi ? 'нравится' : 'лучший'}</button><button data-v="ok">✓ норм</button><button data-v="bad">✗ плохо</button>
           </span>
           <span class="label">${v.letter} = ${v.label}</span>
         </div>`).join('')}
@@ -109,7 +110,19 @@ function render() {
       row.querySelectorAll('button').forEach(b => b.classList.toggle('sel', b.dataset.v === val));
     });
     paint();
-    sec.querySelectorAll('.row button').forEach(b => b.onclick = () => {
+    // small ▶ next to the ratings: listen and rate without reaching for the audio bar; one sound at a time
+    sec.querySelectorAll('.row .pl').forEach(b => b.onclick = () => {
+      const a = b.closest('.row').querySelector('audio');
+      if (!a.paused) { a.pause(); return; }
+      document.querySelectorAll('audio').forEach(x => { if (x !== a) x.pause(); });
+      a.currentTime = 0; a.play();
+    });
+    sec.querySelectorAll('.row audio').forEach(a => {
+      const b = a.closest('.row').querySelector('.pl');
+      a.onplay = () => { document.querySelectorAll('audio').forEach(x => { if (x !== a) x.pause(); }); b.textContent = '■'; };
+      a.onpause = a.onended = () => { b.textContent = '▶'; };
+    });
+    sec.querySelectorAll('.row button[data-v]').forEach(b => b.onclick = () => {
       const row = b.closest('.row'), vid = row.dataset.v;
       if (b.dataset.v === 'best' && !p.multi) {  // only one best per phrase: the old best becomes "ok"
         for (const v of p.variants) if (v.id !== vid && state[key(p.id, 'rating', v.id)] === 'best') save(p.id, 'rating', v.id, 'ok');
