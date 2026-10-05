@@ -32,9 +32,9 @@ import numpy as np
 from piper import PiperVoice, SynthesisConfig
 
 from pali_ipa import to_ipa, tune
-from respell import en_phonemes, respell
+from respell import en_phonemes, respell, ru_phonemes
 
-RULES_VERSION = 'r22'  # bump when pali_ipa rules change, so cached mp3 are not reused
+RULES_VERSION = 'r23'  # bump when pali_ipa rules change, so cached mp3 are not reused
 MAX_CHARS = 2000
 RATE_LIMIT = 60  # requests per client IP per minute
 VOICES = {  # id -> (model file, language); 'pi*' voices are fed our Pali IPA
@@ -162,6 +162,8 @@ def synth_pcm(text, vid, rate):
             phonemes = [list(ipa)] if ipa.strip(' ,.?!') else []
         elif lang == 'en':  # Pali words in an English translation get our phonemes (dhamma, sutta)
             phonemes = [p for p in [en_phonemes(voice, sent)] if p]
+        elif lang == 'ru':  # Pali words in Cyrillic, and the soft sign espeak loses (боль, день, кровь)
+            phonemes = [p for p in ru_phonemes(voice, sent) if p]
         else:
             phonemes = [p for p in voice.phonemize(respell(sent, lang)) if p]  # Pali words in a translation
         for ph in phonemes:

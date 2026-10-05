@@ -113,6 +113,67 @@ def en_phonemes(voice, text):
     return [p for p in seq if p in voice.config.phoneme_id_map]
 
 
+# espeak-ng (issue #1045, open since 2021) leaves some consonants hard before a soft sign: боль = бол,
+# день, кровь, только, учитель. т and с it softens itself. Letter -> the phonemes espeak gives it.
+RU_SOFTEN = {'л': ('ɭ', 'l'), 'н': ('n',), 'в': ('v', 'f'), 'м': ('m',), 'р': ('r',)}
+RU_WORD = re.compile(r'[а-яё]+(?:-[а-яё]+)*')
+
+
+def ru_soften(word, phonemes):
+    """word: one Russian word; phonemes: its phonemes. Adds ʲ after л/н/в/м/р that stand before ь."""
+    out = list(phonemes)
+    for letter, bases in RU_SOFTEN.items():
+        if letter + 'ь' not in word:
+            continue
+        idx = [i for i, p in enumerate(out) if p in bases]
+        letters = [m.start() for m in re.finditer(letter, word)]
+        if len(idx) != len(letters):  # can't pair the letters with the phonemes: leave the word as espeak said it
+            continue
+        for k in reversed(range(len(letters))):
+            pos, i = letters[k], idx[k]
+            if word[pos + 1:pos + 2] == 'ь' and (i + 1 >= len(out) or out[i + 1] != 'ʲ'):
+                out.insert(i + 1, 'ʲ')
+    return out
+
+
+def ru_phonemes(voice, text):
+    """Phoneme lists (one per sentence) for a Piper Russian voice, with the soft sign restored."""
+    text = respell(text, 'ru')
+    words = RU_WORD.findall(text.lower())
+    sents = [list(s) for s in voice.phonemize(text) if s]
+    flat = [p for s in sents for p in s + [' ']]  # a space between sentences too, or their edge words merge
+    tokens, cur = [], []
+    for p in flat:  # split into words; punctuation stays inside the token it is glued to
+        if p == ' ':
+            if cur:
+                tokens.append(cur)
+            cur = []
+        else:
+            cur.append(p)
+    if len([t for t in tokens if any(c.isalpha() for c in t)]) != len(words):
+        return sents  # espeak split the words differently: no fix rather than a wrong one
+    fixed, wi = {}, 0
+    for ti, t in enumerate(tokens):
+        if any(c.isalpha() for c in t):
+            if 'ь' in words[wi]:
+                fixed[ti] = ru_soften(words[wi], t)
+            wi += 1
+    out, ti, cur = [], 0, []
+    for s in sents:  # put the words back into their sentences
+        new, word = [], []
+        for p in s + [' ']:
+            if p == ' ':
+                if word:
+                    new += fixed.get(ti, word)
+                    ti += 1
+                word = []
+                new.append(' ')
+            else:
+                word.append(p)
+        out.append(new[:-1])
+    return out
+
+
 def _case(src, out):
     return out[:1].upper() + out[1:] if src[:1].isupper() else out
 
@@ -146,4 +207,12 @@ if __name__ == '__main__':
     assert en_expand('There Ven. Sāriputta said, i.e. the Buddha (SN 56.11; MN 10).') == \
         'There Venerable Sāriputta said, that is, the Buddha (Saṁyutta Nikāya 56, 11; Majjhima Nikāya 10).', en_expand('There Ven. Sāriputta said, i.e. the Buddha (SN 56.11; MN 10).')
     assert en_expand('he said "Venus" and Seven Sāriputta') == 'he said "Venus" and Seven Sāriputta'  # not inside words
+    assert ru_soften('боль', ['b', 'ˈ', 'o', 'ɭ']) == ['b', 'ˈ', 'o', 'ɭ', 'ʲ']
+    assert ru_soften('мать', ['m', 'ˈ', 'ɑ', 't', 'ʲ']) == ['m', 'ˈ', 'ɑ', 't', 'ʲ']  # т: espeak got it right
+
+    class _V:  # stand-in for a Piper voice: two sentences, as espeak splits them
+        @staticmethod
+        def phonemize(t):
+            return [list('bˈoɭ?'), list('ˈɛtʌ bˈoɭ.')]
+    assert [''.join(x) for x in ru_phonemes(_V, 'Боль? Это боль.')] == ['bˈoɭʲ?', 'ˈɛtʌ bˈoɭʲ.']
     print('ok')
