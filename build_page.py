@@ -4,10 +4,10 @@ import random
 import re
 import time
 
-ROUND = 'es4'
-TITLE = 'espeak-ng: r и v'
-INTRO = ('Голос самого espeak. После es2 r всё ещё «не нормальная», а v в saddamanussāvesuṁ пропала. Варианты r и v из других языков espeak, вперемешку. '
-         '<b>★ лучший</b>, <b>✓ норм</b>, <b>✗ плохо</b>.')
+ROUND = 'es5'
+TITLE = 'espeak-ng: глоссарий'
+INTRO = ('52 термина из глоссария — только с трудными звуками (r, v, j, ñ, конечное ṁ, ḷ, придыхательные и двойные, длинные слова). '
+         'espeak с поправками (j и v снова звучат, конечное ṁ — долгое ŋ), дальше pratham и твой голос по тем же фонемам. <b>✓</b> правильно, <b>✗</b> ошибка; <b>нажмите на слово</b>, если неправильно.')
 idx = json.load(open(f'out/{ROUND}/index.json', encoding='utf-8'))
 ver = int(time.time())
 phrases = []
