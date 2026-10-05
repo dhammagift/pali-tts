@@ -25,13 +25,16 @@ PROFILES = {
     'ml': {'A': 'ɐ', 'i': 'i', 'u': 'u'},
     'te': {'A': 'a', 'i': 'i', 'u': 'u', 'r': 'r'},
 }
+PEYYALA = re.compile(r'(?:…|\.\.\.)\s*p[ae]\s*(?:…|\.\.\.)')
 PUNCT = {',': ',', ';': ',', ':': ',', '—': ',', '–': ',', '.': '.', '?': '?', '!': '!'}
 
 
 def normalize(text):
     text = unicodedata.normalize('NFC', text.lower())
-    text = text.replace('ṁ', 'ṃ').replace('ŋ', 'ṃ').replace('…pe…', ', ').replace('…', ', ')
-    return text
+    # "…pe…" / "…pa…" mark a passage left out: read as "peyyāla" (owner: without it only someone who knows
+    # the text by heart can tell anything was skipped), set off by short pauses
+    text = PEYYALA.sub(', peyyāla, ', text.replace('ṁ', 'ṃ').replace('ŋ', 'ṃ'))
+    return text.replace('…', ', ')
 
 
 def word_ipa(word, stress=True, full_a=False, final_m=False, lang='hi', heavy_back=True):
@@ -193,4 +196,6 @@ if __name__ == '__main__':
     assert tune(to_ipa('So evamāha', full_a=True)) == 'sˈoː, eːʋʌmˈaːhʌ', tune(to_ipa('So evamāha', full_a=True))
     assert ', ' not in tune(to_ipa('āyasmā ānando', full_a=True))  # longer words: unchanged
     assert tune(to_ipa('jarāpi paṭhamaṁ', full_a=True)) == 'ɟʌɾˈaːpɪ pˈʌʈʰʌmʌŋŋ'  # no open a any more (round 22)
+    assert tune(to_ipa('sammādiṭṭhi …pe… sammāsamādhi', full_a=True)) == 'sʌmmaːdˈɪʈʈʰɪ, pejjˈaːlʌ, sʌmmaːsʌmˈaːdʰɪ', tune(to_ipa('sammādiṭṭhi …pe… sammāsamādhi', full_a=True))
+    assert normalize('a ...pa... b') == 'a , peyyāla,  b'
     print('ok')
