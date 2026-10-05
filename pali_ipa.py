@@ -125,9 +125,11 @@ PRATHAM_RULES = [
     # round 24: viharati read "viharti" once the open-a rule was gone; an open a in the verb ending
     # -ati (word-final) brought it back, without the swallowing the general rule caused (round 22)
     (re.compile(r'ʌ(?=tɪ(?=[ ,.?!:;]|$))'), 'a'),
-    # rounds 24-26: pratham has no word-final [ŋ] (Hindi has it only before k/g): -aṁ as an explicit
-    # "ng" (ŋɡ) was the one heard right; -iṁ as "im" (paccaññāsiṁ, imasmiṁ)
-    (re.compile(r'(?<=[ʌa])ŋŋ(?=[ ,.?!:;]|$)'), 'ŋɡ'),
+    # pratham has no word-final [ŋ] (Hindi has it only before k/g). Round 29: what Hindi itself does with
+    # an anusvara won (6 best of 10) - दुक्खं dʊkkʰən, चक्खुं cʌkkʰũ; the explicit "ng" of rounds 24-26 was
+    # heard as a literal «НГ». -iṁ stays "im" (paccaññāsiṁ; imasmiṁ was bad every way)
+    (re.compile(r'[ʌa]ŋŋ(?=[ ,.?!:;]|$)'), 'ən'),
+    (re.compile(r'ʊŋŋ(?=[ ,.?!:;]|$)'), 'u\u0303'),  # u + combining tilde: the voice's map has no precomposed ũ
     (re.compile(r'(?<=ɪ)ŋŋ(?=[ ,.?!:;]|$)'), 'm'),
 ]
 
@@ -203,13 +205,14 @@ if __name__ == '__main__':
     assert to_ipa('pītisukhaṁ', full_a=True, heavy_back=True) == 'pˈiːtɪsʊkʰʌŋ', to_ipa('pītisukhaṁ', full_a=True, heavy_back=True)
     assert to_ipa('bhagavato', heavy_back=True) == to_ipa('bhagavato', heavy_back=False)  # nothing heavy to move to
     assert to_ipa('brahmacariyaṁ', full_a=True) == 'bɾʌhmʌcˈʌɾɪjʌŋ'  # heavy syllable two away: stays
-    assert tune(to_ipa('passambhayaṁ', full_a=True)) == 'pʌssˈʌmbʰʌjjʌŋɡ', tune(to_ipa('passambhayaṁ', full_a=True))
+    assert tune(to_ipa('passambhayaṁ', full_a=True)) == 'pʌssˈʌmbʰʌjjən', tune(to_ipa('passambhayaṁ', full_a=True))
     assert 'jj' not in tune(to_ipa('kāya paññā', full_a=True))  # after a long vowel / in ññ: untouched
     assert tune(to_ipa('So evamāha', full_a=True)) == 'sˈoː, eːʋʌmˈaːhʌ', tune(to_ipa('So evamāha', full_a=True))
     assert ', ' not in tune(to_ipa('āyasmā ānando', full_a=True))  # longer words: unchanged
-    assert tune(to_ipa('jarāpi paṭhamaṁ', full_a=True)) == 'ɟʌɾˈaːpɪ pˈʌʈʰʌmʌŋɡ'  # no open a any more (round 22)
+    assert tune(to_ipa('jarāpi paṭhamaṁ', full_a=True)) == 'ɟʌɾˈaːpɪ pˈʌʈʰʌmən'  # no open a any more (round 22)
     assert tune(to_ipa('sammādiṭṭhi …pe… sammāsamādhi', full_a=True)) == 'sʌmmaːdˈɪʈʈʰɪ, pejjˈaːlʌ, sʌmmaːsʌmˈaːdʰɪ', tune(to_ipa('sammādiṭṭhi …pe… sammāsamādhi', full_a=True))
     assert normalize('a ...pa... b') == 'a , peyyāla,  b'
     assert tune(to_ipa('kiñci muhuttena viharati', full_a=True)) == 'kˈɪncɪ muhuttˈeːnʌ ʋɪhˈʌɾatɪ'  # rounds 24-25
-    assert tune(to_ipa('dutiyaṁ imasmiṁ', full_a=True)) == 'dˈʊtɪjʌŋɡ ɪmˈʌsmɪm'  # one y after i; -aṁ ŋɡ, -iṁ m
+    assert tune(to_ipa('dutiyaṁ imasmiṁ', full_a=True)) == 'dˈʊtɪjən ɪmˈʌsmɪm'  # one y after i; -aṁ ən, -iṁ m
+    assert tune(to_ipa('evaṁ me sutaṁ cakkhuṁ', full_a=True)) == 'ˈeːʋən mˈeː sˈʊtən cˈʌkkʰu\u0303'  # round 29
     print('ok')
