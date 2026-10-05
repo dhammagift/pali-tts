@@ -4,10 +4,10 @@ import random
 import re
 import time
 
-ROUND = 'es6'
-TITLE = 'espeak-ng: двойные и h'
-INTRO = ('Голос самого espeak, по заметкам к es5: двойные согласные слишком сильные («памоджжа» вместо «паамодджа»), h слишком сильная. Варианты вперемешку. '
-         '<b>★ лучший</b>, <b>✓ норм</b>, <b>✗ плохо</b>.')
+ROUND = 'r28'
+TITLE = 'Pali TTS — раунд 28: остатки'
+INTRO = ('saṅkhāra («санкхарпаччая»), sahagatā, отдельное слово-заголовок (Dutiyaṁ), sammāsambodhiṁ abhisambuddho’ti, конечное -uṁ (cakkhuṁ, -suṁ). У pratham по 2–4 варианта, по 2 дубля; твой голос для сравнения. Вперемешку. '
+         '<b>★ лучший</b> (один на фразу), <b>✓ норм</b>, <b>✗ плохо</b>; <b>нажмите на слово</b>, которое звучит неправильно.')
 idx = json.load(open(f'out/{ROUND}/index.json', encoding='utf-8'))
 ver = int(time.time())
 phrases = []

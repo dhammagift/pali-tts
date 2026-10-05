@@ -1,2 +1,15 @@
-{"id": "dhammagift/pali-tts-ears", "title": "pali-tts-ears", "code_file": "run.py", "language": "python", "kernel_type": "script",
- "is_private": true, "enable_gpu": true, "enable_internet": true, "dataset_sources": ["dhammagift/pali-tts-ears-v1"], "competition_sources": [], "kernel_sources": []}
+{
+ "id": "dhammagift/pali-tts-ears",
+ "title": "pali-tts-ears",
+ "code_file": "run.py",
+ "language": "python",
+ "kernel_type": "script",
+ "is_private": true,
+ "enable_gpu": true,
+ "enable_internet": true,
+ "dataset_sources": [
+  "dhammagift/pali-tts-ears-r28-1791195561"
+ ],
+ "competition_sources": [],
+ "kernel_sources": []
+}
