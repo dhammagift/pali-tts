@@ -60,7 +60,7 @@ for k in kept:
     rows.append(f"{k['name']}.wav|{k['plain']}|{' '.join(map(str, ids))}")
 open(f'{OUT}/metadata.csv', 'w', encoding='utf-8').write('\n'.join(rows) + '\n')
 json.dump(voice.config.phoneme_id_map, open(f'{OUT}/phonemes.json', 'w', encoding='utf-8'), ensure_ascii=False)
-for f in ('respell.py',):
+for f in ('respell.py', 'pali_ipa.py'):  # respell imports pali_ipa
     os.system(f'cp {f} {OUT}/')
 json.dump({'title': 'ru-dg-voice-data', 'id': 'dhammagift/ru-dg-voice-data', 'licenses': [{'name': 'CC-BY-NC-SA-4.0'}]},
           open(f'{OUT}/dataset-metadata.json', 'w'))
