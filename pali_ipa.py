@@ -129,6 +129,8 @@ PRATHAM_RULES = [
     # an anusvara won (6 best of 10) - दुक्खं dʊkkʰən, चक्खुं cʌkkʰũ; the explicit "ng" of rounds 24-26 was
     # heard as a literal «НГ». -iṁ stays "im" (paccaññāsiṁ; imasmiṁ was bad every way)
     (re.compile(r'[ʌa]ŋŋ(?=[ ,.?!:;]|$)'), 'ən'),
+    # rounds 31-32: after h that ə came out as "e" (arahaṁ «арахем»); a full a there was ok in every take
+    (re.compile(r'(?<=h)ən(?=[ ,.?!:;]|$)'), 'ʌn'),
     (re.compile(r'ʊŋŋ(?=[ ,.?!:;]|$)'), 'u\u0303'),  # u + combining tilde: the voice's map has no precomposed ũ
     (re.compile(r'(?<=ɪ)ŋŋ(?=[ ,.?!:;]|$)'), 'm'),
 ]
@@ -214,5 +216,6 @@ if __name__ == '__main__':
     assert normalize('a ...pa... b') == 'a , peyyāla,  b'
     assert tune(to_ipa('kiñci muhuttena viharati', full_a=True)) == 'kˈɪncɪ muhuttˈeːnʌ ʋɪhˈʌɾatɪ'  # rounds 24-25
     assert tune(to_ipa('dutiyaṁ imasmiṁ', full_a=True)) == 'dˈʊtɪjən ɪmˈʌsmɪm'  # one y after i; -aṁ ən, -iṁ m
+    assert tune(to_ipa('arahaṁ ahaṁ', full_a=True)) == 'ˈʌɾʌhʌn ˈʌhʌn'  # round 32
     assert tune(to_ipa('evaṁ me sutaṁ cakkhuṁ', full_a=True)) == 'ˈeːʋən mˈeː sˈʊtən cˈʌkkʰu\u0303'  # round 29
     print('ok')
