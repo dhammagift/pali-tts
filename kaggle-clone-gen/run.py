@@ -1,7 +1,8 @@
 """Kaggle GPU job: a synthetic Russian dataset in the owner's voice. Chatterbox Multilingual (MIT) clones the voice
 from an 18 s reference and reads DG translation sentences; Whisper large-v3-turbo transcribes every clip and only
 clips whose transcript matches the text (CER <= 8%) are kept (the "4 words" Piper recipe: Whisper as the filter).
-Stops at 1.3 h of kept audio or a 6 h budget. Output: /kaggle/working/clips.zip (22.05 kHz mono wavs) + kept.json
+Stops at 1.3 h of kept audio or a 6 h budget. Sentences come with stress marks (stress_ru.py): Chatterbox's own
+stresser is not installable on Kaggle, without marks every clip had stress errors. Output: /kaggle/working/clips.zip (22.05 kHz mono wavs) + kept.json
 """
 import glob
 import json
