@@ -42,7 +42,10 @@ with zipfile.ZipFile(f'{SRC}/clips.zip') as z:
 for k in kept:
     k['plain'] = k['text'].replace(STRESS, '')
     k['spl'] = k['sec'] / max(len(k['plain']), 1)
-    k['pause'] = longest_pause(f"{OUT}/wavs/{k['name']}.wav")
+    try:
+        k['pause'] = longest_pause(f"{OUT}/wavs/{k['name']}.wav")
+    except Exception:  # the job was killed mid-write: a broken last file
+        k['pause'] = 99
 slow = np.percentile([k['spl'] for k in kept], 92)
 rows, dropped = [], 0
 for k in kept:
