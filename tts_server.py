@@ -199,6 +199,8 @@ def memo_mp3(segments, vid, rate, delay, end_delay, sound):
             capture_output=True, check=True).stdout, dtype=np.float32) * 0.6)
     if end_delay > 0:
         parts.append(np.zeros(int(sr * end_delay), dtype=np.float32))
+    # lead-in silence: players with fade-in swallow the first syllables
+    parts.insert(0, np.zeros(int(sr * 1.0), dtype=np.float32))
     return encode_mp3(np.concatenate(parts), sr)
 
 
