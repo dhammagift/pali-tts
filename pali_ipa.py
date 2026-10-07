@@ -122,6 +122,9 @@ PRATHAM_RULES = [
     (re.compile(r'ɲ(?=c)'), 'n'),
     # round 25: muhuttena - the h between two short u swallowed them; tense u held
     (re.compile(r'ʊhʊ'), 'uhu'),
+    # round 33: samphassa from the aspirated pʰ came out as «сасфасса» (m lost, ph as f); p + h was ok in
+    # both takes (round 34: j stays ɟ, dʒ and dʲ were bad everywhere)
+    (re.compile(r'mpʰ'), 'mph'),
     # round 24: viharati read "viharti" once the open-a rule was gone; an open a in the verb ending
     # -ati (word-final) brought it back, without the swallowing the general rule caused (round 22)
     (re.compile(r'ʌ(?=tɪ(?=[ ,.?!:;]|$))'), 'a'),
@@ -216,6 +219,7 @@ if __name__ == '__main__':
     assert normalize('a ...pa... b') == 'a , peyyāla,  b'
     assert tune(to_ipa('kiñci muhuttena viharati', full_a=True)) == 'kˈɪncɪ muhuttˈeːnʌ ʋɪhˈʌɾatɪ'  # rounds 24-25
     assert tune(to_ipa('dutiyaṁ imasmiṁ', full_a=True)) == 'dˈʊtɪjən ɪmˈʌsmɪm'  # one y after i; -aṁ ən, -iṁ m
+    assert 'sʌmphˈʌssʌɟən' in tune(to_ipa('kāyasamphassajaṁ', full_a=True))
     assert tune(to_ipa('arahaṁ ahaṁ', full_a=True)) == 'ˈʌɾʌhʌn ˈʌhʌn'  # round 32
     assert tune(to_ipa('evaṁ me sutaṁ cakkhuṁ', full_a=True)) == 'ˈeːʋən mˈeː sˈʊtən cˈʌkkʰu\u0303'  # round 29
     print('ok')
