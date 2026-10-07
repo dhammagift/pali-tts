@@ -47,7 +47,7 @@ VOICES = {  # id -> (model file, language); 'pi*' voices are fed our Pali IPA
     'irina': ('ru_RU-irina-medium', 'ru'),
     'ruslan': ('ru_RU-ruslan-medium', 'ru'),
     # the owner's timbre: Piper fine-tuned from ruslan on 1 h read by a Chatterbox clone of his voice (2026-10-07)
-    'dgru': ('ru_dg-medium', 'ru'),
+    'dgru': ('ru_dg2-medium', 'ru'),
 }
 CACHE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cache', 'tts')
 SENTENCE = re.compile(r'(?<=[.?!;:])\s+')
