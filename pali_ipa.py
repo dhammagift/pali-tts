@@ -115,7 +115,8 @@ PRATHAM_RULES = [
     # round 18: y after a short vowel glided into it and its syllable was lost (passambhayaṁ ->
     # "пасамбхам"); doubled jj had no bad take of 8. Not after a long vowel or ɲː (ññ is ɲːj).
     # Only after a (rounds 25, 27): after i it hurt - dutiyaṁ, appaṭivattiyaṁ read better with one y.
-    (re.compile(r'(?<=[ʌa])j(?=[ʌaeoiuɪʊˈ])'), 'jj'),
+    # Round 35: not before i (vedayitaṁ «ведайеиа»; a single y was ok in both takes)
+    (re.compile(r'(?<=[ʌa])j(?=[ʌaeouʊˈ])'), 'jj'),
     # round 21: a word-initial ñ came out as "я" (Ñāṇañca -> "янанча"); n + j was the one that worked
     (re.compile(r'(?<![^ ,])ɲj'), 'nj'),
     # round 25: ñ before c as n (kiñci was right only as "kinci")
@@ -219,6 +220,7 @@ if __name__ == '__main__':
     assert normalize('a ...pa... b') == 'a , peyyāla,  b'
     assert tune(to_ipa('kiñci muhuttena viharati', full_a=True)) == 'kˈɪncɪ muhuttˈeːnʌ ʋɪhˈʌɾatɪ'  # rounds 24-25
     assert tune(to_ipa('dutiyaṁ imasmiṁ', full_a=True)) == 'dˈʊtɪjən ɪmˈʌsmɪm'  # one y after i; -aṁ ən, -iṁ m
+    assert 'ʋˈeːdʌjɪtən' in tune(to_ipa('vedayitaṁ', full_a=True))
     assert 'sʌmphˈʌssʌɟən' in tune(to_ipa('kāyasamphassajaṁ', full_a=True))
     assert tune(to_ipa('arahaṁ ahaṁ', full_a=True)) == 'ˈʌɾʌhʌn ˈʌhʌn'  # round 32
     assert tune(to_ipa('evaṁ me sutaṁ cakkhuṁ', full_a=True)) == 'ˈeːʋən mˈeː sˈʊtən cˈʌkkʰu\u0303'  # round 29
