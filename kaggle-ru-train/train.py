@@ -8,7 +8,10 @@ import os
 import subprocess
 import sys
 
-SMOKE = os.environ.get('SMOKE', '0') == '1'
+SMOKE = os.environ.get('SMOKE', '0') == '1' or bool(glob.glob('/kaggle/input/**/SMOKE', recursive=True))
+# RESUME: a previous run's last.ckpt in the inputs (dataset ru-dg-voice-ckpt) - training continues from it
+# (optimizer, epoch counter) instead of a fresh warm start from ruslan
+RESUME = (glob.glob('/kaggle/input/**/resume/last.ckpt', recursive=True) or [None])[0]
 MAX_TIME = '00:00:20:00' if SMOKE else '00:07:00:00'  # 7 h: enough for a same-language fine-tune, saves GPU quota
 W = '/kaggle/working'
 DATA = os.path.dirname(glob.glob('/kaggle/input/**/metadata.csv', recursive=True)[0])
@@ -47,7 +50,7 @@ os.chdir(f'{W}/piper1-gpl')
 sh("sed -i 's/torch.onnx.export(/torch.onnx.export(dynamo=False, /' src/piper/train/export_onnx.py")
 sh("pip install -q cython scikit-build 'cmake<4' ninja onnx onnxscript -e '.[train]'")
 sh('bash build_monotonic_align.sh && python setup.py build_ext --inplace -q')
-if not os.path.exists(f'{W}/base.ckpt'):
+if not RESUME and not os.path.exists(f'{W}/base.ckpt'):
     sh(f'wget -q -O {W}/base.ckpt "{CKPT_URL}"')
 os.makedirs(f'{W}/out', exist_ok=True)
 sh(' '.join([
@@ -64,8 +67,8 @@ sh(' '.join([
     '--data.dataset_type phoneme_ids',
     '--data.num_symbols 256',
     f'--data.phonemes_path {DATA}/phonemes.json',
-    f'--model.warmstart_ckpt {W}/base.ckpt',
-    '--trainer.max_epochs 3000',
+    f'--ckpt_path {RESUME}' if RESUME else f'--model.warmstart_ckpt {W}/base.ckpt',
+    f"--trainer.max_epochs {'2' if SMOKE and not RESUME else '3000'}",
     f'--trainer.max_time {MAX_TIME}',
     '--trainer.accelerator gpu --trainer.devices 1',
     f'--trainer.check_val_every_n_epoch {1 if SMOKE else 20}',
