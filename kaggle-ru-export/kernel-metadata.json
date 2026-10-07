@@ -1,0 +1,1 @@
+{"id": "dhammagift/ru-dg-voice-export", "title": "ru-dg-voice-export", "code_file": "run.py", "language": "python", "kernel_type": "script", "is_private": true, "enable_gpu": false, "enable_internet": true, "dataset_sources": ["dhammagift/ru-dg-voice-data"], "competition_sources": [], "kernel_sources": ["dhammagift/ru-dg-voice-train"]}
