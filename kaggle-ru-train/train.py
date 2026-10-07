@@ -74,22 +74,26 @@ sh(' '.join([
 last = sorted(glob.glob(f'{W}/train/**/last.ckpt', recursive=True))[-1]
 sh(f'python -m piper.train.export_onnx --checkpoint {last} --output-file {W}/out/ru_dg-medium.onnx')
 
-# Samples with the exported voice and our Pali IPA
-sh('pip install -q piper-tts')
-sys.path.insert(0, DATA)
-import wave  # noqa: E402
+# Samples: never fatal - after a 7 h run a failing sample step must not leave the cache behind (2026-10-07: it did,
+# and the output could no longer be listed). The samples can always be rendered on our server instead.
+try:
+    sh('pip install -q piper-tts')
+    sys.path.insert(0, DATA)
+    import wave  # noqa: E402
 
-import numpy as np  # noqa: E402
+    import numpy as np  # noqa: E402
 
-from piper import PiperVoice  # noqa: E402
-from respell import ru_phonemes  # noqa: E402
+    from piper import PiperVoice  # noqa: E402
+    from respell import ru_phonemes  # noqa: E402
 
-voice = PiperVoice.load(f'{W}/out/ru_dg-medium.onnx', config_path=f'{W}/out/ru_dg-medium.onnx.json')
-for i, text in enumerate(SAMPLES):
-    audio = np.concatenate([voice.phoneme_ids_to_audio(voice.phonemes_to_ids(ph)) for ph in ru_phonemes(voice, text)])
-    with wave.open(f'{W}/out/sample{i}.wav', 'wb') as w:
-        w.setnchannels(1); w.setsampwidth(2); w.setframerate(22050)
-        w.writeframes((audio.clip(-1, 1) * 32767).astype('int16').tobytes())
+    voice = PiperVoice.load(f'{W}/out/ru_dg-medium.onnx', config_path=f'{W}/out/ru_dg-medium.onnx.json')
+    for i, text in enumerate(SAMPLES):
+        audio = np.concatenate([voice.phoneme_ids_to_audio(voice.phonemes_to_ids(ph)) for ph in ru_phonemes(voice, text)])
+        with wave.open(f'{W}/out/sample{i}.wav', 'wb') as w:
+            w.setnchannels(1); w.setsampwidth(2); w.setframerate(22050)
+            w.writeframes((audio.clip(-1, 1) * 32767).astype('int16').tobytes())
+except Exception as e:  # noqa: BLE001
+    print('samples skipped:', e, flush=True)
 sh(f'cp {last} {W}/out/last.ckpt')
 cleanup()
 print('done')
