@@ -181,7 +181,12 @@ def synth_pcm(text, vid, rate):
 
 
 SOUNDS = '/var/www/html/assets/sounds'
-MEMO_LIMITS = {'segments': 200, 'chars': 20000, 'delay': 300, 'end_delay': 600, 'speech_minutes': 30, 'minutes': 180}
+MEMO_LIMITS = {'segments': 200, 'chars': 20000, 'delay': 3600, 'end_delay': 3600, 'speech_minutes': 30, 'minutes': 180}   # pauses in seconds
+
+
+def human(seconds):
+    m = round(seconds / 60)
+    return f"{m // 60} h {m % 60} min" if m >= 60 and m % 60 else (f"{m // 60} h" if m >= 60 else f"{m} min")
 
 
 def memo_mp3(segments, vid, rate, delay, end_delay, sound):
@@ -195,7 +200,8 @@ def memo_mp3(segments, vid, rate, delay, end_delay, sound):
     lead, last = 1.0, (end_delay if end_delay > 0 else 0)   # lead-in silence: fade-in players swallow the first syllables
     pauses = lead + last + (delay * (len(segments) - 1) if delay > 0 else 0)
     if pauses > 60 * MEMO_LIMITS['minutes']:
-        raise ValueError(f"the pauses alone are {pauses / 60:.0f} min, the limit for the whole file is {MEMO_LIMITS['minutes']} min")
+        raise ValueError(f"the whole recording can be {human(60 * MEMO_LIMITS['minutes'])} at most, and the pauses come to {human(pauses)} "
+                         f"({len(segments)} lines, {human(delay)} between them and {human(end_delay)} at the end)")
     sound_pcm = None
     if sound:
         sound_pcm = np.frombuffer(subprocess.run(
@@ -219,13 +225,13 @@ def memo_mp3(segments, vid, rate, delay, end_delay, sound):
                 pcm, _ = synth_pcm(seg, vid, rate)
                 speech += len(pcm) / sr
                 if speech > 60 * MEMO_LIMITS['speech_minutes']:
-                    raise ValueError(f"the speech is longer than {MEMO_LIMITS['speech_minutes']} min (the pauses do not count)")
+                    raise ValueError(f"the speech itself can be {MEMO_LIMITS['speech_minutes']} min at most (the pauses do not count)")
                 proc.stdin.write(pcm.astype(np.float32).tobytes())
                 if i < len(segments) - 1 and delay > 0:
                     silence(delay)
             total = pauses + speech + (len(sound_pcm) / sr if sound_pcm is not None else 0)
             if total > 60 * MEMO_LIMITS['minutes']:
-                raise ValueError(f"the whole file would be {total / 60:.0f} min, the limit is {MEMO_LIMITS['minutes']} min")
+                raise ValueError(f"the whole recording would be {human(total)}, the limit is {human(60 * MEMO_LIMITS['minutes'])}")
             if sound_pcm is not None:
                 proc.stdin.write(sound_pcm.astype(np.float32).tobytes())
             silence(last)
@@ -277,13 +283,17 @@ class Handler(BaseHTTPRequestHandler):
             segs = [str(x).strip()[:MAX_CHARS] for x in req.get('segments', []) if str(x).strip()]
             vid = str(req.get('voice') or 'pratham')
             rate = min(max(float(req.get('rate', 1.0)), 0.25), 3.0)
-            delay = min(max(float(req.get('delay', 2)), 0), MEMO_LIMITS['delay'])
-            end_delay = min(max(float(req.get('end_delay', 0)), 0), MEMO_LIMITS['end_delay'])
+            delay = max(float(req.get('delay', 2)), 0)
+            end_delay = max(float(req.get('end_delay', 0)), 0)
             sound = str(req.get('sound') or '')
         except (ValueError, TypeError):
             return self.reply(400, {'error': {'message': 'bad request'}})
         if vid not in VOICES:
             return self.reply(400, {'error': {'message': 'unknown voice'}})
+        if delay > MEMO_LIMITS['delay']:
+            return self.reply(413, {'error': {'message': f"the interval between lines can be {human(MEMO_LIMITS['delay'])} at most, yours is {human(delay)}"}})
+        if end_delay > MEMO_LIMITS['end_delay']:
+            return self.reply(413, {'error': {'message': f"the end wait can be {human(MEMO_LIMITS['end_delay'])} at most, yours is {human(end_delay)}"}})
         if sound and (sound not in ('gong.mp3', 'tick.mp3') or not os.path.exists(os.path.join(SOUNDS, sound))):
             sound = ''
         if not segs:
