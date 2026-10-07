@@ -34,7 +34,7 @@ from piper import PiperVoice, SynthesisConfig
 from pali_ipa import to_ipa, tune
 from respell import en_phonemes, respell, ru_phonemes
 
-RULES_VERSION = 'r26'  # bump when pali_ipa rules change, so cached mp3 are not reused
+RULES_VERSION = 'r27'  # bump when pali_ipa rules change, so cached mp3 are not reused
 MAX_CHARS = 2000
 RATE_LIMIT = 60  # requests per client IP per minute
 VOICES = {  # id -> (model file, language); 'pi*' voices are fed our Pali IPA
