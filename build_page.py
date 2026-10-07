@@ -4,9 +4,9 @@ import random
 import re
 import time
 
-ROUND = 'r33'
-TITLE = 'Pali TTS — раунд 33: kāyasamphassajaṁ'
-INTRO = ('DN 22: «кайя сасфассазян». Варианты одного слова kāyasamphassajaṁ, 0.7x, по 2 дубля, вперемешку. <b>★ лучший</b>, <b>✓ норм</b>, <b>✗ плохо</b>.')
+ROUND = 'r34'
+TITLE = 'Pali TTS — раунд 34: j'
+INTRO = ('Все j (jā, jarā, sañjāti, vijjā, jhānaṁ): как сейчас, «дж», «дь». 0.7x, по 2 дубля, вперемешку. <b>★ лучший</b>, <b>✓ норм</b>, <b>✗ плохо</b>.')
 idx = json.load(open(f'out/{ROUND}/index.json', encoding='utf-8'))
 ver = int(time.time())
 phrases = []
