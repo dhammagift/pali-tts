@@ -12,7 +12,8 @@ SMOKE = os.environ.get('SMOKE', '0') == '1' or bool(glob.glob('/kaggle/input/**/
 # RESUME: a previous run's last.ckpt in the inputs (dataset ru-dg-voice-ckpt) - training continues from it
 # (optimizer, epoch counter) instead of a fresh warm start from ruslan
 RESUME = (glob.glob('/kaggle/input/**/last.ckpt', recursive=True) or [None])[0]  # Kaggle flattens the dataset: at its root
-MAX_TIME = '00:00:08:00' if SMOKE else os.environ.get('MAX_TIME', '00:02:15:00')  # what was left of the weekly GPU quota (2026-10-07)
+# max_time counts from the start of the first run: the resumed checkpoint already has 6:40 elapsed
+MAX_TIME = '00:06:48:00' if SMOKE else os.environ.get('MAX_TIME', '00:08:35:00')  # +1:55, what is left of the weekly GPU quota (2026-10-07)
 W = '/kaggle/working'
 DATA = os.path.dirname(glob.glob('/kaggle/input/**/metadata.csv', recursive=True)[0])
 CKPT_URL = ('https://huggingface.co/datasets/rhasspy/piper-checkpoints/resolve/main/ru/ru_RU/ruslan/medium/'
