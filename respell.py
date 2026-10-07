@@ -119,6 +119,11 @@ RU_SOFTEN = {'л': ('ɭ', 'l'), 'н': ('n',), 'в': ('v', 'f'), 'м': ('m',), '�
 RU_WORD = re.compile(r'[а-яё]+(?:-[а-яё]+)*')
 
 
+# espeak's stress is wrong for some names (owner, ruvoice1/2: Варанаси, Исипатане): whole words in espeak's style
+RU_STRESS = {'варанаси': 'vʌrʌnˈɑsʲɪ', 'исипатана': 'ɪsʲɪpʌtˈɑna', 'исипатане': 'ɪsʲɪpʌtˈɑnʲi',
+             'исипатану': 'ɪsʲɪpʌtˈɑnu', 'исипатаной': 'ɪsʲɪpʌtˈɑnəj'}
+
+
 def ru_soften(word, phonemes):
     """word: one Russian word; phonemes: its phonemes. Adds ʲ after л/н/в/м/р that stand before ь."""
     out = list(phonemes)
@@ -155,7 +160,9 @@ def ru_phonemes(voice, text):
     fixed, wi = {}, 0
     for ti, t in enumerate(tokens):
         if any(c.isalpha() for c in t):
-            if 'ь' in words[wi]:
+            if words[wi] in RU_STRESS:  # keep the punctuation glued to the word
+                fixed[ti] = list(RU_STRESS[words[wi]]) + [c for c in t if not c.isalpha() and c not in 'ˈˌːʲ']
+            elif 'ь' in words[wi]:
                 fixed[ti] = ru_soften(words[wi], t)
             wi += 1
     out, ti, cur = [], 0, []
@@ -199,6 +206,7 @@ if __name__ == '__main__':
     assert respell('Tathāgata and phassa', 'en') == 'Tataagata and passa', respell('Tathāgata and phassa', 'en')
     assert respell('the thing that the Buddha said, abhorred', 'en') == 'the thing that the Buddha said, abhorred'  # English untouched
     assert respell('the Dhamma and dukkha', 'en') == 'the Damma and dukka'
+    assert RU_STRESS['исипатане'].count('ˈ') == 1
     assert en_ipa('dhamma') == 'dˈʌmɐ', en_ipa('dhamma')
     assert en_ipa('sutta') == 'sˈʊtɐ', en_ipa('sutta')
     assert en_ipa('gotamo') == 'ɡˈəʊtɐməʊ', en_ipa('gotamo')
