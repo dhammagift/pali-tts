@@ -14,7 +14,6 @@ from piper import PiperVoice, SynthesisConfig
 
 from respell import ru_phonemes
 
-MODEL = sys.argv[1]
 OUT = 'out/ruvoice1'
 LINES = ['Это, монахи, боль благородно-истина.',
          'И с запущенным колесом Учения о действительности местные божества провозгласили.',
@@ -35,6 +34,7 @@ def render(voice, text, f):
 
 
 if __name__ == '__main__':
+    MODEL = sys.argv[1]
     new = PiperVoice.load(f'{MODEL}/ru_dg-medium.onnx', config_path=f'{MODEL}/ru_dg-medium.onnx.json')
     ruslan = PiperVoice.load('models/ru_RU-ruslan-medium.onnx')
     os.makedirs(OUT, exist_ok=True)
