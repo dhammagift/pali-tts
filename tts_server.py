@@ -181,29 +181,61 @@ def synth_pcm(text, vid, rate):
 
 
 SOUNDS = '/var/www/html/assets/sounds'
-MEMO_LIMITS = {'segments': 200, 'chars': 20000, 'delay': 300, 'end_delay': 600, 'minutes': 45}
+MEMO_LIMITS = {'segments': 200, 'chars': 20000, 'delay': 300, 'end_delay': 600, 'speech_minutes': 30, 'minutes': 180}
 
 
 def memo_mp3(segments, vid, rate, delay, end_delay, sound):
     """The Memo page's lines read one after another with `delay` seconds of silence between them, then
-    an optional sound and `end_delay` of silence, as one mp3."""
-    parts, sr = [], None
-    for i, seg in enumerate(segments):
-        pcm, sr = synth_pcm(seg, vid, rate)
-        parts.append(pcm)
-        if i < len(segments) - 1 and delay > 0:
-            parts.append(np.zeros(int(sr * delay), dtype=np.float32))
-        if sum(len(p) for p in parts) > sr * 60 * MEMO_LIMITS['minutes']:
-            raise ValueError(f"longer than {MEMO_LIMITS['minutes']} minutes")
+    an optional sound and `end_delay` of silence, as one mp3.
+
+    Two limits, because they cost different things: SPEECH (the synthesis, CPU) at most speech_minutes,
+    the WHOLE file at most minutes. Silence costs next to nothing, so it is not held in memory: it is
+    fed to ffmpeg in chunks, and the pauses are known before the first word is synthesized."""
+    sr = get_voice(vid).config.sample_rate
+    lead, last = 1.0, (end_delay if end_delay > 0 else 0)   # lead-in silence: fade-in players swallow the first syllables
+    pauses = lead + last + (delay * (len(segments) - 1) if delay > 0 else 0)
+    if pauses > 60 * MEMO_LIMITS['minutes']:
+        raise ValueError(f"the pauses alone are {pauses / 60:.0f} min, the limit for the whole file is {MEMO_LIMITS['minutes']} min")
+    sound_pcm = None
     if sound:
-        parts.append(np.frombuffer(subprocess.run(
+        sound_pcm = np.frombuffer(subprocess.run(
             ['ffmpeg', '-loglevel', 'error', '-i', os.path.join(SOUNDS, sound), '-f', 'f32le', '-ac', '1', '-ar', str(sr), '-'],
-            capture_output=True, check=True).stdout, dtype=np.float32) * 0.6)
-    if end_delay > 0:
-        parts.append(np.zeros(int(sr * end_delay), dtype=np.float32))
-    # lead-in silence: players with fade-in swallow the first syllables
-    parts.insert(0, np.zeros(int(sr * 1.0), dtype=np.float32))
-    return encode_mp3(np.concatenate(parts), sr)
+            capture_output=True, check=True).stdout, dtype=np.float32) * 0.6
+    with tempfile.NamedTemporaryFile(suffix='.mp3') as f:
+        # Into a file (not a pipe) so ffmpeg can go back and write the Xing header (see encode_mp3).
+        proc = subprocess.Popen(['ffmpeg', '-loglevel', 'error', '-y', '-f', 'f32le', '-ar', str(sr), '-ac', '1', '-i', '-',
+                                 '-q:a', MP3_QUALITY, f.name], stdin=subprocess.PIPE)
+        try:
+            def silence(seconds):
+                left = int(sr * seconds)
+                chunk = np.zeros(sr * 10, dtype=np.float32).tobytes()          # 10 s at a time
+                while left > 0:
+                    n = min(left, sr * 10)
+                    proc.stdin.write(chunk if n == sr * 10 else np.zeros(n, dtype=np.float32).tobytes())
+                    left -= n
+            silence(lead)
+            speech = 0.0
+            for i, seg in enumerate(segments):
+                pcm, _ = synth_pcm(seg, vid, rate)
+                speech += len(pcm) / sr
+                if speech > 60 * MEMO_LIMITS['speech_minutes']:
+                    raise ValueError(f"the speech is longer than {MEMO_LIMITS['speech_minutes']} min (the pauses do not count)")
+                proc.stdin.write(pcm.astype(np.float32).tobytes())
+                if i < len(segments) - 1 and delay > 0:
+                    silence(delay)
+            total = pauses + speech + (len(sound_pcm) / sr if sound_pcm is not None else 0)
+            if total > 60 * MEMO_LIMITS['minutes']:
+                raise ValueError(f"the whole file would be {total / 60:.0f} min, the limit is {MEMO_LIMITS['minutes']} min")
+            if sound_pcm is not None:
+                proc.stdin.write(sound_pcm.astype(np.float32).tobytes())
+            silence(last)
+            proc.stdin.close()
+            if proc.wait() != 0:
+                raise RuntimeError('mp3 encoding failed')
+        except BaseException:
+            proc.kill(); proc.wait()
+            raise
+        return open(f.name, 'rb').read()
 
 
 class Handler(BaseHTTPRequestHandler):

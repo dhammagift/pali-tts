@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pali TTS тест</title>
+<style>
+:root{--bg:#faf8f4;--fg:#222;--muted:#6b6560;--card:#fff;--line:#e6e0d8;--accent:#b5651d;--good:#2e7d32;--bad:#c62828;--best:#b8860b;--chip:#f1ece4;--mark:#ffd9d6}
+@media (prefers-color-scheme:dark){:root{--bg:#16140f;--fg:#ece6dc;--muted:#a59d92;--card:#211e18;--line:#3a352c;--accent:#e0a060;--good:#66bb6a;--bad:#ef5350;--best:#f0c040;--chip:#2c2820;--mark:#5a2420}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 system-ui,sans-serif}
+main{max-width:820px;margin:auto;padding:16px 16px 80px}
+h1{font-size:1.35rem;margin:.2em 0}
+.lead{color:var(--muted);font-size:.95rem}
+.lead b{color:var(--fg)}
+.bar{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:8px 0;display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:.9rem}
+.bar .status{margin-left:auto;color:var(--muted)}
+section{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin:14px 0}
+.words{font-style:italic;font-size:1.08rem;line-height:2}
+.w{display:inline-block;padding:0 4px;margin:1px 0;border-radius:6px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.w:hover{background:var(--chip)}
+.w.on{background:var(--mark);text-decoration:underline wavy var(--bad)}
+.note{color:var(--muted);margin:2px 0 6px;font-size:.88rem}
+h2.sec{font-size:1.15rem;margin:28px 0 4px}
+section.multi .row .label{display:block}
+.hint{color:var(--muted);font-size:.8rem;margin:0 0 6px}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:8px 0;border-top:1px solid var(--line)}
+.row .name{flex:0 0 auto;font-weight:600;min-width:1.6em}
+.row .label{display:none;flex:1 1 100%;font-size:.82rem;color:var(--accent);order:5}
+body.reveal .row .label{display:block}
+.row audio{flex:1 1 220px;min-width:0;height:36px}
+.btns{display:flex;gap:6px}
+.btns button{font:inherit;font-size:.88rem;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--chip);color:var(--fg);cursor:pointer;min-height:36px}
+.btns .pl{min-width:40px;font-weight:700}
+.btns button[data-v=best].sel{background:var(--best);border-color:var(--best);color:#111}
+.btns button[data-v=ok].sel{background:var(--good);border-color:var(--good);color:#fff}
+.btns button[data-v=bad].sel{background:var(--bad);border-color:var(--bad);color:#fff}
+textarea{width:100%;margin-top:8px;font:inherit;font-size:.92rem;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);min-height:2.6em;resize:vertical}
+details{font-size:.8rem;color:var(--muted)} code{word-break:break-word}
+section.done{border-color:var(--good)}
+</style>
+</head>
+<body>
+<main>
+<h1>Твой голос: клон (Chatterbox)</h1>
+<p class="lead">Chatterbox Multilingual (открытая, MIT) прочитал фразы твоим голосом по 18-секундному куску твоей записи SN 56.11, без обучения. Если клон устроит, им начитаем 1–2 часа и дообучим из этого быстрый голос Piper (ONNX), как ruslan. Оценивай похожесть на тебя и правильность чтения.</p>
+<div class="bar"><span id="progress"></span><label><input type="checkbox" id="reveal"> показать, кто есть кто</label><span class="status" id="status"></span></div>
+<div id="list"></div>
+</main>
+<script>
+const DATA = {"round": "clone1", "phrases": [{"id": "ru0", "text": "Это, монахи, боль благородно-истина.", "note": "★ нравится (можно несколько), ✓ норм, ✗ плохо", "ipa": "", "script": "", "section": "Русский", "multi": true, "words": ["Это,", "монахи,", "боль", "благородно-истина."], "variants": [{"id": "c1", "letter": "клон · дубль 1", "label": "Chatterbox, твой голос по образцу 18 с", "src": "audio/clone1/ru0.1.mp3?v=1791244627"}, {"id": "c2", "letter": "клон · дубль 2", "label": "Chatterbox, твой голос по образцу 18 с", "src": "audio/clone1/ru0.2.mp3?v=1791244627"}, {"id": "now", "letter": "сейчас на сайте: ruslan", "label": "для сравнения", "src": "audio/clone1/ru0.now.mp3?v=1791244627"}]}, {"id": "ru1", "text": "И с запущенным колесом Учения о действительности местные божества провозгласили.", "note": "★ нравится (можно несколько), ✓ норм, ✗ плохо", "ipa": "", "script": "", "section": "Русский", "multi": true, "words": ["И", "с", "запущенным", "колесом", "Учения", "о", "действительности", "местные", "божества", "провозгласили."], "variants": [{"id": "c1", "letter": "клон · дубль 1", "label": "Chatterbox, твой голос по образцу 18 с", "src": "audio/clone1/ru1.1.mp3?v=1791244627"}, {"id": "c2", "letter": "клон · дубль 2", "label": "Chatterbox, твой голос по образцу 18 с", "src": "audio/clone1/ru1.2.mp3?v=1791244627"}, {"id": "now", "letter": "сейчас на сайте: ruslan", "label": "для сравнения", "src": "audio/clone1/ru1.now.mp3?v=1791244627"}]}, {"id": "ru2", "text": "Вот Благословенным в Варанаси, в Исипатане, в Оленьем Парке запущено колесо непревзойдённого Учения.", "note": "★ нравится (можно несколько), ✓ норм, ✗ плохо", "ipa": "", "script": "", "section": "Русский", "multi": true, "words": ["Вот", "Благословенным", "в", "Варанаси,", "в", "Исипатане,", "в", "Оленьем", "Парке", "запущено", "колесо", "непревзойдённого", "Учения."], "variants": [{"id": "c1", "letter": "клон · дубль 1", "label": "Chatterbox, твой голос по образцу 18 с", "src": "audio/clone1/ru2.1.mp3?v=1791244627"}, {"id": "c2", "letter": "клон · дубль 2", "label": "Chatterbox, твой голос по образцу 18 с", "src": "audio/clone1/ru2.2.mp3?v=1791244627"}, {"id": "now", "letter": "сейчас на сайте: ruslan", "label": "для сравнения", "src": "audio/clone1/ru2.now.mp3?v=1791244627"}]}, {"id": "ru3", "text": "И что такое, монахи, боль? Та которая, монахи, телесная боль, телесный дискомфорт, это называется, монахи, боль.", "note": "★ нравится (можно несколько), ✓ норм, ✗ плохо", "ipa": "", "script": "", "section": "Русский", "multi": true, "words": ["И", "что", "такое,", "монахи,", "боль?", "Та", "которая,", "монахи,", "телесная", "боль,", "телесный", "дискомфорт,", "это", "называется,", "монахи,", "боль."], "variants": [{"id": "c1", "letter": "клон · дубль 1", "label": "Chatterbox, твой голос по образцу 18 с", "src": "audio/clone1/ru3.1.mp3?v=1791244627"}, {"id": "c2", "letter": "клон · дубль 2", "label": "Chatterbox, твой голос по образцу 18 с", "src": "audio/clone1/ru3.2.mp3?v=1791244627"}, {"id": "now", "letter": "сейчас на сайте: ruslan", "label": "для сравнения", "src": "audio/clone1/ru3.now.mp3?v=1791244627"}]}, {"id": "ru4", "text": "Татхагата, ниббана, дхамма, сангха.", "note": "★ нравится (можно несколько), ✓ норм, ✗ плохо", "ipa": "", "script": "", "section": "Русский", "multi": true, "words": ["Татхагата,", "ниббана,", "дхамма,", "сангха."], "variants": [{"id": "c1", "letter": "клон · дубль 1", "label": "Chatterbox, твой голос по образцу 18 с", "src": "audio/clone1/ru4.1.mp3?v=1791244627"}, {"id": "c2", "letter": "клон · дубль 2", "label": "Chatterbox, твой голос по образцу 18 с", "src": "audio/clone1/ru4.2.mp3?v=1791244627"}, {"id": "now", "letter": "сейчас на сайте: ruslan", "label": "для сравнения", "src": "audio/clone1/ru4.now.mp3?v=1791244627"}]}, {"id": "en0", "text": "At one time the Buddha was staying near Varanasi in the deer park at Isipatana.", "note": "★ нравится (можно несколько), ✓ норм, ✗ плохо", "ipa": "", "script": "", "section": "English", "multi": true, "words": ["At", "one", "time", "the", "Buddha", "was", "staying", "near", "Varanasi", "in", "the", "deer", "park", "at", "Isipatana."], "variants": [{"id": "c1", "letter": "клон · дубль 1", "label": "Chatterbox, твой голос по образцу 18 с", "src": "audio/clone1/en0.1.mp3?v=1791244627"}, {"id": "c2", "letter": "клон · дубль 2", "label": "Chatterbox, твой голос по образцу 18 с", "src": "audio/clone1/en0.2.mp3?v=1791244627"}, {"id": "now", "letter": "сейчас на сайте: alan", "label": "для сравнения", "src": "audio/clone1/en0.now.mp3?v=1791244627"}]}, {"id": "en1", "text": "There the Buddha addressed the group of five mendicants.", "note": "★ нравится (можно несколько), ✓ норм, ✗ плохо", "ipa": "", "script": "", "section": "English", "multi": true, "words": ["There", "the", "Buddha", "addressed", "the", "group", "of", "five", "mendicants."], "variants": [{"id": "c1", "letter": "клон · дубль 1", "label": "Chatterbox, твой голос по образцу 18 с", "src": "audio/clone1/en1.1.mp3?v=1791244627"}, {"id": "c2", "letter": "клон · дубль 2", "label": "Chatterbox, твой голос по образцу 18 с", "src": "audio/clone1/en1.2.mp3?v=1791244627"}, {"id": "now", "letter": "сейчас на сайте: alan", "label": "для сравнения", "src": "audio/clone1/en1.now.mp3?v=1791244627"}]}, {"id": "en2", "text": "And when the Buddha rolled forth the Wheel of Dhamma, the earth gods raised the cry.", "note": "★ нравится (можно несколько), ✓ норм, ✗ плохо", "ipa": "", "script": "", "section": "English", "multi": true, "words": ["And", "when", "the", "Buddha", "rolled", "forth", "the", "Wheel", "of", "Dhamma,", "the", "earth", "gods", "raised", "the", "cry."], "variants": [{"id": "c1", "letter": "клон · дубль 1", "label": "Chatterbox, твой голос по образцу 18 с", "src": "audio/clone1/en2.1.mp3?v=1791244627"}, {"id": "c2", "letter": "клон · дубль 2", "label": "Chatterbox, твой голос по образцу 18 с", "src": "audio/clone1/en2.2.mp3?v=1791244627"}, {"id": "now", "letter": "сейчас на сайте: alan", "label": "для сравнения", "src": "audio/clone1/en2.now.mp3?v=1791244627"}]}, {"id": "en3", "text": "In brief, the five grasping aggregates are suffering.", "note": "★ нравится (можно несколько), ✓ норм, ✗ плохо", "ipa": "", "script": "", "section": "English", "multi": true, "words": ["In", "brief,", "the", "five", "grasping", "aggregates", "are", "suffering."], "variants": [{"id": "c1", "letter": "клон · дубль 1", "label": "Chatterbox, твой голос по образцу 18 с", "src": "audio/clone1/en3.1.mp3?v=1791244627"}, {"id": "c2", "letter": "клон · дубль 2", "label": "Chatterbox, твой голос по образцу 18 с", "src": "audio/clone1/en3.2.mp3?v=1791244627"}, {"id": "now", "letter": "сейчас на сайте: alan", "label": "для сравнения", "src": "audio/clone1/en3.now.mp3?v=1791244627"}]}]};
+const API = (DATA.api || 'vote.php') + '?round=' + DATA.round;
+const $ = (s, el = document) => el.querySelector(s);
+let state = {};
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+function key(p, kind, v = '') { return p + '|' + kind + '|' + v; }
+
+async function save(phrase, kind, variant, value) {
+  state[key(phrase, kind, variant)] = value;
+  $('#status').textContent = 'сохраняю…';
+  try {
+    const r = await fetch(API, { method: 'POST', body: JSON.stringify({ phrase, kind, variant, value }) });
+    $('#status').textContent = r.ok ? 'сохранено ✓' : 'ошибка сохранения';
+  } catch { $('#status').textContent = 'нет сети — не сохранено'; }
+  progress();
+}
+
+function progress() {
+  let n = 0;
+  for (const p of DATA.phrases) {
+    const done = p.variants.some(v => state[key(p.id, 'rating', v.id)] === 'best');
+    document.getElementById(p.id).classList.toggle('done', done);
+    if (done) n++;
+  }
+  $('#progress').textContent = `Оценено: ${n} из ${DATA.phrases.length}`;
+}
+
+function render() {
+  const list = $('#list');
+  let lastSection = '';
+  for (const p of DATA.phrases) {
+    if (p.section !== lastSection) {
+      lastSection = p.section;
+      const h = document.createElement('h2'); h.className = 'sec'; h.textContent = p.section; list.appendChild(h);
+    }
+    const sec = document.createElement('section');
+    sec.id = p.id;
+    if (p.multi) sec.classList.add('multi');
+    const marked = new Set(state[key(p.id, 'words')] || []);
+    sec.innerHTML = `
+      <div class="words">${p.words.map((w, i) => `<span class="w${marked.has(i + ':' + w) ? ' on' : ''}" data-i="${i}">${w}</span>`).join(' ')}</div>
+      <p class="note">${p.id} · ${p.note}</p>
+      ${p.multi ? '' : '<p class="hint">нажмите на слово, которое лучший вариант читает неправильно</p>'}
+      ${p.variants.map(v => `
+        <div class="row" data-v="${v.id}">
+          <span class="name">${v.letter}</span>
+          <audio controls preload="none" src="${v.src}"></audio>
+          <span class="btns">
+            <button class="pl" title="Слушать / стоп">▶</button><button data-v="best">★ ${p.multi ? 'нравится' : 'лучший'}</button><button data-v="ok">✓ норм</button><button data-v="bad">✗ плохо</button>
+          </span>
+          <span class="label">${v.letter} = ${v.label}</span>
+        </div>`).join('')}
+      <textarea placeholder="Комментарий: что не так, как должно звучать…">${esc(state[key(p.id, 'comment')] || '')}</textarea>
+      ${p.ipa ? `<details><summary>фонемы / письмо каннада</summary><code>${p.ipa}</code><br><code>${p.script}</code></details>` : ''}`;
+    list.appendChild(sec);
+
+    const paint = () => sec.querySelectorAll('.row').forEach(row => {
+      const val = state[key(p.id, 'rating', row.dataset.v)];
+      row.querySelectorAll('button').forEach(b => b.classList.toggle('sel', b.dataset.v === val));
+    });
+    paint();
+    // small ▶ next to the ratings: listen and rate without reaching for the audio bar; one sound at a time
+    sec.querySelectorAll('.row .pl').forEach(b => b.onclick = () => {
+      const a = b.closest('.row').querySelector('audio');
+      if (!a.paused) { a.pause(); return; }
+      document.querySelectorAll('audio').forEach(x => { if (x !== a) x.pause(); });
+      a.currentTime = 0; a.play();
+    });
+    sec.querySelectorAll('.row audio').forEach(a => {
+      const b = a.closest('.row').querySelector('.pl');
+      a.onplay = () => { document.querySelectorAll('audio').forEach(x => { if (x !== a) x.pause(); }); b.textContent = '■'; };
+      a.onpause = a.onended = () => { b.textContent = '▶'; };
+    });
+    sec.querySelectorAll('.row button[data-v]').forEach(b => b.onclick = () => {
+      const row = b.closest('.row'), vid = row.dataset.v;
+      if (b.dataset.v === 'best' && !p.multi) {  // only one best per phrase: the old best becomes "ok"
+        for (const v of p.variants) if (v.id !== vid && state[key(p.id, 'rating', v.id)] === 'best') save(p.id, 'rating', v.id, 'ok');
+      }
+      const cur = state[key(p.id, 'rating', vid)];
+      save(p.id, 'rating', vid, cur === b.dataset.v ? '' : b.dataset.v);
+      paint();
+    });
+    sec.querySelectorAll('.w').forEach(w => w.onclick = () => {
+      w.classList.toggle('on');
+      const on = [...sec.querySelectorAll('.w.on')].map(x => x.dataset.i + ':' + x.textContent);
+      save(p.id, 'words', '', on);
+    });
+    let t;
+    $('textarea', sec).oninput = e => { clearTimeout(t); t = setTimeout(() => save(p.id, 'comment', '', e.target.value), 700); };
+  }
+  // one player at a time
+  document.addEventListener('play', e => document.querySelectorAll('audio').forEach(a => a !== e.target && a.pause()), true);
+  progress();
+}
+
+$('#reveal').onchange = e => document.body.classList.toggle('reveal', e.target.checked);
+fetch(API).then(r => r.json()).then(s => { state = s || {}; }).catch(() => {}).finally(render);
+</script>
+</body>
+</html>
