@@ -141,6 +141,8 @@ PRATHAM_RULES = [
     (re.compile(r'(?<=ɪ)ŋŋ(?=[ ,.?!:;]|$)'), 'm'),
     # round 38: tiṇṇaṁ was bad as ɳɳən in both engines; a long ɳ won (best + ok), full a / dental nn did not
     (re.compile(r'ɳɳ(?=ən(?=[ ,.?!:;]|$))'), 'ɳː'),
+    # rounds 38-39: the final -ha of Tasmātiha was not heard at all (hʌ, ha, ɦʌ, ɦaː); a long a won (best + ok)
+    (re.compile(r'(?<=ɪ)hʌ(?=[ ,.?!:;]|$)'), 'haː'),
 ]
 
 
@@ -227,6 +229,7 @@ if __name__ == '__main__':
     assert 'ʋˈeːdʌjɪtən' in tune(to_ipa('vedayitaṁ', full_a=True))
     assert 'sʌmphˈʌssʌɟɟən' in tune(to_ipa('kāyasamphassajaṁ', full_a=True))
     assert tune(to_ipa('arahaṁ ahaṁ', full_a=True)) == 'ˈʌɾʌhʌn ˈʌhʌn'  # round 32
+    assert tune(to_ipa('Tasmātiha, bhikkhave', full_a=True)) == 'tʌsmˈaːtɪhaː, bʰˈɪkkʰʌʋeː'  # round 39
     assert tune(to_ipa('Tiṇṇaṁ saṅgati', full_a=True)) == 'tˈɪɳːən sˈʌŋɡatɪ'  # round 38
     assert tune(to_ipa('evaṁ me sutaṁ cakkhuṁ', full_a=True)) == 'ˈeːʋən mˈeː sˈʊtən cˈʌkkʰu\u0303'  # round 29
     print('ok')
