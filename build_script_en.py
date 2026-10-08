@@ -1,19 +1,20 @@
-"""Recording script for an English voice (a friend of the owner): sentences from Bhikkhu Sujato's English
-translations on SuttaCentral, so Pali names and terms (Sāvatthī, bhikkhu, Tathāgata) are in the data too.
+"""Recording script for an English voice (a friend of the owner): sentences from DG's English sutta translations,
+Thanissaro Bhikkhu's where a sutta has one, else Bhikkhu Sujato's (owner's choice), so Pali names and terms
+(Sāvatthī, bhikkhu, Tathāgata) are in the data too.
 Picked like build_script.py: greedy cover of phoneme pairs (espeak en-us, as Piper's English voices are trained),
 best lines first, so a session stopped halfway still covers the most.
-Usage: .venv/bin/python build_script_en.py -> site/record-en/script.json
+Usage: .venv/bin/python build_script_en.py /var/www/dg-node-prod/dg.db -> site/record-en/script.json
 """
-import glob
 import heapq
 import json
 import os
 import re
+import sqlite3
+import sys
 from collections import Counter
 
 from piper import PiperVoice
 
-ROOT = '/var/www/html/suttacentral.net/sc-data/sc_bilara_data/translation/en/sujato/sutta'
 TARGET_MIN = 150  # the ideal case; the first lines matter most
 WANT = 4
 SENT = re.compile(r'(?<=[.!?;])\s+')
@@ -34,15 +35,19 @@ def seconds(text):  # calm reading: ~2.6 words a second plus a breath
     return 0.8 + len(text.split()) / 2.6
 
 
+con = sqlite3.connect(f'file:{sys.argv[1]}?mode=ro', uri=True)
+rows = con.execute("select sutta_id, translator, segment_id, txt from texts where lang='en' and kind='translation'"
+                   " and translator in ('thanissaro', 'sujato') order by sutta_id, ord").fetchall()
+than = {r[0] for r in rows if r[1] == 'thanissaro'}
 cands, seen = [], set()
-for f in sorted(glob.glob(f'{ROOT}/**/*.json', recursive=True)):
-    for sid, text in json.load(open(f, encoding='utf-8')).items():
-        if ':0.' in sid:
+for sutta, tr, sid, text in rows:
+    if tr == ('thanissaro' if sutta in than else 'sujato'):
+        if ':0.' in sid or not text:
             continue
         for k, s in enumerate(SENT.split(text.strip().replace('“', '').replace('”', '').replace('‘', ''))):
             s = s.strip(' ’')
             key = re.sub(r'[^a-z]', '', s.lower())
-            if not 30 <= len(s) <= 170 or not GOOD.match(s) or key in seen or s.count('—') > 1:
+            if not 30 <= len(s) <= 170 or not GOOD.match(s) or key in seen or s.count('—') > 1 or s.count('-') > 2:
                 continue
             seen.add(key)
             cands.append((f'{sid}.{k}' if k else sid, s))
