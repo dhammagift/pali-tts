@@ -121,7 +121,9 @@ RU_WORD = re.compile(r'[а-яё]+(?:-[а-яё]+)*')
 
 # espeak's stress is wrong for some names (owner, ruvoice1/2: Варанаси, Исипатане): whole words in espeak's style
 RU_STRESS = {'варанаси': 'vʌrʌnˈɑsʲɪ', 'исипатана': 'ɪsʲɪpʌtˈɑna', 'исипатане': 'ɪsʲɪpʌtˈɑnʲi',
-             'исипатану': 'ɪsʲɪpʌtˈɑnu', 'исипатаной': 'ɪsʲɪpʌtˈɑnəj'}
+             'исипатану': 'ɪsʲɪpʌtˈɑnu', 'исипатаной': 'ɪsʲɪpʌtˈɑnəj',
+             # корпус текстов: espeak reads the plural корпуса́ (buildings); our texts mean ко́рпуса
+             'корпуса': 'kˈorpusʌ'}
 
 
 def ru_soften(word, phonemes):
@@ -207,6 +209,7 @@ if __name__ == '__main__':
     assert respell('the thing that the Buddha said, abhorred', 'en') == 'the thing that the Buddha said, abhorred'  # English untouched
     assert respell('the Dhamma and dukkha', 'en') == 'the Damma and dukka'
     assert RU_STRESS['исипатане'].count('ˈ') == 1
+    assert all(v.count('ˈ') == 1 for v in RU_STRESS.values())
     assert en_ipa('dhamma') == 'dˈʌmɐ', en_ipa('dhamma')
     assert en_ipa('sutta') == 'sˈʊtɐ', en_ipa('sutta')
     assert en_ipa('gotamo') == 'ɡˈəʊtɐməʊ', en_ipa('gotamo')
