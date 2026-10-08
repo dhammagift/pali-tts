@@ -143,6 +143,11 @@ PRATHAM_RULES = [
     (re.compile(r'ɳɳ(?=ən(?=[ ,.?!:;]|$))'), 'ɳː'),
     # rounds 38-39: the final -ha of Tasmātiha was not heard at all (hʌ, ha, ɦʌ, ɦaː); a long a won (best + ok)
     (re.compile(r'(?<=ɪ)hʌ(?=[ ,.?!:;]|$)'), 'haː'),
+    # rounds 38-40: an unstressed word-final o inside a phrase was heard short next to a long ā (measured: ~110 ms
+    # vs ~140 ms stressed ā). oːː, ˌoː, ˈoː, ɔːː, oːˑ (rounds 38-39) were all still short; a triple oː (~230 ms)
+    # won in both phrases (best + ok). Only before the next word: phrase-final o is already long (~300 ms), and a
+    # stressed one-syllable word (sˈoː, khˈoː) keeps its own o.
+    (re.compile(r'(?<=[^ ,ˈˌ])oː(?= )'), 'oːoːoː'),
 ]
 
 
@@ -229,6 +234,8 @@ if __name__ == '__main__':
     assert 'ʋˈeːdʌjɪtən' in tune(to_ipa('vedayitaṁ', full_a=True))
     assert 'sʌmphˈʌssʌɟɟən' in tune(to_ipa('kāyasamphassajaṁ', full_a=True))
     assert tune(to_ipa('arahaṁ ahaṁ', full_a=True)) == 'ˈʌɾʌhʌn ˈʌhʌn'  # round 32
+    assert tune(to_ipa('Ātāpī sampajāno satimā.', full_a=True)) == 'aːtˈaːpiː sʌmpʌɟɟˈaːnoːoːoː sˈʌtɪmaː.'  # round 40
+    assert tune(to_ipa('yogo karaṇīyo.', full_a=True)) == 'jˈoːɡoːoːoː kʌɾʌɳˈiːjoː.'
     assert tune(to_ipa('Tasmātiha, bhikkhave', full_a=True)) == 'tʌsmˈaːtɪhaː, bʰˈɪkkʰʌʋeː'  # round 39
     assert tune(to_ipa('Tiṇṇaṁ saṅgati', full_a=True)) == 'tˈɪɳːən sˈʌŋɡatɪ'  # round 38
     assert tune(to_ipa('evaṁ me sutaṁ cakkhuṁ', full_a=True)) == 'ˈeːʋən mˈeː sˈʊtən cˈʌkkʰu\u0303'  # round 29
