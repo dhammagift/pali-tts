@@ -16,3 +16,6 @@ takes/
 record.key
 site/r*.html
 models/*.align.onnx
+takes-en/
+record-en.key
+takes-en-test/

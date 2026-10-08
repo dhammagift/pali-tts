@@ -106,8 +106,31 @@ body.prompt #prevBtn,body.prompt #nextBtn{flex:1;padding:16px;font-size:1.2rem}
 </main>
 <script>
 const KEY = new URLSearchParams(location.search).get('k') || '';
+// the same page records the owner's Pali voice (record/) and a friend's English one (record-en/, symlinked here)
+const EN = location.pathname.includes('/record-en/'), T = (ru, en) => EN ? en : ru, LS = EN ? 'rec_en_' : 'rec_';
 const api = (q = '') => `save.php?k=${encodeURIComponent(KEY)}${q}`;
 const $ = id => document.getElementById(id);
+if (EN) {
+  document.documentElement.lang = 'en'; document.title = 'Voice recording';
+  document.querySelector('h1').textContent = 'Voice recording for Dhamma.Gift';
+  document.querySelector('details').innerHTML = `<summary>How to record (please read once)</summary><ul>
+<li>A quiet room without echo (furniture and curtains help). No fan or fridge nearby.</li>
+<li>The same microphone at the same distance (15–20 cm) in every session, a little to the side of your mouth so "p" and "b" don't pop.</li>
+<li>Calm natural reading, as if reading aloud to a friend. Not chanting, not acting. An even pace.</li>
+<li>Pali names (Sāvatthī, Koṇḍañña…): read them the way you normally would; no need to be perfect.</li>
+<li><kbd>Space</kbd> starts recording (while recording: restart), <kbd>Enter</kbd> stops and saves, <kbd>Esc</kbd> cancels. Leave half a second of silence before and after. Saved one with a mistake? <kbd>R</kbd> goes back to it and records again. Arrows move between lines; <kbd>P</kbd> plays a take.</li>
+<li>The meter: green is good, red is too loud (move back). The browser's sound processing is off on purpose.</li>
+<li>Lines go in order of usefulness: the first 100 are a test, the first 300 matter most. Record in several sittings; your progress is kept on the server.</li>
+<li>Below the buttons every take shows <b>"saved on the server ✓"</b> once it is really stored. If you see anything else for long, stop and tell us.</li>
+<li>A bad connection is fine: takes wait in a queue (⏳) and go up by themselves, even after closing the page — just open it again later.</li></ul>`;
+  $('start').textContent = 'Turn on the microphone (record here)';
+  $('textOnly').textContent = 'Text only (I record in another app)';
+  $('nomicNote').textContent = '🎙 Not recording: text-only mode (you record in another app)';
+  $('recBtn').innerHTML = '● Record <kbd>Space</kbd>'; $('stopBtn').innerHTML = '■ Stop and save <kbd>Enter</kbd>';
+  $('playBtn').innerHTML = '▶ Play <kbd>P</kbd>'; $('todoBtn').textContent = 'to the next unrecorded';
+  $('hideBtn').innerHTML = 'Hide controls <kbd>H</kbd>'; $('showBtn').textContent = 'Show controls';
+  $('auto').parentElement.lastChild.textContent = ' after "stop", save and go to the next line';
+}
 let script = [], done = new Set(), i = 0, ctx, chunks = null, lastWav = null, lastUrl = null, peak = 0;
 
 function wavBlob(bufs, rate) {
@@ -126,13 +149,13 @@ function show() {
   const line = script[i];
   $('text').textContent = line.text;
   const top = Math.min(300, script.length), topDone = script.slice(0, top).filter(l => done.has(l.id)).length;
-  $('pos').textContent = i < top ? `${i + 1} из ${top} главных (${topDone} готово)` : `${i + 1} из ${script.length}, дополнительные`;
+  $('pos').textContent = i < top ? T(`${i + 1} из ${top} главных (${topDone} готово)`, `${i + 1} of the first ${top} (${topDone} done)`) : T(`${i + 1} из ${script.length}, дополнительные`, `${i + 1} of ${script.length}, extra`);
   $('sid').textContent = line.id;
-  $('status').textContent = pending.has(line.id) ? '⏳ в очереди' : done.has(line.id) ? '✓ записано' : '';
+  $('status').textContent = pending.has(line.id) ? T('⏳ в очереди', '⏳ queued') : done.has(line.id) ? T('✓ записано', '✓ recorded') : '';
   $('done').style.width = (100 * done.size / script.length) + '%';
   $('playBtn').disabled = !(lastWav && lastWav.idx === i) && !done.has(line.id) && !pending.has(line.id);
   queueInfo();
-  try { localStorage.setItem('rec_pos', i); } catch (e) {}
+  try { localStorage.setItem(LS + 'pos', i); } catch (e) {}
 }
 
 function hint(msg, warn) { $('hint').textContent = msg; $('hint').className = warn ? 'warn' : ''; }
@@ -151,13 +174,13 @@ function idb(mode, fn) {
 async function openQueue() {
   db = await new Promise(res => {
     try {
-      const r = indexedDB.open('pali-rec', 1);
+      const r = indexedDB.open(EN ? 'en-rec' : 'pali-rec', 1);
       r.onupgradeneeded = () => r.result.createObjectStore('q', { keyPath: 'id' });
       r.onsuccess = () => res(r.result); r.onerror = () => res(null);
     } catch (e) { res(null); }
   });
   for (const it of (await idb('readonly', st => st.getAll())) || []) pending.set(it.id, it);
-  if (!db) hint('⚠ Браузер не даёт хранить очередь: не закрывайте страницу, пока «ждут отправки» не станет пусто.', true);
+  if (!db) hint(T('⚠ Браузер не даёт хранить очередь: не закрывайте страницу, пока «ждут отправки» не станет пусто.', '⚠ This browser cannot keep the upload queue: do not close the page until "waiting to upload" is empty.'), true);
   pump();
 }
 // Upload log: one row per take - spinner while it goes up, ✓ only when the server says the file is on disk
@@ -177,14 +200,14 @@ function logRow(it, state, text) {
 }
 function queueInfo() {
   const n = pending.size;
-  $('queue').textContent = n ? `⏳ ждут отправки: ${n}` : '';
+  $('queue').textContent = n ? T(`⏳ ждут отправки: ${n}`, `⏳ waiting to upload: ${n}`) : '';
 }
 function save(idx, blob) {
   const it = { id: script[idx].id, t: Date.now(), blob };
   const older = pending.get(it.id);
-  if (older) logRow(older, 'old', 'заменена новой записью');
+  if (older) logRow(older, 'old', T('заменена новой записью', 'replaced by a new take'));
   pending.set(it.id, it);
-  logRow(it, 'wait', 'в очереди…');
+  logRow(it, 'wait', T('в очереди…', 'queued…'));
   idb('readwrite', st => st.put(it));
   show(); pump();
 }
@@ -192,7 +215,7 @@ async function upload(it) {
   const parts = Math.ceil(it.blob.size / SLICE);
   for (let n = 0; n < parts; n++) {
     const q = `&id=${encodeURIComponent(it.id)}&t=${it.t}&part=${n}&parts=${parts}`;
-    logRow(it, 'wait', parts > 1 ? `отправляется ${n + 1}/${parts}…` : 'отправляется…');
+    logRow(it, 'wait', parts > 1 ? T(`отправляется ${n + 1}/${parts}…`, `uploading ${n + 1}/${parts}…`) : T('отправляется…', 'uploading…'));
     const r = await fetch(api(q), { method: 'POST', body: it.blob.slice(n * SLICE, (n + 1) * SLICE) }).catch(() => null);
     if (!r || !r.ok) return r ? r.status : 0;
     if (n === parts - 1) {
@@ -213,14 +236,14 @@ async function pump() {
     if (code === 200) {
       if (pending.get(it.id) === it) { pending.delete(it.id); idb('readwrite', st => st.delete(it.id)); }
       done.add(it.id); wait = 2000; show();
-      logRow(it, 'ok', `на сервере ✓ ${it.secs} с`);
+      logRow(it, 'ok', T(`на сервере ✓ ${it.secs} с`, `saved on the server ✓ ${it.secs} s`));
     } else if (code === 403 || code === 400) {  // will never succeed: keep the take, stop hammering
-      hint(`Сервер отказал (${code}). Записи сохранены в браузере, обновите страницу позже.`, true);
-      logRow(it, 'fail', `сервер отказал (${code}), запись хранится в браузере`);
+      hint(T(`Сервер отказал (${code}). Записи сохранены в браузере, обновите страницу позже.`, `The server refused (${code}). Your takes are kept in the browser; reload the page later.`), true);
+      logRow(it, 'fail', T(`сервер отказал (${code}), запись хранится в браузере`, `server refused (${code}), take kept in the browser`));
       break;
     } else {
-      $('queue').textContent = `⏳ ждут отправки: ${pending.size} · нет связи, повтор через ${wait / 1000} с`;
-      logRow(it, 'fail', `нет связи (${code || 'сеть'}), повтор через ${wait / 1000} с`);
+      $('queue').textContent = T(`⏳ ждут отправки: ${pending.size} · нет связи, повтор через ${wait / 1000} с`, `⏳ waiting to upload: ${pending.size} · no connection, retry in ${wait / 1000} s`);
+      logRow(it, 'fail', T(`нет связи (${code || 'сеть'}), повтор через ${wait / 1000} с`, `no connection (${code || 'network'}), retry in ${wait / 1000} s`));
       await new Promise(r => setTimeout(r, wait));
       wait = Math.min(wait * 2, 60000);
     }
@@ -233,12 +256,12 @@ addEventListener('beforeunload', e => { if (pending.size && !db) e.preventDefaul
 let timer = null;
 function recUi(on) {
   $('text').classList.toggle('rec', on);
-  $('recBtn').innerHTML = on ? '↻ Заново <kbd>Пробел</kbd>' : '● Запись <kbd>Пробел</kbd>';
+  $('recBtn').innerHTML = on ? T('↻ Заново <kbd>Пробел</kbd>', '↻ Restart <kbd>Space</kbd>') : T('● Запись <kbd>Пробел</kbd>', '● Record <kbd>Space</kbd>');
   $('stopBtn').disabled = !on;
   clearInterval(timer);
   if (on) {
     const t0 = Date.now();
-    const tick = () => $('hint').textContent = (`● Идёт запись, ${((Date.now() - t0) / 1000).toFixed(0)} с. Стоп и сохранить — Enter; заново — Пробел; отмена — Esc`);
+    const tick = () => $('hint').textContent = T(`● Идёт запись, ${((Date.now() - t0) / 1000).toFixed(0)} с. Стоп и сохранить — Enter; заново — Пробел; отмена — Esc`, `● Recording, ${((Date.now() - t0) / 1000).toFixed(0)} s. Stop and save: Enter; restart: Space; cancel: Esc`);
     tick(); timer = setInterval(tick, 500);
     $('hint').className = 'rec';
   }
@@ -250,7 +273,7 @@ let stream = null, watchdog = null;
 async function micAlive() {
   const t = stream && stream.getAudioTracks()[0];
   if (!t || t.readyState !== 'live' || t.muted) {
-    hint('Подключаю микрофон заново…', true);
+    hint(T('Подключаю микрофон заново…', 'Reconnecting the microphone…'), true);
     if (!await connectMic()) return false;
   }
   if (ctx.state !== 'running') await ctx.resume().catch(() => {});
@@ -259,19 +282,19 @@ async function micAlive() {
 
 // Record always starts from scratch: pressed while recording, the take so far is dropped
 async function start() {
-  if (!await micAlive()) return hint('🎙 Микрофон недоступен: обновите страницу и разрешите микрофон.', true);
+  if (!await micAlive()) return hint(T('🎙 Микрофон недоступен: обновите страницу и разрешите микрофон.', '🎙 No microphone: reload the page and allow the microphone.'), true);
   chunks = []; peak = 0;
   recUi(true);
   clearTimeout(watchdog);
   watchdog = setTimeout(() => {  // no sound data at all: say so now, not after the reading
-    if (chunks && !chunks.length) { chunks = null; recUi(false); hint('🎙 Микрофон молчит, запись не идёт. Обновите страницу.', true); }
+    if (chunks && !chunks.length) { chunks = null; recUi(false); hint(T('🎙 Микрофон молчит, запись не идёт. Обновите страницу.', '🎙 The microphone sends nothing, not recording. Reload the page.'), true); }
   }, 1500);
 }
 
 function cancel() {
   if (!chunks) return;
   chunks = null; recUi(false);
-  hint('Запись отменена, ничего не сохранено.');
+  hint(T('Запись отменена, ничего не сохранено.', 'Cancelled, nothing saved.'));
 }
 
 async function stop() {
@@ -283,11 +306,11 @@ async function stop() {
   if (lastUrl) URL.revokeObjectURL(lastUrl);
   lastUrl = URL.createObjectURL(blob);
   const secs = bufs.reduce((s, b) => s + b.length, 0) / ctx.sampleRate;
-  if (secs < 1) return hint('⚠ Слишком коротко (меньше секунды), не сохранено. Запишите заново.', true), show();
+  if (secs < 1) return hint(T('⚠ Слишком коротко (меньше секунды), не сохранено. Запишите заново.', '⚠ Too short (under a second), not saved. Record it again.'), true), show();
   // A loud or quiet take is still saved (levels get evened out later): losing it silently was worse
-  if (peak > 0.98) hint('Записано, но был перегруз: отодвиньтесь немного. Можно перезаписать (R).', true);
-  else if (peak < 0.08) hint('Записано, но тихо: придвиньтесь немного. Можно перезаписать (R).', true);
-  else hint(`Записано: пик ${Math.round(peak * 100)}%, ${secs.toFixed(1)} с`);
+  if (peak > 0.98) hint(T('Записано, но был перегруз: отодвиньтесь немного. Можно перезаписать (R).', 'Saved, but too loud: move back a little. You can re-record it (R).'), true);
+  else if (peak < 0.08) hint(T('Записано, но тихо: придвиньтесь немного. Можно перезаписать (R).', 'Saved, but quiet: move a little closer. You can re-record it (R).'), true);
+  else hint(T(`Записано: пик ${Math.round(peak * 100)}%, ${secs.toFixed(1)} с`, `Recorded: peak ${Math.round(peak * 100)}%, ${secs.toFixed(1)} s`));
   if ($('auto').checked) {
     save(idx, blob);
     if (idx === i && i < script.length - 1) { i++; show(); }
@@ -303,27 +326,29 @@ function play() {
 }
 
 async function load() {
-  if (!KEY) return alert('Откройте ссылку с ключом (?k=…)'), false;
+  if (!KEY) return alert(T('Откройте ссылку с ключом (?k=…)', 'Please open the full link (with ?k=…)')), false;
   const [s, d] = await Promise.all([fetch('script.json').then(r => r.json()), fetch(api()).then(r => r.ok ? r.json() : Promise.reject(r.status))])
-    .catch(e => (alert('Не удалось загрузить: ' + e), []));
+    .catch(e => (alert(T('Не удалось загрузить: ', 'Could not load: ') + e), []));
   if (!s) return false;
   script = s; done = new Set(d);
   await openQueue();
-  let saved = 0; try { saved = +localStorage.getItem('rec_pos') || 0; } catch (e) {}
-  i = Math.min(saved, script.length - 1);
+  // no position in this browser (a new device): the first line not yet on the server, not line 1 again
+  let saved = null; try { saved = localStorage.getItem(LS + 'pos'); } catch (e) {}
+  const todo = script.findIndex(l => !done.has(l.id));
+  i = Math.min(saved !== null ? +saved || 0 : Math.max(todo, 0), script.length - 1);
   $('start').hidden = $('textOnly').hidden = true; $('ui').hidden = false;
   return true;
 }
 
 function prompter(on, remember = true) {
   document.body.classList.toggle('prompt', on);
-  if (remember) try { localStorage.setItem('rec_prompt', on ? '1' : ''); } catch (e) {}
+  if (remember) try { localStorage.setItem(LS + 'prompt', on ? '1' : ''); } catch (e) {}
 }
 
 $('textOnly').onclick = async () => {
   if (!await load()) return;
   document.body.classList.add('nomic');
-  $('showBtn').textContent = '🎙 Записывать здесь';
+  $('showBtn').textContent = T('🎙 Записывать здесь', '🎙 Record here');
   prompter(true, false);  // text-only is its own mode, not remembered as hidden controls
   show();
 };
@@ -331,7 +356,7 @@ $('textOnly').onclick = async () => {
 async function connectMic() {
   // browser "voice processing" (noise suppression, AGC, echo cancel) would bake artifacts into the dataset
   const s = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 } })
-    .catch(e => (alert('Нет доступа к микрофону: ' + e.message), null));
+    .catch(e => (alert(T('Нет доступа к микрофону: ', 'No access to the microphone: ') + e.message), null));
   if (!s) return false;
   if (stream) stream.getTracks().forEach(t => t.stop());
   if (ctx) ctx.close().catch(() => {});
@@ -355,10 +380,10 @@ $('start').onclick = async () => {
   if (!await connectMic()) return;
   $('ui').hidden = false;
   document.body.classList.remove('nomic');
-  $('showBtn').textContent = 'Показать управление';
-  let p = false; try { p = !!localStorage.getItem('rec_prompt'); } catch (e) {}
+  $('showBtn').textContent = T('Показать управление', 'Show controls');
+  let p = false; try { p = !!localStorage.getItem(LS + 'prompt'); } catch (e) {}
   prompter(p);
-  hint(`Частота ${ctx.sampleRate} Гц. Пробел — начать.`);
+  hint(T(`Частота ${ctx.sampleRate} Гц. Пробел — начать.`, `Sample rate ${ctx.sampleRate} Hz. Press Space to start.`));
   show();
 };
 $('recBtn').onclick = start;
