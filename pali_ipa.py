@@ -139,6 +139,8 @@ PRATHAM_RULES = [
     (re.compile(r'(?<=h)ən(?=[ ,.?!:;]|$)'), 'ʌn'),
     (re.compile(r'ʊŋŋ(?=[ ,.?!:;]|$)'), 'u\u0303'),  # u + combining tilde: the voice's map has no precomposed ũ
     (re.compile(r'(?<=ɪ)ŋŋ(?=[ ,.?!:;]|$)'), 'm'),
+    # round 38: tiṇṇaṁ was bad as ɳɳən in both engines; a long ɳ won (best + ok), full a / dental nn did not
+    (re.compile(r'ɳɳ(?=ən(?=[ ,.?!:;]|$))'), 'ɳː'),
 ]
 
 
@@ -225,5 +227,6 @@ if __name__ == '__main__':
     assert 'ʋˈeːdʌjɪtən' in tune(to_ipa('vedayitaṁ', full_a=True))
     assert 'sʌmphˈʌssʌɟɟən' in tune(to_ipa('kāyasamphassajaṁ', full_a=True))
     assert tune(to_ipa('arahaṁ ahaṁ', full_a=True)) == 'ˈʌɾʌhʌn ˈʌhʌn'  # round 32
+    assert tune(to_ipa('Tiṇṇaṁ saṅgati', full_a=True)) == 'tˈɪɳːən sˈʌŋɡatɪ'  # round 38
     assert tune(to_ipa('evaṁ me sutaṁ cakkhuṁ', full_a=True)) == 'ˈeːʋən mˈeː sˈʊtən cˈʌkkʰu\u0303'  # round 29
     print('ok')
