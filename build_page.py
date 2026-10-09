@@ -4,9 +4,9 @@ import random
 import re
 import time
 
-ROUND = 'st2'
-TITLE = 'Supertonic 3: слушается ли знаков ударения (русский)'
-INTRO = ('Знак ударения стоит над гласной в тексте фразы. <b>★</b>/ok — ударение слышно там, где отмечено, <b>✗</b> — нет. Плюс буква ё. Голоса M1 и F1, вперемешку.')
+ROUND = 'stm1clips'
+TITLE = 'Записи Supertonic M1 для обучения Piper'
+INTRO = ('На этих записях M1 сейчас учится Piper. 20 случайных из 1757: <b>ok</b> — чисто и правильно, <b>✗</b> — шум, ошибка чтения или странная интонация (что именно — в комментарии).')
 idx = json.load(open(f'out/{ROUND}/index.json', encoding='utf-8'))
 ver = int(time.time())
 phrases = []
