@@ -37,26 +37,23 @@ from respell import en_phonemes, respell, ru_phonemes
 RULES_VERSION = 'r37'  # bump when pali_ipa rules change, so cached mp3 are not reused
 MAX_CHARS = 2000
 RATE_LIMIT = 60  # requests per client IP per minute
-VOICES = {  # id -> (model file, language); 'pi*' voices are fed our Pali IPA
-    'pratham': ('hi_IN-pratham-medium', 'pi'),
+# id -> (model file, language, menu label). Sites build their voice menus from GET /voices (in this order; the first
+# voice of a language is its default), so a voice is added, renamed or dropped here only, not in DG's voice.js.
+# 'pi*' voices are fed our Pali IPA. Male voices first, then female (owner: the order of the suttas' own lists).
+VOICES = {
+    'pratham': ('hi_IN-pratham-medium', 'pi', 'pratham ♂ · Piper'),
     # the owner's own voice, fine-tuned on their readings (v1, epoch 179: round 13); trained on plain to_ipa
-    'dg': ('pali_dg-medium', 'pi-own'),
+    'dg': ('pali_dg-medium', 'pi-own', 'o Dhamma.Gift ♂ · beta'),
     # female Pali voice (round 44: ok 20 of 22 with pratham's rules, as they are)
-    'priyamvada': ('hi_IN-priyamvada-medium', 'pi'),
-    'alan': ('en_GB-alan-medium', 'en'),
-    'norman': ('en_US-norman-medium', 'en'),
-    'kathleen': ('en_US-kathleen-low', 'en'),
-    'irina': ('ru_RU-irina-medium', 'ru'),
-    'ruslan': ('ru_RU-ruslan-medium', 'ru'),
+    'priyamvada': ('hi_IN-priyamvada-medium', 'pi', 'priyamvada ♀ · Piper'),
+    'alan': ('en_GB-alan-medium', 'en', 'alan ♂ · UK'),
+    'norman': ('en_US-norman-medium', 'en', 'norman ♂ · US'),
+    'kathleen': ('en_US-kathleen-low', 'en', 'kathleen ♀ · US (low)'),
     # the owner's timbre: Piper fine-tuned from ruslan on 1 h read by a Chatterbox clone of his voice (2026-10-07)
-    'dgru': ('ru_dg2-medium', 'ru'),
-    # Supertonic 3 (one 99M engine for all its voices and languages; a voice is a 0.3 MB style file). st1: its M1 was
-    # best in 9 of 10 English / Russian lines, ruslan bad in all 5 Russian. Test voices (test.dhamma.gift) for now.
-    'stm-ru': ('supertonic:M1', 'ru'), 'stf-ru': ('supertonic:F1', 'ru'),
-    'stm-en': ('supertonic:M1', 'en'), 'stf-en': ('supertonic:F1', 'en'),
+    'dgru': ('ru_dg2-medium', 'ru', 'o Dhamma.Gift ♂ · beta'),
+    'ruslan': ('ru_RU-ruslan-medium', 'ru', 'ruslan ♂'),
+    'irina': ('ru_RU-irina-medium', 'ru', 'irina ♀'),
 }
-SUPERTONIC = '/var/www/supertonic'  # git clone of supertone-oss-archive/supertonic + its assets/ (see round_st1.py)
-ST_STEPS = 8  # denoising steps: 8 as rated in st1 (~1.6x realtime on f3; 4 is ~2.9x)
 CACHE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cache', 'tts')
 SENTENCE = re.compile(r'(?<=[.?!;:])\s+')
 
@@ -70,8 +67,7 @@ args = args.parse_args()
 MAX_LOADED = args.max_loaded
 MODELS = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'models')
 # a copy without some models (the Hugging Face Space has no own voice) just serves fewer voices
-VOICES = {k: v for k, v in VOICES.items() if os.path.exists(
-    f'{SUPERTONIC}/assets/voice_styles/{v[0][11:]}.json' if v[0].startswith('supertonic:') else os.path.join(MODELS, v[0] + '.onnx'))}
+VOICES = {k: v for k, v in VOICES.items() if os.path.exists(os.path.join(MODELS, v[0] + '.onnx'))}
 busy = threading.Semaphore(2)  # 2 vCPU: more parallel syntheses only slow each other down
 loaded, load_lock = {}, threading.Lock()  # insertion order = least recently used first
 hits, hits_lock = {}, threading.Lock()  # ip -> (window start minute, count)
@@ -142,26 +138,6 @@ def get_voice(vid):
         return loaded[vid]
 
 
-st_engine, st_styles, st_lock = None, {}, threading.Lock()
-
-
-def supertonic_pcm(text, vid, rate):
-    """One engine for every Supertonic voice, loaded on first use (~550 MB) and kept."""
-    global st_engine
-    with st_lock:
-        if st_engine is None:
-            import sys
-            sys.path.insert(0, f'{SUPERTONIC}/py')
-            from helper import load_text_to_speech, load_voice_style
-            st_engine = load_text_to_speech(f'{SUPERTONIC}/assets/onnx')
-            st_styles['load'] = load_voice_style
-        style = VOICES[vid][0][11:]
-        if style not in st_styles:
-            st_styles[style] = st_styles['load']([f'{SUPERTONIC}/assets/voice_styles/{style}.json'])
-    wav, dur = st_engine(text, VOICES[vid][1], st_styles[style], ST_STEPS, 1.05 * rate)
-    return wav.reshape(-1)[:int(st_engine.sample_rate * float(dur[0]))], st_engine.sample_rate
-
-
 def synth(text, vid, rate):
     pcm, sr = synth_pcm(text, vid, rate)
     return encode_mp3(pcm, sr)
@@ -183,8 +159,6 @@ def encode_mp3(pcm, sr):
 
 def synth_pcm(text, vid, rate):
     """Sentence by sentence (VITS degrades on very long inputs), short pauses between."""
-    if VOICES[vid][0].startswith('supertonic:'):
-        return supertonic_pcm(text, vid, rate)
     voice, lang = get_voice(vid), VOICES[vid][1]
     sr = voice.config.sample_rate
     # pratham: our tuned pace (length 1.15 at rate 1); own voice and translations: the recorded pace
@@ -310,8 +284,9 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == '/health':
             return self.reply(200, {'ok': True, 'loaded': list(loaded), 'rules': RULES_VERSION})
-        if self.path == '/voices':
-            return self.reply(200, {vid: lang for vid, (_, lang) in VOICES.items()})
+        if self.path == '/voices':  # the menus of DG's voice.js; 'pi-own' is a Pali voice like the others
+            return self.reply(200, {'voices': [{'id': vid, 'lang': lang[:2], 'label': label}
+                                               for vid, (_, lang, label) in VOICES.items()]})
         self.reply(404, {'error': {'message': 'not found'}})
 
     def memo(self):
