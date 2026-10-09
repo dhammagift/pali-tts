@@ -15,10 +15,10 @@ import re
 import subprocess
 
 import numpy as np
+import onnxruntime as ort
 from piper import PiperVoice, SynthesisConfig
 
 from pali_ipa import to_ipa, tune
-from round26 import HOP, IDS, SESSION
 from round31 import SR
 
 OUT = 'out/r50'
