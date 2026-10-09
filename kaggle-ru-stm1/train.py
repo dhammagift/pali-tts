@@ -6,6 +6,7 @@ SMOKE=1 runs a few minutes to validate the environment.
 """
 import glob
 import os
+import re
 import subprocess
 import sys
 
@@ -56,6 +57,12 @@ if not os.path.exists(f'{W}/piper1-gpl'):
 os.chdir(f'{W}/piper1-gpl')
 # legacy TorchScript exporter: torch >= 2.9 defaults to dynamo, which cannot trace VITS (run v4 died there)
 sh("sed -i 's/torch.onnx.export(/torch.onnx.export(dynamo=False, /' src/piper/train/export_onnx.py")
+# piper keeps the best checkpoints by val_mos (UTMOS via torch.hub). Where UTMOS can't load (Lightning AI's Python 3.14,
+# 2026-10-09), val_mos is never logged and current Lightning raises instead of skipping that callback: drop it
+# (the val_mel and last.ckpt checkpoints stay)
+main_py = 'src/piper/train/__main__.py'
+src = open(main_py).read()
+open(main_py, 'w').write(re.sub(r'\n\s*ModelCheckpoint\(\s*monitor="val_mos".*?\),(?=\n)', '', src, flags=re.S))
 sh("pip install -q cython scikit-build 'cmake<4' ninja onnx onnxscript -e '.[train]'")
 sh('bash build_monotonic_align.sh && python setup.py build_ext --inplace -q')
 if not RESUME and not os.path.exists(f'{W}/base.ckpt'):
