@@ -41,6 +41,8 @@ VOICES = {  # id -> (model file, language); 'pi*' voices are fed our Pali IPA
     'pratham': ('hi_IN-pratham-medium', 'pi'),
     # the owner's own voice, fine-tuned on their readings (v1, epoch 179: round 13); trained on plain to_ipa
     'dg': ('pali_dg-medium', 'pi-own'),
+    # female Pali voice (round 44: ok 20 of 22 with pratham's rules, as they are)
+    'priyamvada': ('hi_IN-priyamvada-medium', 'pi'),
     'alan': ('en_GB-alan-medium', 'en'),
     'norman': ('en_US-norman-medium', 'en'),
     'kathleen': ('en_US-kathleen-low', 'en'),
