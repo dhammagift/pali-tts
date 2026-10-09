@@ -4,9 +4,9 @@ import random
 import re
 import time
 
-ROUND = 'r49'
-TITLE = 'Pali TTS — раунд 49: ṭṭh «ч» (Pātimokkha)'
-INTRO = ('ṭṭh всё ещё звучит как «ч» (Tiṭṭhantu «тичанту», Uddiṭṭhaṁ, Niṭṭhite, Sukkavissaṭṭhi). Новое: смычка ретрофлексная, а взрыв зубной с придыханием; и зубное ttʰ на этих словах. 2 дубля, вперемешку, 0.7x. <b>★</b> где «ттх» без «ч», <b>✗</b> где плохо.')
+ROUND = 'r50'
+TITLE = 'Pali TTS — раунд 50: слово отдельно, h, конечное ṁ, dhārayāmīti'
+INTRO = ('Pātimokkha. Слово отдельно (заголовки правил) — с точкой, медленнее или вырезанное из фразы; отдельное h — твёрже; конечное -aṁ — носовыми гласными, как ũ в vadeyyuṁ; dhārayāmīti — одно j. 2 дубля, вперемешку, 0.7x. <b>★</b> где правильно, <b>✗</b> где плохо.')
 idx = json.load(open(f'out/{ROUND}/index.json', encoding='utf-8'))
 ver = int(time.time())
 phrases = []
