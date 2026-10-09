@@ -27,7 +27,7 @@ def run(base, smoke=False):
         STUDIO.upload_file(f'{HERE}/train.py', f'{HOME}/train.py')
         if 'ok' not in STUDIO.run(f'test -f {HOME}/input/metadata.csv && echo ok || echo missing'):
             STUDIO.upload_file(DATA_ZIP, f'{HOME}/data.zip')
-            STUDIO.run(f'mkdir -p {HOME}/input && cd {HOME}/input && unzip -q -o ../data.zip && rm ../data.zip')
+            STUDIO.run(f'mkdir -p {HOME}/input && cd {HOME}/input && python -m zipfile -e ../data.zip . && rm ../data.zip')
         env = f'INPUT={HOME}/input WORK={work} BASE={base} SMOKE={int(smoke)}'
         STUDIO.run(f'rm -rf {work} && mkdir -p {work} && cd {HOME} && (nohup env {env} python train.py > {work}/log.txt 2>&1 &)')
         while True:
