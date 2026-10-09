@@ -13,12 +13,16 @@ SMOKE = os.environ.get('SMOKE', '0') == '1' or bool(glob.glob('/kaggle/input/**/
 # RESUME: a previous run's last.ckpt in the inputs (dataset ru-dg-voice-ckpt) - training continues from it
 # (optimizer, epoch counter) instead of a fresh warm start from ruslan
 RESUME = (glob.glob('/kaggle/input/**/last.ckpt', recursive=True) or [None])[0]  # Kaggle flattens the dataset: at its root
-# a Kaggle GPU session ends at 12 h: 11 h of training leaves time for setup, export and samples
-MAX_TIME = '00:00:08:00' if SMOKE else os.environ.get('MAX_TIME', '00:11:00:00')
+# the comparison runs: 2:30 each (push_ru_stm1.sh rewrites it); a GPU session ends at 12 h, so at most ~11 h
+MAX_TIME = '00:00:08:00' if SMOKE else '00:02:30:00'
 W = '/kaggle/working'
 DATA = os.path.dirname(glob.glob('/kaggle/input/**/metadata.csv', recursive=True)[0])
-CKPT_URL = ('https://huggingface.co/datasets/rhasspy/piper-checkpoints/resolve/main/ru/ru_RU/ruslan/medium/'
-            'epoch%3D2436-step%3D1724372.ckpt')
+# owner: try every male Russian Piper voice as the start, short runs of equal length, then go on with the winner.
+# push_ru_stm1.sh makes one kernel per base (it rewrites this line); their phoneme maps match ruslan's but for 2 ids
+BASE = 'ruslan'
+CKPT = {'ruslan': 'epoch%3D2436-step%3D1724372.ckpt', 'denis': 'epoch%3D4474-step%3D1521860.ckpt',
+        'dmitri': 'epoch%3D5589-step%3D1478840.ckpt'}
+CKPT_URL = f'https://huggingface.co/datasets/rhasspy/piper-checkpoints/resolve/main/ru/ru_RU/{BASE}/medium/{CKPT[BASE]}'
 SAMPLES = [
     'Одно время Благословенный в Варанаси располагается, в Исипатане, в Оленьем Парке.',
     'И что такое, монахи, боль? Та которая, монахи, телесная боль, телесный дискомфорт, это называется, монахи, боль.',
