@@ -19,13 +19,15 @@ STUDIO = Studio(name='ru-stm1', teamspace='default-project', org='dhamma-gift', 
 
 def run(base, smoke=False):
     """Start the studio, train one base, fetch its outputs, stop the studio (always: the 4 h rule)."""
-    work = f'{HOME}/work-{base}{"-smoke" if smoke else ""}'
+    rel = f'work-{base}{"-smoke" if smoke else ""}'  # upload_file / download_file paths are relative to HOME
+    work = f'{HOME}/{rel}'
     print(time.strftime('%H:%M'), 'start', base, 'smoke' if smoke else '', flush=True)
     STUDIO.start(Machine.T4)
     try:
-        STUDIO.upload_file(f'{HERE}/train.py', f'{HOME}/train.py')
+        STUDIO.upload_file(f'{HERE}/train.py', 'train.py')
         if 'ok' not in STUDIO.run(f'test -f {HOME}/input/metadata.csv && echo ok || echo missing'):
-            STUDIO.upload_file(DATA_ZIP, f'{HOME}/data.zip')
+            STUDIO.upload_file(DATA_ZIP, 'data.zip')
+            STUDIO.run(f'for i in $(seq 60); do test -f {HOME}/data.zip && break; sleep 5; done; ls -la {HOME}/data.zip')
             STUDIO.run(f'mkdir -p {HOME}/input && cd {HOME}/input && python -m zipfile -e ../data.zip . && rm ../data.zip')
         env = f'INPUT={HOME}/input WORK={work} BASE={base} SMOKE={int(smoke)}'
         STUDIO.run(f'rm -rf {work} && mkdir -p {work} && cd {HOME} && (nohup env {env} python train.py > {work}/log.txt 2>&1 &)')
@@ -39,12 +41,12 @@ def run(base, smoke=False):
         out = f'{LOCAL}/{base}{"-smoke" if smoke else ""}'
         os.makedirs(out, exist_ok=True)
         files = STUDIO.run(f'ls {work}/out 2>/dev/null; true').split()
-        STUDIO.download_file(f'{work}/log.txt', f'{out}/log.txt')
+        STUDIO.download_file(f'{rel}/log.txt', f'{out}/log.txt')
         for f in sorted(set(files)):
             if f.endswith(('.onnx', '.json', '.wav')) or (f == 'last.ckpt' and not smoke):
-                STUDIO.download_file(f'{work}/out/{f}', f'{out}/{f}')
+                STUDIO.download_file(f'{rel}/out/{f}', f'{out}/{f}')
         if STUDIO.run(f'test -f {work}/error.txt && echo yes; true').strip() == 'yes':
-            STUDIO.download_file(f'{work}/error.txt', f'{out}/error.txt')
+            STUDIO.download_file(f'{rel}/error.txt', f'{out}/error.txt')
         return state == 'done'
     finally:
         STUDIO.stop()
