@@ -4,9 +4,9 @@ import random
 import re
 import time
 
-ROUND = 'stm1clips'
-TITLE = 'Записи Supertonic M1 для обучения Piper'
-INTRO = ('На этих записях M1 сейчас учится Piper. 20 случайных из 1757: <b>ok</b> — чисто и правильно, <b>✗</b> — шум, ошибка чтения или странная интонация (что именно — в комментарии).')
+ROUND = 'stm1'
+TITLE = 'Русский голос: ученики Supertonic M1 на Piper'
+INTRO = ('Piper, дообученный на 3 часах записей M1 (быстрый, как сейчас), против самого M1 и нынешнего ruslan. Пока готов ученик от ruslan; denis и dmitri добавятся, когда доучатся. Вперемешку, обычная скорость. <b>★</b> лучший, <b>ok</b> годится, <b>✗</b> плохо.')
 idx = json.load(open(f'out/{ROUND}/index.json', encoding='utf-8'))
 ver = int(time.time())
 phrases = []
