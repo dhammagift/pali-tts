@@ -138,6 +138,37 @@ def get_voice(vid):
         return loaded[vid]
 
 
+aligned, HOP = {}, 256  # voice id -> onnx session that also gives per-phoneme durations (or None: no such file)
+
+
+def align_session(vid):
+    """models/<model>.align.onnx: the voice with its duration node (/Ceil) as a second output, made by
+    round26.align_model(). Loaded on first use, kept."""
+    with load_lock:
+        if vid not in aligned:
+            path = os.path.join(MODELS, VOICES[vid][0] + '.align.onnx')
+            import onnxruntime  # piper's own dependency
+            aligned[vid] = onnxruntime.InferenceSession(path, providers=['CPUExecutionProvider']) if os.path.exists(path) else None
+        return aligned[vid]
+
+
+def lone_word(vid, ipa, cfg):
+    """A word on its own (a rule's title: Sañcaritta, Aññabhāgiya) is misread far worse than inside a sentence. Round 50:
+    read inside "W, W." with the second W cut out by the model's own durations, 4 of 6 ok; with a full stop 2 of 6;
+    alone 0 of 6. Without an align model, the full stop."""
+    sess = align_session(vid)
+    voice = get_voice(vid)
+    if sess is None:
+        return voice.phoneme_ids_to_audio(voice.phonemes_to_ids(list(ipa + '.')), cfg)
+    ids = voice.phonemes_to_ids(list(f'{ipa}, {ipa}.'))  # ^ _ (phoneme _)* $
+    audio, dur = sess.run(None, {'input': np.array([ids], dtype=np.int64), 'input_lengths': np.array([len(ids)], dtype=np.int64),
+                                 'scales': np.array([cfg.noise_scale, cfg.length_scale, cfg.noise_w_scale], dtype=np.float32)})
+    audio, dur = audio.reshape(-1), dur.reshape(-1).astype(int) * HOP
+    starts = np.concatenate([[0], np.cumsum(dur)])
+    first = starts[2 + 2 * (len(ipa) + 2)]  # the second W's first phoneme, after ", "
+    return audio[max(first - int(0.03 * voice.config.sample_rate), 0):].astype(np.float32)
+
+
 def synth(text, vid, rate):
     pcm, sr = synth_pcm(text, vid, rate)
     return encode_mp3(pcm, sr)
@@ -175,6 +206,11 @@ def synth_pcm(text, vid, rate):
             phonemes = [p for p in ru_phonemes(voice, sent) if p]
         else:
             phonemes = [p for p in voice.phonemize(respell(sent, lang)) if p]  # Pali words in a translation
+        word = ipa.strip(' ,.?!:;') if lang == 'pi' else ''
+        if word and ' ' not in word:
+            parts.append(lone_word(vid, word, cfg))
+            phonemes = []  # read
+            parts.append(np.zeros(int(sr * 0.35), dtype=np.float32))
         for ph in phonemes:
             parts.append(voice.phoneme_ids_to_audio(voice.phonemes_to_ids(ph), cfg))
         if phonemes:
