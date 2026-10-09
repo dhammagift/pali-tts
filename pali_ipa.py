@@ -174,9 +174,8 @@ def tune(ipa, rules=PRATHAM_RULES):
         ipa = rx.sub(rep, ipa)
     # round 43: "So imameva" with that pause read So apart from its sentence (bad in both takes); So unstressed
     # and joined was ok in all 3. Owner: no pause at all, but the o must stay long - the triple oː of rounds 38-40.
-    # Only before i: before e (So evamāha, round 17) joining gave «сори»
-    return MONO_HIATUS.sub(lambda m: 'soːoːoː ' if m.group(1) == 'sˈoː' and ipa[m.end():m.end() + 2].lstrip('ˈ')[:1] in 'ɪi'
-                           else m.group(1) + ', ', ipa)
+    # Round 45: so before e as well (So evamāha: joined long So best/ok/ok/ok, round 17's pause bad 3 of 4)
+    return MONO_HIATUS.sub(lambda m: 'soːoːoː ' if m.group(1) == 'sˈoː' else m.group(1) + ', ', ipa)
 
 
 DEVA_C = {'kh': 'ख', 'gh': 'घ', 'ch': 'छ', 'jh': 'झ', 'ṭh': 'ठ', 'ḍh': 'ढ', 'th': 'थ', 'dh': 'ध', 'ph': 'फ', 'bh': 'भ',
@@ -240,7 +239,7 @@ if __name__ == '__main__':
     assert to_ipa('brahmacariyaṁ', full_a=True) == 'bɾʌhmʌcˈʌɾɪjʌŋ'  # heavy syllable two away: stays
     assert tune(to_ipa('passambhayaṁ', full_a=True)) == 'pʌssˈʌmbʰʌjjən', tune(to_ipa('passambhayaṁ', full_a=True))
     assert 'jj' not in tune(to_ipa('kāya paññā', full_a=True))  # after a long vowel / in ññ: untouched
-    assert tune(to_ipa('So evamāha', full_a=True)) == 'sˈoː, eːʋʌmˈaːhʌ', tune(to_ipa('So evamāha', full_a=True))
+    assert tune(to_ipa('So evamāha', full_a=True)) == 'soːoːoː eːʋʌmˈaːhʌ', tune(to_ipa('So evamāha', full_a=True))
     assert ', ' not in tune(to_ipa('āyasmā ānando', full_a=True))  # longer words: unchanged
     assert tune(to_ipa('jarāpi paṭhamaṁ', full_a=True)) == 'ɟʌɾˈaːpɪ pˈʌʈʰʌmən'  # no open a any more (round 22)
     assert tune(to_ipa('sammādiṭṭhi …pe… sammāsamādhi', full_a=True)) == 'sʌmmaːdˈɪʈːʰɪ, pejjˈaːlʌ, sʌmmaːsʌmˈaːdʰɪ', tune(to_ipa('sammādiṭṭhi …pe… sammāsamādhi', full_a=True))
