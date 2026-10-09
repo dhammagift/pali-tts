@@ -156,6 +156,10 @@ PRATHAM_RULES = [
     # round 42: pana before a comma read «пан» (now: ok/bad); an open a, aː and ʌː were all ok/ok - the open a, the
     # smallest change, for the word pana wherever it stands
     (re.compile(r'(?<![^ ,])pˈʌnʌ(?=[ ,.?!:;]|$)'), 'pˈʌna'),
+    # round 43: aññena with ɲːj was bad in both takes, a single ɲj ok in both
+    (re.compile(r'(?<![^ ,])ʌɲːjˈeːnʌ(?=[ ,.?!:;]|$)'), 'ʌɲjˈeːnʌ'),
+    # round 43: byagghehi from bj was bad; jj (as after a, round 18) ok in both takes, so for a word-initial by-
+    (re.compile(r'(?<![^ ,])bj(?=ˈ?[ʌa])'), 'bjj'),
 ]
 
 
@@ -168,7 +172,10 @@ MONO_HIATUS = re.compile(r'(?<![^ ,])([^ ,.?!ʌəaeoiuɪʊ]*ˈ?[ʌəaeoiuɪʊ]ː
 def tune(ipa, rules=PRATHAM_RULES):
     for rx, rep in rules:
         ipa = rx.sub(rep, ipa)
-    return MONO_HIATUS.sub(r'\1, ', ipa)
+    # round 43: "So imameva" with that pause read So apart from its sentence (bad in both takes); So unstressed
+    # and joined was ok in all 3. Only before i: before e (So evamāha, round 17) joining gave «сори»
+    return MONO_HIATUS.sub(lambda m: 'soː ' if m.group(1) == 'sˈoː' and ipa[m.end():m.end() + 2].lstrip('ˈ')[:1] in 'ɪi'
+                           else m.group(1) + ', ', ipa)
 
 
 DEVA_C = {'kh': 'ख', 'gh': 'घ', 'ch': 'छ', 'jh': 'झ', 'ṭh': 'ठ', 'ḍh': 'ढ', 'th': 'थ', 'dh': 'ध', 'ph': 'फ', 'bh': 'भ',
@@ -247,6 +254,8 @@ if __name__ == '__main__':
     assert tune(to_ipa('Diṭṭhupādānaṁ, saṅkhārapaccayā viññāṇaṁ, saṅkhārā.', full_a=True)) == \
         'dɪʈːʰʊpaːdˈaːnən, sʌŋkʰaːɾaːpˈʌccʌjjaː ʋɪɲːjˈaːɳən, sʌŋkʰˈaːɾaː.'  # rounds 20, 41
     assert tune(to_ipa('Kathañca pana, bhikkhave', full_a=True)) == 'kʌtʰˈʌncʌ pˈʌna, bʰˈɪkkʰʌʋeː'  # round 42
+    assert tune(to_ipa('So imameva kāyaṁ aññena byagghehi', full_a=True)) == \
+        'soː ɪmʌmˈeːʋʌ kˈaːjən ʌɲjˈeːnʌ bjjʌɡɡʰˈeːhɪ', tune(to_ipa('So imameva kāyaṁ aññena byagghehi', full_a=True))  # round 43
     assert tune(to_ipa('Tasmātiha, bhikkhave', full_a=True)) == 'tʌsmˈaːtɪhaː, bʰˈɪkkʰʌʋeː'  # round 39
     assert tune(to_ipa('Tiṇṇaṁ saṅgati', full_a=True)) == 'tˈɪɳːən sˈʌŋɡatɪ'  # round 38
     assert tune(to_ipa('evaṁ me sutaṁ cakkhuṁ', full_a=True)) == 'ˈeːʋən mˈeː sˈʊtən cˈʌkkʰu\u0303'  # round 29
