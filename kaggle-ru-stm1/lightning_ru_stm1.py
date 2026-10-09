@@ -14,7 +14,7 @@ HOME = '/teamspace/studios/this_studio'
 DATA_ZIP, BASES = sys.argv[1], sys.argv[2:]
 LOCAL = '/root/st-m1/runs'
 HERE = os.path.dirname(os.path.abspath(__file__))
-STUDIO = Studio(name='ru-stm1', teamspace='general', org='dhamma-gift', create_ok=True)  # the teamspace belongs to the org
+STUDIO = Studio(name='ru-stm1', teamspace='default-project', org='dhamma-gift', create_ok=True)  # the org's teamspace
 
 
 def run(base, smoke=False):
