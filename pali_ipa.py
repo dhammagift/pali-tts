@@ -153,6 +153,9 @@ PRATHAM_RULES = [
     (re.compile(r'ʈʈʰ'), 'ʈːʰ'),
     # round 41: the a after r in saṅkhāra- compounds was swallowed («санкхарпаччая»); a long aː won (best + ok)
     (re.compile(r'(?<=kʰaːɾ)ʌ(?=[^ ,.?!:;ˈʌaeoiuɪʊː])'), 'aː'),
+    # round 42: pana before a comma read «пан» (now: ok/bad); an open a, aː and ʌː were all ok/ok - the open a, the
+    # smallest change, for the word pana wherever it stands
+    (re.compile(r'(?<![^ ,])pˈʌnʌ(?=[ ,.?!:;]|$)'), 'pˈʌna'),
 ]
 
 
@@ -243,6 +246,7 @@ if __name__ == '__main__':
     assert tune(to_ipa('yogo karaṇīyo.', full_a=True)) == 'jˈoːɡoːoːoː kʌɾʌɳˈiːjoː.'
     assert tune(to_ipa('Diṭṭhupādānaṁ, saṅkhārapaccayā viññāṇaṁ, saṅkhārā.', full_a=True)) == \
         'dɪʈːʰʊpaːdˈaːnən, sʌŋkʰaːɾaːpˈʌccʌjjaː ʋɪɲːjˈaːɳən, sʌŋkʰˈaːɾaː.'  # rounds 20, 41
+    assert tune(to_ipa('Kathañca pana, bhikkhave', full_a=True)) == 'kʌtʰˈʌncʌ pˈʌna, bʰˈɪkkʰʌʋeː'  # round 42
     assert tune(to_ipa('Tasmātiha, bhikkhave', full_a=True)) == 'tʌsmˈaːtɪhaː, bʰˈɪkkʰʌʋeː'  # round 39
     assert tune(to_ipa('Tiṇṇaṁ saṅgati', full_a=True)) == 'tˈɪɳːən sˈʌŋɡatɪ'  # round 38
     assert tune(to_ipa('evaṁ me sutaṁ cakkhuṁ', full_a=True)) == 'ˈeːʋən mˈeː sˈʊtən cˈʌkkʰu\u0303'  # round 29
