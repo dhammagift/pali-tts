@@ -5,8 +5,8 @@ import re
 import time
 
 ROUND = 'r46'
-TITLE = 'Pali TTS — раунд 46: jarā в конце фразы'
-INTRO = ('jarā в конце фразы читается «джа». 4 варианта, 2 дубля, вперемешку, 0.7x. <b>★</b> где слышно «джарā» целиком, <b>✗</b> где обрезано.')
+TITLE = 'Pali TTS — раунд 46: DN 22 (jarā, phoṭṭhabba, kattha, paṭipadāya, tiṭṭhatu)'
+INTRO = ('Из DN 22: jarā в конце фразы («джа»), phoṭṭhabba («фоттабба»), kattha (обрыв в конце), paṭipadāya («пратипада»), tiṭṭhatu («чичату»). Уже оценённые дубли jarā не менялись. 2 дубля, вперемешку, 0.7x. <b>★</b> где правильно, <b>✗</b> где плохо.')
 idx = json.load(open(f'out/{ROUND}/index.json', encoding='utf-8'))
 ver = int(time.time())
 phrases = []
