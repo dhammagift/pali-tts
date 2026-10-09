@@ -25,6 +25,9 @@ OUT = 'out/r50'
 LENGTH = 1.15 / 0.7
 CFG = SynthesisConfig(length_scale=LENGTH, noise_scale=0.6, noise_w_scale=0.7)
 END = r'(?=[ ,.?!:;]|$)'
+HOP = 256
+IDS = json.load(open('models/hi_IN-pratham-medium.onnx.json'))['phoneme_id_map']
+SESSION = ort.InferenceSession('models/hi_IN-pratham-medium.align.onnx', providers=['CPUExecutionProvider'])  # round26.py made it
 TILDE = '̃'
 
 
