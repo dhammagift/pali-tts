@@ -160,6 +160,10 @@ PRATHAM_RULES = [
     (re.compile(r'(?<![^ ,])ʌɲːjˈeːnʌ(?=[ ,.?!:;]|$)'), 'ʌɲjˈeːnʌ'),
     # round 43: byagghehi from bj was bad; jj (as after a, round 18) ok in both takes, so for a word-initial by-
     (re.compile(r'(?<![^ ,])bj(?=ˈ?[ʌa])'), 'bjj'),
+    # round 46: the word jarā read «джа»; stress on rā (round 20's best) ok in all 4 takes, as it was 2 of 4
+    (re.compile(r'(?<![^ ,])ɟˈʌɾaː(?=[ ,.?!:;]|$)'), 'ɟʌɾˈaː'),
+    # round 46: kattha cut at the end; a long final aː ok in 3 of 4 takes (open a 1, ʌː 2, as it was 0)
+    (re.compile(r'(?<![^ ,])kˈʌttʰʌ(?=[ ,.?!:;]|$)'), 'kˈʌttʰaː'),
 ]
 
 
@@ -256,6 +260,8 @@ if __name__ == '__main__':
     assert tune(to_ipa('Kathañca pana, bhikkhave', full_a=True)) == 'kʌtʰˈʌncʌ pˈʌna, bʰˈɪkkʰʌʋeː'  # round 42
     assert tune(to_ipa('So imameva kāyaṁ aññena byagghehi', full_a=True)) == \
         'soːoːoː ɪmʌmˈeːʋʌ kˈaːjən ʌɲjˈeːnʌ bjjʌɡɡʰˈeːhɪ', tune(to_ipa('So imameva kāyaṁ aññena byagghehi', full_a=True))  # round 43
+    assert tune(to_ipa('Katamā ca, bhikkhave, jarā?', full_a=True)) == 'kˈʌtʌmaː cˈʌ, bʰˈɪkkʰʌʋeː, ɟʌɾˈaː?'  # round 46
+    assert tune(to_ipa('Taṇhā kattha uppajjati', full_a=True)) == 'tˈʌɳhaː kˈʌttʰaː ʊppˈʌɟɟatɪ'  # round 46
     assert tune(to_ipa('Tasmātiha, bhikkhave', full_a=True)) == 'tʌsmˈaːtɪhaː, bʰˈɪkkʰʌʋeː'  # round 39
     assert tune(to_ipa('Tiṇṇaṁ saṅgati', full_a=True)) == 'tˈɪɳːən sˈʌŋɡatɪ'  # round 38
     assert tune(to_ipa('evaṁ me sutaṁ cakkhuṁ', full_a=True)) == 'ˈeːʋən mˈeː sˈʊtən cˈʌkkʰu\u0303'  # round 29
