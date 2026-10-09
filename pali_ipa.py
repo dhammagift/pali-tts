@@ -173,8 +173,9 @@ def tune(ipa, rules=PRATHAM_RULES):
     for rx, rep in rules:
         ipa = rx.sub(rep, ipa)
     # round 43: "So imameva" with that pause read So apart from its sentence (bad in both takes); So unstressed
-    # and joined was ok in all 3. Only before i: before e (So evamāha, round 17) joining gave «сори»
-    return MONO_HIATUS.sub(lambda m: 'soː ' if m.group(1) == 'sˈoː' and ipa[m.end():m.end() + 2].lstrip('ˈ')[:1] in 'ɪi'
+    # and joined was ok in all 3. Owner: no pause at all, but the o must stay long - the triple oː of rounds 38-40.
+    # Only before i: before e (So evamāha, round 17) joining gave «сори»
+    return MONO_HIATUS.sub(lambda m: 'soːoːoː ' if m.group(1) == 'sˈoː' and ipa[m.end():m.end() + 2].lstrip('ˈ')[:1] in 'ɪi'
                            else m.group(1) + ', ', ipa)
 
 
@@ -255,7 +256,7 @@ if __name__ == '__main__':
         'dɪʈːʰʊpaːdˈaːnən, sʌŋkʰaːɾaːpˈʌccʌjjaː ʋɪɲːjˈaːɳən, sʌŋkʰˈaːɾaː.'  # rounds 20, 41
     assert tune(to_ipa('Kathañca pana, bhikkhave', full_a=True)) == 'kʌtʰˈʌncʌ pˈʌna, bʰˈɪkkʰʌʋeː'  # round 42
     assert tune(to_ipa('So imameva kāyaṁ aññena byagghehi', full_a=True)) == \
-        'soː ɪmʌmˈeːʋʌ kˈaːjən ʌɲjˈeːnʌ bjjʌɡɡʰˈeːhɪ', tune(to_ipa('So imameva kāyaṁ aññena byagghehi', full_a=True))  # round 43
+        'soːoːoː ɪmʌmˈeːʋʌ kˈaːjən ʌɲjˈeːnʌ bjjʌɡɡʰˈeːhɪ', tune(to_ipa('So imameva kāyaṁ aññena byagghehi', full_a=True))  # round 43
     assert tune(to_ipa('Tasmātiha, bhikkhave', full_a=True)) == 'tʌsmˈaːtɪhaː, bʰˈɪkkʰʌʋeː'  # round 39
     assert tune(to_ipa('Tiṇṇaṁ saṅgati', full_a=True)) == 'tˈɪɳːən sˈʌŋɡatɪ'  # round 38
     assert tune(to_ipa('evaṁ me sutaṁ cakkhuṁ', full_a=True)) == 'ˈeːʋən mˈeː sˈʊtən cˈʌkkʰu\u0303'  # round 29
