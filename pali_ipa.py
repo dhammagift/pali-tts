@@ -164,6 +164,11 @@ PRATHAM_RULES = [
     (re.compile(r'(?<![^ ,])ɟˈʌɾaː(?=[ ,.?!:;]|$)'), 'ɟʌɾˈaː'),
     # round 46: kattha cut at the end; a long final aː ok in 3 of 4 takes (open a 1, ʌː 2, as it was 0)
     (re.compile(r'(?<![^ ,])kˈʌttʰʌ(?=[ ,.?!:;]|$)'), 'kˈʌttʰaː'),
+    # round 51: mama with its final ʌ swallowed (bad both takes); an open a best + ok, as pana (round 42)
+    (re.compile(r'(?<![^ ,])mˈʌmʌ(?=[ ,.?!:;]|$)'), 'mˈʌma'),
+    # round 51: uposathassa etāni ran together (bad both takes); the open a before the e: ok in both (a pause: best + ok,
+    # but a pause inside a phrase is what round 45 threw out for So)
+    (re.compile(r'ʌ(?= ˈ?eː)'), 'a'),
     # rounds 46-47: phoṭṭhabba with pʰ read «фо» (0 of 2); p + separate h ok 2 of 4 - better, owner: still not right
     (re.compile(r'pʰ(?=ˈ?oʈːʰ)'), 'ph'),
     # round 47: gāminiyā read «гаминья» (as now ok 1 of 2); a doubled jj best + ok
@@ -266,6 +271,7 @@ if __name__ == '__main__':
     assert tune(to_ipa('Kathañca pana, bhikkhave', full_a=True)) == 'kʌtʰˈʌncʌ pˈʌna, bʰˈɪkkʰʌʋeː'  # round 42
     assert tune(to_ipa('So imameva kāyaṁ aññena byagghehi', full_a=True)) == \
         'soːoːoː ɪmʌmˈeːʋʌ kˈaːjən ʌɲjˈeːnʌ bjjʌɡɡʰˈeːhɪ', tune(to_ipa('So imameva kāyaṁ aññena byagghehi', full_a=True))  # round 43
+    assert tune(to_ipa('uposathassa etāni mama vacanāya', full_a=True)) == 'ʊpoːsʌtʰˈʌssa eːtˈaːnɪ mˈʌma ʋʌccʌnˈaːjʌ'  # round 51
     assert tune(to_ipa('Katamā ca, bhikkhave, jarā?', full_a=True)) == 'kˈʌtʌmaː cˈʌ, bʰˈɪkkʰʌʋeː, ɟʌɾˈaː?'  # round 46
     assert tune(to_ipa('Taṇhā kattha uppajjati', full_a=True)) == 'tˈʌɳhaː kˈʌttʰaː ʊppˈʌɟɟatɪ'  # round 46
     assert tune(to_ipa('phoṭṭhabba gāminiyā paṭipadāya paṭipadā', full_a=True)) == \
