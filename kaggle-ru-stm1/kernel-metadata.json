@@ -1,0 +1,1 @@
+{"id": "dhammagift/ru-stm1-voice-train", "title": "ru-stm1-voice-train", "code_file": "train.py", "language": "python", "kernel_type": "script", "is_private": true, "enable_gpu": true, "enable_internet": true, "dataset_sources": ["dhammagift/ru-stm1-voice-data"], "competition_sources": [], "kernel_sources": []}

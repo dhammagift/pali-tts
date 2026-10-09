@@ -3,7 +3,7 @@ the owner heard mic-like noises in 3 of 30 (round clonegen2), always as an over-
 so out go clips with an internal pause over 0.8 s and the slowest 8% by seconds per letter. Phonemes are what the
 voice will get at run time: espeak via ruslan + our soft-sign fix (respell.ru_phonemes), stress marks removed;
 ids from ruslan's map (the fine-tune starts from ruslan).
-Usage (on f3): .venv/bin/python make_ru_voice_dataset.py /root/clone/gen2-out /root/clone/ru-voice-data
+Usage (on f3): .venv/bin/python make_ru_voice_dataset.py /root/clone/gen2-out /root/clone/ru-voice-data [dataset name]
 """
 import json
 import os
@@ -16,6 +16,7 @@ from piper import PiperVoice
 from respell import ru_phonemes
 
 SRC, OUT = sys.argv[1:3]
+NAME = sys.argv[3] if len(sys.argv) > 3 else 'ru-dg-voice-data'  # Kaggle dataset
 STRESS = '́'
 
 
@@ -62,6 +63,6 @@ open(f'{OUT}/metadata.csv', 'w', encoding='utf-8').write('\n'.join(rows) + '\n')
 json.dump(voice.config.phoneme_id_map, open(f'{OUT}/phonemes.json', 'w', encoding='utf-8'), ensure_ascii=False)
 for f in ('respell.py', 'pali_ipa.py'):  # respell imports pali_ipa
     os.system(f'cp {f} {OUT}/')
-json.dump({'title': 'ru-dg-voice-data', 'id': 'dhammagift/ru-dg-voice-data', 'licenses': [{'name': 'CC-BY-NC-SA-4.0'}]},
+json.dump({'title': NAME, 'id': f'dhammagift/{NAME}', 'licenses': [{'name': 'CC-BY-NC-SA-4.0'}]},
           open(f'{OUT}/dataset-metadata.json', 'w'))
 print(len(rows), 'clips kept,', dropped, 'dropped,', f"{sum(k['sec'] for k in kept if k['pause'] <= 0.8 and k['spl'] <= slow) / 3600:.2f} h")
