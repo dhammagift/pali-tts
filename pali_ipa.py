@@ -148,6 +148,11 @@ PRATHAM_RULES = [
     # won in both phrases (best + ok). Only before the next word: phrase-final o is already long (~300 ms), and a
     # stressed one-syllable word (sˈoː, khˈoː) keeps its own o.
     (re.compile(r'(?<=[^ ,ˈˌ])oː(?= )'), 'oːoːoː'),
+    # rounds 20, 41: ṭṭh came out as an affricate (sammādiṭṭhi «дичи», diṭṭhupādānaṁ «диччупадана»); a long ʈː
+    # was the best spelling in both rounds (r20: 3 best 5 ok; r41: ok/ok, the only one with no bad take)
+    (re.compile(r'ʈʈʰ'), 'ʈːʰ'),
+    # round 41: the a after r in saṅkhāra- compounds was swallowed («санкхарпаччая»); a long aː won (best + ok)
+    (re.compile(r'(?<=kʰaːɾ)ʌ(?=[^ ,.?!:;ˈʌaeoiuɪʊː])'), 'aː'),
 ]
 
 
@@ -227,7 +232,7 @@ if __name__ == '__main__':
     assert tune(to_ipa('So evamāha', full_a=True)) == 'sˈoː, eːʋʌmˈaːhʌ', tune(to_ipa('So evamāha', full_a=True))
     assert ', ' not in tune(to_ipa('āyasmā ānando', full_a=True))  # longer words: unchanged
     assert tune(to_ipa('jarāpi paṭhamaṁ', full_a=True)) == 'ɟʌɾˈaːpɪ pˈʌʈʰʌmən'  # no open a any more (round 22)
-    assert tune(to_ipa('sammādiṭṭhi …pe… sammāsamādhi', full_a=True)) == 'sʌmmaːdˈɪʈʈʰɪ, pejjˈaːlʌ, sʌmmaːsʌmˈaːdʰɪ', tune(to_ipa('sammādiṭṭhi …pe… sammāsamādhi', full_a=True))
+    assert tune(to_ipa('sammādiṭṭhi …pe… sammāsamādhi', full_a=True)) == 'sʌmmaːdˈɪʈːʰɪ, pejjˈaːlʌ, sʌmmaːsʌmˈaːdʰɪ', tune(to_ipa('sammādiṭṭhi …pe… sammāsamādhi', full_a=True))
     assert normalize('a ...pa... b') == 'a , peyyāla,  b'
     assert tune(to_ipa('kiñci muhuttena viharati', full_a=True)) == 'kˈɪncɪ muhuttˈeːnʌ ʋɪhˈʌɾatɪ'  # rounds 24-25
     assert tune(to_ipa('dutiyaṁ imasmiṁ', full_a=True)) == 'dˈʊtɪjən ɪmˈʌsmɪm'  # one y after i; -aṁ ən, -iṁ m
@@ -236,6 +241,8 @@ if __name__ == '__main__':
     assert tune(to_ipa('arahaṁ ahaṁ', full_a=True)) == 'ˈʌɾʌhʌn ˈʌhʌn'  # round 32
     assert tune(to_ipa('Ātāpī sampajāno satimā.', full_a=True)) == 'aːtˈaːpiː sʌmpʌɟɟˈaːnoːoːoː sˈʌtɪmaː.'  # round 40
     assert tune(to_ipa('yogo karaṇīyo.', full_a=True)) == 'jˈoːɡoːoːoː kʌɾʌɳˈiːjoː.'
+    assert tune(to_ipa('Diṭṭhupādānaṁ, saṅkhārapaccayā viññāṇaṁ, saṅkhārā.', full_a=True)) == \
+        'dɪʈːʰʊpaːdˈaːnən, sʌŋkʰaːɾaːpˈʌccʌjjaː ʋɪɲːjˈaːɳən, sʌŋkʰˈaːɾaː.'  # rounds 20, 41
     assert tune(to_ipa('Tasmātiha, bhikkhave', full_a=True)) == 'tʌsmˈaːtɪhaː, bʰˈɪkkʰʌʋeː'  # round 39
     assert tune(to_ipa('Tiṇṇaṁ saṅgati', full_a=True)) == 'tˈɪɳːən sˈʌŋɡatɪ'  # round 38
     assert tune(to_ipa('evaṁ me sutaṁ cakkhuṁ', full_a=True)) == 'ˈeːʋən mˈeː sˈʊtən cˈʌkkʰu\u0303'  # round 29
