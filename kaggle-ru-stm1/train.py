@@ -9,17 +9,19 @@ import os
 import subprocess
 import sys
 
-SMOKE = os.environ.get('SMOKE', '0') == '1' or bool(glob.glob('/kaggle/input/**/SMOKE', recursive=True))
+SMOKE = os.environ.get('SMOKE', '0') == '1' or bool(glob.glob(f"{os.environ.get('INPUT', '/kaggle/input')}/**/SMOKE", recursive=True))
 # RESUME: a previous run's last.ckpt in the inputs (dataset ru-dg-voice-ckpt) - training continues from it
 # (optimizer, epoch counter) instead of a fresh warm start from ruslan
-RESUME = (glob.glob('/kaggle/input/**/last.ckpt', recursive=True) or [None])[0]  # Kaggle flattens the dataset: at its root
+# Lightning AI (lightning_ru_stm1.py) runs the same file with INPUT / WORK / BASE / MAX_TIME in the environment
+INPUT = os.environ.get('INPUT', '/kaggle/input')
+RESUME = (glob.glob(f'{INPUT}/**/last.ckpt', recursive=True) or [None])[0]  # Kaggle flattens the dataset: at its root
 # the comparison runs: 2:30 each (push_ru_stm1.sh rewrites it); a GPU session ends at 12 h, so at most ~11 h
-MAX_TIME = '00:00:08:00' if SMOKE else '00:02:30:00'
-W = '/kaggle/working'
-DATA = os.path.dirname(glob.glob('/kaggle/input/**/metadata.csv', recursive=True)[0])
+MAX_TIME = '00:00:08:00' if SMOKE else os.environ.get('MAX_TIME', '00:02:30:00')
+W = os.environ.get('WORK', '/kaggle/working')
+DATA = os.path.dirname(glob.glob(f'{INPUT}/**/metadata.csv', recursive=True)[0])
 # owner: try every male Russian Piper voice as the start, short runs of equal length, then go on with the winner.
 # push_ru_stm1.sh makes one kernel per base (it rewrites this line); their phoneme maps match ruslan's but for 2 ids
-BASE = 'ruslan'
+BASE = os.environ.get('BASE', 'ruslan')
 CKPT = {'ruslan': 'epoch%3D2436-step%3D1724372.ckpt', 'denis': 'epoch%3D4474-step%3D1521860.ckpt',
         'dmitri': 'epoch%3D5589-step%3D1478840.ckpt'}
 CKPT_URL = f'https://huggingface.co/datasets/rhasspy/piper-checkpoints/resolve/main/ru/ru_RU/{BASE}/medium/{CKPT[BASE]}'
