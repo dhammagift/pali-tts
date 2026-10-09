@@ -164,6 +164,12 @@ PRATHAM_RULES = [
     (re.compile(r'(?<![^ ,])ɟˈʌɾaː(?=[ ,.?!:;]|$)'), 'ɟʌɾˈaː'),
     # round 46: kattha cut at the end; a long final aː ok in 3 of 4 takes (open a 1, ʌː 2, as it was 0)
     (re.compile(r'(?<![^ ,])kˈʌttʰʌ(?=[ ,.?!:;]|$)'), 'kˈʌttʰaː'),
+    # rounds 46-47: phoṭṭhabba with pʰ read «фо» (0 of 2); p + separate h ok 2 of 4 - better, owner: still not right
+    (re.compile(r'pʰ(?=ˈ?oʈːʰ)'), 'ph'),
+    # round 47: gāminiyā read «гаминья» (as now ok 1 of 2); a doubled jj best + ok
+    (re.compile(r'(?<=ɡˈaːmɪnɪ)j(?=aː)'), 'jj'),
+    # rounds 46-47: paṭipadā read «пратипада» (ʈ between vowels as Hindi's flap); a doubled ʈʈ ok 5 of 6, as now 3 of 6
+    (re.compile(r'(?<=pʌ)ʈ(?=ˈ?ɪpʌd)'), 'ʈʈ'),
 ]
 
 
@@ -262,6 +268,8 @@ if __name__ == '__main__':
         'soːoːoː ɪmʌmˈeːʋʌ kˈaːjən ʌɲjˈeːnʌ bjjʌɡɡʰˈeːhɪ', tune(to_ipa('So imameva kāyaṁ aññena byagghehi', full_a=True))  # round 43
     assert tune(to_ipa('Katamā ca, bhikkhave, jarā?', full_a=True)) == 'kˈʌtʌmaː cˈʌ, bʰˈɪkkʰʌʋeː, ɟʌɾˈaː?'  # round 46
     assert tune(to_ipa('Taṇhā kattha uppajjati', full_a=True)) == 'tˈʌɳhaː kˈʌttʰaː ʊppˈʌɟɟatɪ'  # round 46
+    assert tune(to_ipa('phoṭṭhabba gāminiyā paṭipadāya paṭipadā', full_a=True)) == \
+        'phoʈːʰˈʌbbʌ ɡˈaːmɪnɪjjaː pʌʈʈɪpʌdˈaːjʌ pʌʈʈˈɪpʌdaː'  # round 47
     assert tune(to_ipa('Tasmātiha, bhikkhave', full_a=True)) == 'tʌsmˈaːtɪhaː, bʰˈɪkkʰʌʋeː'  # round 39
     assert tune(to_ipa('Tiṇṇaṁ saṅgati', full_a=True)) == 'tˈɪɳːən sˈʌŋɡatɪ'  # round 38
     assert tune(to_ipa('evaṁ me sutaṁ cakkhuṁ', full_a=True)) == 'ˈeːʋən mˈeː sˈʊtən cˈʌkkʰu\u0303'  # round 29
