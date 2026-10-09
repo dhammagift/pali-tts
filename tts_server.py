@@ -50,7 +50,13 @@ VOICES = {  # id -> (model file, language); 'pi*' voices are fed our Pali IPA
     'ruslan': ('ru_RU-ruslan-medium', 'ru'),
     # the owner's timbre: Piper fine-tuned from ruslan on 1 h read by a Chatterbox clone of his voice (2026-10-07)
     'dgru': ('ru_dg2-medium', 'ru'),
+    # Supertonic 3 (one 99M engine for all its voices and languages; a voice is a 0.3 MB style file). st1: its M1 was
+    # best in 9 of 10 English / Russian lines, ruslan bad in all 5 Russian. Test voices (test.dhamma.gift) for now.
+    'stm-ru': ('supertonic:M1', 'ru'), 'stf-ru': ('supertonic:F1', 'ru'),
+    'stm-en': ('supertonic:M1', 'en'), 'stf-en': ('supertonic:F1', 'en'),
 }
+SUPERTONIC = '/var/www/supertonic'  # git clone of supertone-oss-archive/supertonic + its assets/ (see round_st1.py)
+ST_STEPS = 8  # denoising steps: 8 as rated in st1 (~1.6x realtime on f3; 4 is ~2.9x)
 CACHE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cache', 'tts')
 SENTENCE = re.compile(r'(?<=[.?!;:])\s+')
 
@@ -64,7 +70,8 @@ args = args.parse_args()
 MAX_LOADED = args.max_loaded
 MODELS = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'models')
 # a copy without some models (the Hugging Face Space has no own voice) just serves fewer voices
-VOICES = {k: v for k, v in VOICES.items() if os.path.exists(os.path.join(MODELS, v[0] + '.onnx'))}
+VOICES = {k: v for k, v in VOICES.items() if os.path.exists(
+    f'{SUPERTONIC}/assets/voice_styles/{v[0][11:]}.json' if v[0].startswith('supertonic:') else os.path.join(MODELS, v[0] + '.onnx'))}
 busy = threading.Semaphore(2)  # 2 vCPU: more parallel syntheses only slow each other down
 loaded, load_lock = {}, threading.Lock()  # insertion order = least recently used first
 hits, hits_lock = {}, threading.Lock()  # ip -> (window start minute, count)
@@ -135,6 +142,26 @@ def get_voice(vid):
         return loaded[vid]
 
 
+st_engine, st_styles, st_lock = None, {}, threading.Lock()
+
+
+def supertonic_pcm(text, vid, rate):
+    """One engine for every Supertonic voice, loaded on first use (~550 MB) and kept."""
+    global st_engine
+    with st_lock:
+        if st_engine is None:
+            import sys
+            sys.path.insert(0, f'{SUPERTONIC}/py')
+            from helper import load_text_to_speech, load_voice_style
+            st_engine = load_text_to_speech(f'{SUPERTONIC}/assets/onnx')
+            st_styles['load'] = load_voice_style
+        style = VOICES[vid][0][11:]
+        if style not in st_styles:
+            st_styles[style] = st_styles['load']([f'{SUPERTONIC}/assets/voice_styles/{style}.json'])
+    wav, dur = st_engine(text, VOICES[vid][1], st_styles[style], ST_STEPS, 1.05 * rate)
+    return wav.reshape(-1)[:int(st_engine.sample_rate * float(dur[0]))], st_engine.sample_rate
+
+
 def synth(text, vid, rate):
     pcm, sr = synth_pcm(text, vid, rate)
     return encode_mp3(pcm, sr)
@@ -156,6 +183,8 @@ def encode_mp3(pcm, sr):
 
 def synth_pcm(text, vid, rate):
     """Sentence by sentence (VITS degrades on very long inputs), short pauses between."""
+    if VOICES[vid][0].startswith('supertonic:'):
+        return supertonic_pcm(text, vid, rate)
     voice, lang = get_voice(vid), VOICES[vid][1]
     sr = voice.config.sample_rate
     # pratham: our tuned pace (length 1.15 at rate 1); own voice and translations: the recorded pace
