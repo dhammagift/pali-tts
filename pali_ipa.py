@@ -27,6 +27,7 @@ PROFILES = {
 }
 PEYYALA = re.compile(r'(?:…|\.\.\.)\s*p[ae]\s*(?:…|\.\.\.)')
 PUNCT = {',': ',', ';': ',', ':': ',', '—': ',', '–': ',', '.': '.', '?': '?', '!': '!'}
+WORDS = re.compile(r"[a-zāīūṭḍṅñṇḷṃ]+|[,;:.?!—–]")
 
 
 def normalize(text):
@@ -89,7 +90,7 @@ def to_ipa(text, stress=True, full_a=False, final_m=False, lang='hi', heavy_back
     """full_a: short a as a full vowel everywhere instead of reduced ə (Hindi voices swallow ə).
     final_m: word-final niggahita as m (paṭhamam jhānam) instead of ŋ, which the voices tend to drop."""
     parts = []
-    for m in re.finditer(r"[a-zāīūṭḍṅñṇḷṃ]+|[,;:.?!—–]", normalize(text)):
+    for m in WORDS.finditer(normalize(text)):
         tok = m.group()
         if tok in PUNCT:
             if parts and parts[-1] in PUNCT.values():
@@ -197,6 +198,16 @@ def tune(ipa, rules=PRATHAM_RULES):
     # and joined was ok in all 3. Owner: no pause at all, but the o must stay long - the triple oː of rounds 38-40.
     # Round 45: so before e as well (So evamāha: joined long So best/ok/ok/ok, round 17's pause bad 3 of 4)
     return MONO_HIATUS.sub(lambda m: 'soːoːoː ' if m.group(1) == 'sˈoː' else m.group(1) + ', ', ipa)
+
+
+def export(rules=PRATHAM_RULES):
+    """The tables and rules as JSON-able data for web/pali-tts.js (DG reads Pali offline in the browser with the same
+    rules: the server hands this out, so the rules live here only). check_js.py runs the corpus through both."""
+    for rx, rep in rules:
+        assert '\\' not in rep and '$' not in rep, rep  # replacements are plain strings in both languages
+    return {'vowels': VOWELS, 'long': sorted(LONG), 'cons': CONS, 'nasal_before': NASAL_BEFORE, 'profiles': PROFILES,
+            'punct': PUNCT, 'token': TOKEN.pattern, 'words': WORDS.pattern, 'peyyala': PEYYALA.pattern,
+            'rules': [[rx.pattern, rep] for rx, rep in rules], 'mono_hiatus': MONO_HIATUS.pattern}
 
 
 DEVA_C = {'kh': 'ख', 'gh': 'घ', 'ch': 'छ', 'jh': 'झ', 'ṭh': 'ठ', 'ḍh': 'ढ', 'th': 'थ', 'dh': 'ध', 'ph': 'फ', 'bh': 'भ',

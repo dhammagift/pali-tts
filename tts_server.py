@@ -7,6 +7,8 @@ POST /memo        body: {"segments": [...], "voice", "rate", "delay": s, "end_de
                   -> audio/mpeg: the lines with silences of any length between them (Memo page download;
                   Google's SSML stops at 10 s pauses)
 GET  /health, /voices
+GET  /offline/pali-ipa.json, /offline/pali-tts.js, /offline/<voice>.onnx(.json): what DG needs to read Pali on the
+     device with no network (web/pali-tts.js + onnxruntime-web): the rules as data, the engine, the model
 Reachable from the internet through Apache/Cloudflare (like Google's TTS API): CORS is open and each
 client IP gets RATE_LIMIT requests per minute (CF-Connecting-IP / X-Forwarded-For).
 mp3 files are cached on disk by sha1(voice + rules version + rate + text): a re-read sutta costs no CPU.
@@ -31,7 +33,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import numpy as np
 from piper import PiperVoice, SynthesisConfig
 
-from pali_ipa import to_ipa, tune
+from pali_ipa import export, to_ipa, tune
 from respell import en_phonemes, respell, ru_phonemes
 
 RULES_VERSION = 'r40'  # bump when pali_ipa rules change, so cached mp3 are not reused
@@ -323,7 +325,34 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == '/voices':  # the menus of DG's voice.js; 'pi-own' is a Pali voice like the others
             return self.reply(200, {'voices': [{'id': vid, 'lang': lang[:2], 'label': label}
                                                for vid, (_, lang, label) in VOICES.items()]})
+        if self.path.startswith('/offline/'):
+            return self.offline(self.path[len('/offline/'):])
         self.reply(404, {'error': {'message': 'not found'}})
+
+    def offline(self, name):
+        """DG offline: rules + engine + models. Only the voices fed tune()'s rules (lang 'pi'); the own voice stays here."""
+        pi = {vid: os.path.join(MODELS, VOICES[vid][0]) for vid in VOICES if VOICES[vid][1] == 'pi'}
+        model = lambda vid: pi[vid] + '.align.onnx' if os.path.exists(pi[vid] + '.align.onnx') else pi[vid] + '.onnx'
+        if name == 'pali-ipa.json':  # 'voices': a new tag tells a device its downloaded model is stale
+            return self.reply(200, {'rules': RULES_VERSION, 'data': export(), 'voices': {
+                vid: {'label': VOICES[vid][2], 'bytes': os.path.getsize(model(vid)),
+                      'tag': f'{int(os.path.getmtime(model(vid)))}'} for vid in pi}})
+        m = re.fullmatch(r'([a-z]+)\.onnx(\.json)?', name)
+        if name == 'pali-tts.js':
+            path, ctype = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'web', 'pali-tts.js'), 'text/javascript'
+        elif m and m.group(1) in pi:
+            path = pi[m.group(1)] + '.onnx.json' if m.group(2) else model(m.group(1))
+            ctype = 'application/json' if m.group(2) else 'application/octet-stream'
+        else:
+            return self.reply(404, {'error': {'message': 'not found'}})
+        self.send_response(200)
+        self.send_header('content-type', ctype)
+        self.send_header('content-length', str(os.path.getsize(path)))
+        self.send_header('cache-control', 'no-cache')
+        self.cors()
+        self.end_headers()
+        with open(path, 'rb') as f:
+            shutil.copyfileobj(f, self.wfile, 1 << 20)
 
     def memo(self):
         try:
