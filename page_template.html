@@ -38,13 +38,19 @@ body.reveal .row .label{display:block}
 textarea{width:100%;margin-top:8px;font:inherit;font-size:.92rem;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);min-height:2.6em;resize:vertical}
 details{font-size:.8rem;color:var(--muted)} code{word-break:break-word}
 section.done{border-color:var(--good)}
+.speed{display:flex;align-items:center;gap:6px}
+.speed input{width:110px}
+.speed button,#empty{font:inherit;font-size:.85rem;padding:4px 8px;border-radius:8px;border:1px solid var(--line);background:var(--chip);color:var(--fg);cursor:pointer}
+.speed button.sel{background:var(--accent);border-color:var(--accent);color:#fff}
+#empty{border-color:var(--bad)} #empty[hidden]{display:none}
 </style>
 </head>
 <body>
 <main>
 <h1>__TITLE__</h1>
 <p class="lead">__INTRO__</p>
-<div class="bar"><span id="progress"></span><label><input type="checkbox" id="reveal"> показать, кто есть кто</label><span class="status" id="status"></span></div>
+<div class="bar"><span id="progress"></span><button id="empty" hidden></button>
+<span class="speed" title="Скорость всех плееров на странице">⏩ <input type="range" id="rate" min="0.5" max="2.5" step="0.05"><b id="rateV"></b><button data-r="1">1×</button><button data-r="1.43">1.43×</button><button data-r="2">2×</button></span><label><input type="checkbox" id="reveal"> показать, кто есть кто</label><span class="status" id="status"></span></div>
 <div id="list"></div>
 </main>
 <script>
@@ -74,7 +80,27 @@ function progress() {
     if (done) n++;
   }
   $('#progress').textContent = `Оценено: ${n} из ${DATA.phrases.length}`;
+  // phrases with no rating at all (not even listened to, most likely): a button jumps to the first one
+  const empty = DATA.phrases.filter(p => !p.multi && !p.variants.some(v => state[key(p.id, 'rating', v.id)]));
+  $('#empty').hidden = !empty.length;
+  $('#empty').textContent = `без оценок: ${empty.length} →`;
+  $('#empty').onclick = () => document.getElementById(empty[0].id).scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
+
+// one speed for every player on the page (rounds are rendered at 0.7x: 1.43× is the site's normal pace); kept per browser
+let rate = 1;
+try { rate = parseFloat(localStorage.getItem('pali_round_rate')) || 1; } catch {}
+function setRate(r) {
+  rate = Math.round(r * 100) / 100;
+  try { localStorage.setItem('pali_round_rate', rate); } catch {}
+  $('#rate').value = rate;
+  $('#rateV').textContent = rate + '×';
+  document.querySelectorAll('.speed button').forEach(b => b.classList.toggle('sel', +b.dataset.r === rate));
+  document.querySelectorAll('audio').forEach(a => { a.defaultPlaybackRate = rate; a.playbackRate = rate; });
+}
+$('#rate').oninput = e => setRate(+e.target.value);
+document.querySelectorAll('.speed button').forEach(b => b.onclick = () => setRate(+b.dataset.r));
+document.addEventListener('play', e => { e.target.playbackRate = rate; }, true);  // also players rendered later
 
 function render() {
   const list = $('#list');
@@ -142,6 +168,7 @@ function render() {
   // one player at a time
   document.addEventListener('play', e => document.querySelectorAll('audio').forEach(a => a !== e.target && a.pause()), true);
   progress();
+  setRate(rate);
 }
 
 $('#reveal').onchange = e => document.body.classList.toggle('reveal', e.target.checked);
