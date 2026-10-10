@@ -183,6 +183,18 @@ def ru_phonemes(voice, text):
     return out
 
 
+def export():
+    """The tables as JSON-able data for web/pali-tts.js (DG reads en/ru translations offline with the same respelling:
+    the service hands this out, so the tables live here only). check_js.py runs translations through both."""
+    for rx, full in EN_ABBR:
+        assert '\\' not in full and '$' not in full, full
+    return {'word': WORD.pattern, 'pali_chars': PALI_CHARS, 'en_pali_hint': EN_PALI_HINT.pattern,
+            'ru_rx': RU_RX.pattern, 'ru_map': RU_MAP, 'en_rx': EN_RX.pattern, 'en_map': EN_MAP,
+            'en_pali_words': sorted(EN_PALI_WORDS), 'en_ipa_rx': EN_IPA_RX.pattern, 'en_ipa': dict(EN_IPA),
+            'en_abbr': [[rx.pattern, full] for rx, full in EN_ABBR], 'en_books': EN_BOOKS, 'en_ref': EN_REF.pattern,
+            'ru_soften': {k: list(v) for k, v in RU_SOFTEN.items()}, 'ru_word': RU_WORD.pattern, 'ru_stress': RU_STRESS}
+
+
 def _case(src, out):
     return out[:1].upper() + out[1:] if src[:1].isupper() else out
 

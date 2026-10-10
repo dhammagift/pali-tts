@@ -7,8 +7,9 @@ POST /memo        body: {"segments": [...], "voice", "rate", "delay": s, "end_de
                   -> audio/mpeg: the lines with silences of any length between them (Memo page download;
                   Google's SSML stops at 10 s pauses)
 GET  /health, /voices
-GET  /offline/pali-ipa.json, /offline/pali-tts.js, /offline/<voice>.onnx(.json): what DG needs to read Pali on the
-     device with no network (web/pali-tts.js + onnxruntime-web): the rules as data, the engine, the model
+GET  /offline/pali-ipa.json, /offline/pali-tts.js, /offline/<voice>.onnx(.json): what DG needs to read on the device
+     with no network (web/pali-tts.js + onnxruntime-web): the rules as data, the engine, the model; for the en/ru voices
+     also /offline/espeak.mjs + espeak.wasm (web/espeak) and /offline/espeak-<core|en|ru>.bin (piper's espeak-ng-data)
 Reachable from the internet through Apache/Cloudflare (like Google's TTS API): CORS is open and each
 client IP gets RATE_LIMIT requests per minute (CF-Connecting-IP / X-Forwarded-For).
 mp3 files are cached on disk by sha1(voice + rules version + rate + text): a re-read sutta costs no CPU.
@@ -34,7 +35,7 @@ import numpy as np
 from piper import PiperVoice, SynthesisConfig
 
 from pali_ipa import export, to_ipa, tune
-from respell import en_phonemes, respell, ru_phonemes
+from respell import en_phonemes, export as respell_export, respell, ru_phonemes
 
 RULES_VERSION = 'r40'  # bump when pali_ipa rules change, so cached mp3 are not reused
 MAX_CHARS = 2000
@@ -293,6 +294,26 @@ def memo_mp3(segments, vid, rate, delay, end_delay, sound):
         return open(f.name, 'rb').read()
 
 
+OWN_VOICES = {'dg', 'dgru'}  # the owner's timbre: never handed out as a file
+# piper's own espeak-ng-data, in packs a device downloads once: core with the first en/ru voice, then its language
+ESPEAK_DATA = os.path.join(os.path.dirname(os.path.abspath(__import__('piper').__file__)), 'espeak-ng-data')
+ESPEAK_PACKS = {'core': ['phontab', 'phonindex', 'phondata', 'intonations'],
+                'en': ['en_dict', 'lang/gmw/en', 'lang/gmw/en-GB-x-rp', 'lang/gmw/en-US'],
+                'ru': ['ru_dict', 'lang/zle/ru']}
+_packs = {}
+
+
+def espeak_pack(pack, gz=False):
+    """[4-byte little-endian header length][JSON header: [[path, size], ...]][the files one after another]
+    (web/voice-offline.js unpacks it into espeak's file system). gz: the same gzipped, for the wire."""
+    if pack not in _packs:
+        files = [(f, open(os.path.join(ESPEAK_DATA, f), 'rb').read()) for f in ESPEAK_PACKS[pack]]
+        head = json.dumps([[f, len(b)] for f, b in files]).encode()
+        raw = len(head).to_bytes(4, 'little') + head + b''.join(b for _, b in files)
+        _packs[pack] = (raw, __import__('gzip').compress(raw, 9))
+    return _packs[pack][1 if gz else 0]
+
+
 class Handler(BaseHTTPRequestHandler):
     def cors(self):
         self.send_header('access-control-allow-origin', '*')
@@ -330,18 +351,29 @@ class Handler(BaseHTTPRequestHandler):
         self.reply(404, {'error': {'message': 'not found'}})
 
     def offline(self, name):
-        """DG offline: rules + engine + models. Only the voices fed tune()'s rules (lang 'pi'); the own voice stays here."""
-        pi = {vid: os.path.join(MODELS, VOICES[vid][0]) for vid in VOICES if VOICES[vid][1] == 'pi'}
-        model = lambda vid: pi[vid] + '.align.onnx' if os.path.exists(pi[vid] + '.align.onnx') else pi[vid] + '.onnx'
+        """DG offline: rules + engine + models. The Pali voices fed tune()'s rules and the en/ru voices; the own voices
+        (pi-own 'dg', 'dgru') stay here."""
+        offered = {vid: os.path.join(MODELS, VOICES[vid][0]) for vid in VOICES
+                   if VOICES[vid][1] in ('pi', 'en', 'ru') and vid not in OWN_VOICES}
+        model = lambda vid: offered[vid] + '.align.onnx' if os.path.exists(offered[vid] + '.align.onnx') else offered[vid] + '.onnx'
+        web = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'web')
         if name == 'pali-ipa.json':  # 'voices': a new tag tells a device its downloaded model is stale
-            return self.reply(200, {'rules': RULES_VERSION, 'data': export(), 'voices': {
-                vid: {'label': VOICES[vid][2], 'bytes': os.path.getsize(model(vid)),
-                      'tag': f'{int(os.path.getmtime(model(vid)))}'} for vid in pi}})
+            return self.reply(200, {'rules': RULES_VERSION, 'data': export(), 'respell': respell_export(),
+                                    'espeak': {'code': sum(os.path.getsize(os.path.join(web, 'espeak', f)) for f in ('espeak.mjs', 'espeak.wasm')),
+                                               'tag': str(int(max(os.path.getmtime(os.path.join(web, 'espeak', f)) for f in ('espeak.mjs', 'espeak.wasm')))),
+                                               **{pack: len(espeak_pack(pack)) for pack in ESPEAK_PACKS},
+                                               'gz': {pack: len(espeak_pack(pack, gz=True)) for pack in ESPEAK_PACKS}}, 'voices': {
+                vid: {'label': VOICES[vid][2], 'lang': VOICES[vid][1], 'bytes': os.path.getsize(model(vid)),
+                      'tag': f'{int(os.path.getmtime(model(vid)))}'} for vid in offered}})
         m = re.fullmatch(r'([a-z]+)\.onnx(\.json)?', name)
         if name == 'pali-tts.js':
-            path, ctype = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'web', 'pali-tts.js'), 'text/javascript'
-        elif m and m.group(1) in pi:
-            path = pi[m.group(1)] + '.onnx.json' if m.group(2) else model(m.group(1))
+            path, ctype = os.path.join(web, 'pali-tts.js'), 'text/javascript'
+        elif name in ('espeak.mjs', 'espeak.wasm'):
+            path, ctype = os.path.join(web, 'espeak', name), 'text/javascript' if name.endswith('mjs') else 'application/wasm'
+        elif re.fullmatch(r'espeak-([a-z]+)\.bin', name) and name[7:-4] in ESPEAK_PACKS:
+            return self.send_bytes(espeak_pack(name[7:-4]), 'application/octet-stream', espeak_pack(name[7:-4], gz=True))
+        elif m and m.group(1) in offered:
+            path = offered[m.group(1)] + '.onnx.json' if m.group(2) else model(m.group(1))
             ctype = 'application/json' if m.group(2) else 'application/octet-stream'
         else:
             return self.reply(404, {'error': {'message': 'not found'}})
@@ -353,6 +385,20 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         with open(path, 'rb') as f:
             shutil.copyfileobj(f, self.wfile, 1 << 20)
+
+    def send_bytes(self, body, ctype, gz=None):
+        if gz and 'gzip' in (self.headers.get('accept-encoding') or ''):  # the browser unpacks it (ru: 9 MB -> 5 MB)
+            body = gz
+        self.send_response(200)
+        self.send_header('content-type', ctype)
+        if body is gz:
+            self.send_header('content-encoding', 'gzip')
+            self.send_header('vary', 'accept-encoding')
+        self.send_header('content-length', str(len(body)))
+        self.send_header('cache-control', 'no-cache')
+        self.cors()
+        self.end_headers()
+        self.wfile.write(body)
 
     def memo(self):
         try:

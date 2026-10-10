@@ -2,6 +2,8 @@
 // The rules are not copied here: makePali() takes pali_ipa.export() as data (GET /api/tts/pali-ipa.json), and this file
 // is only the engine around them. check_js.py runs the corpus through Python and this file; they must agree.
 // Usage: const p = makePali(data); const s = await makeSpeaker(ort, p, modelBytes, modelJson); const {pcm, sr} = await s.speak(text, rate)
+// Translation voices (en/ru): const t = makeTranslation(respellData, p, await loadEspeak(makeEspeakModule, files)), then
+// makeSpeaker(ort, p, modelBytes, modelJson, { translation: t, lang: 'en' | 'ru' }).
 
 export function makePali(d) {
   const has = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
@@ -65,12 +67,170 @@ export function makePali(d) {
   return { normalize, toIpa, tune };
 }
 
+// Piper's espeak phonemizer (piper-tts 1.8.0 phonemize_espeak.py) on web/espeak (the same espeak-ng commit, built
+// to WebAssembly). files: {path in espeak-ng-data: bytes}. makeModule: web/espeak/espeak.mjs's default export.
+export async function loadEspeak(makeModule, files, moduleOpts = {}) {
+  const m = await makeModule(moduleOpts);
+  for (const [path, bytes] of Object.entries(files)) {
+    m.FS.mkdirTree('/d/' + path.split('/').slice(0, -1).join('/'));
+    m.FS.writeFile('/d/' + path, bytes);
+  }
+  if (m.ccall('dg_init', 'number', ['string'], ['/d']) < 0) throw new Error('espeak-ng did not start');
+  function phonemize(voice, text) {  // -> sentences, each a list of phonemes (code points), as voice.phonemize
+    if (m.ccall('dg_voice', 'number', ['string'], [voice]) !== 0) throw new Error('espeak-ng has no voice ' + voice);
+    const t = m.stringToNewUTF8(text), r = m._dg_phonemes(t), out = m.UTF8ToString(r);
+    m._free(t);
+    m._free(r);
+    const all = [];
+    let sent = [];
+    for (const line of out.slice(0, -1).split('\n')) {
+      const [ph, term, end] = line.split('\t');
+      // (lang) switch flags around words of another language go; punctuation stays, a clause gets a space after it
+      sent.push(...(ph.replace(/\([^)]+\)/g, '') + term + ([',', ':', ';'].includes(term) ? ' ' : '')).normalize('NFD'));
+      if (end === '1') {
+        all.push(sent);
+        sent = [];
+      }
+    }
+    if (sent.length) all.push(sent);
+    if (all.length && !all.at(-1).length) all.pop();
+    return all;
+  }
+  return { phonemize };
+}
+
+// respell.py for the en/ru voices (Pali words inside a translation, abbreviations, the soft sign): its tables come as data
+// (respell.export()), this is only the code around them. check_js.py runs translations through both.
+export function makeTranslation(d, pali, espeak) {
+  const has = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+  const WORD = new RegExp(d.word, 'g'), HINT = new RegExp(d.en_pali_hint), RU_RX = new RegExp(d.ru_rx, 'g');
+  const EN_RX = new RegExp(d.en_rx, 'g'), EN_IPA_RX = new RegExp(d.en_ipa_rx, 'g'), REF = new RegExp(d.en_ref, 'g');
+  const ABBR = d.en_abbr.map(([p, full]) => [new RegExp(p, 'g'), full]), RU_WORD = new RegExp(d.ru_word, 'g');
+  const PALI_WORDS = new Set(d.en_pali_words);
+  const alpha = c => /\p{L}/u.test(c);  // Python's str.isalpha
+  const cased = (src, out) => {
+    const c = src.slice(0, 1);
+    return c && c === c.toUpperCase() && c !== c.toLowerCase() ? out.slice(0, 1).toUpperCase() + out.slice(1) : out;
+  };
+
+  function respell(text, lang) {
+    text = text.normalize('NFC');
+    if (lang !== 'ru' && lang !== 'en') return text;
+    return text.replace(WORD, w => {
+      const low = w.toLowerCase();
+      if (lang === 'ru') return cased(w, low.replace(RU_RX, x => d.ru_map[x]));
+      if ([...low].some(c => d.pali_chars.includes(c)) || HINT.test(low)) return cased(w, low.replace(EN_RX, x => d.en_map[x]));
+      return w;
+    });
+  }
+
+  const isPaliEn = low => PALI_WORDS.has(low.endsWith('s') && PALI_WORDS.has(low.slice(0, -1)) ? low.slice(0, -1) : low);
+
+  function enIpa(word, us) {
+    let ipa = pali.toIpa(word, { finalM: true }).replace(EN_IPA_RX, m => d.en_ipa[m]);
+    ipa = ipa.replaceAll('ə', us ? 'ə' : 'ɐ').replace(/oː|o/g, us ? 'oʊ' : 'əʊ');
+    return ipa.replace(/(tʃ|dʒ|[kɡtdpbmnlsvhjɹ])\1/g, '$1');
+  }
+
+  function enParts(text, us) {
+    const out = [];
+    let last = 0;
+    for (const m of text.normalize('NFC').matchAll(WORD)) {
+      const low = m[0].toLowerCase();
+      if (!isPaliEn(low)) continue;
+      const plural = low.endsWith('s') && PALI_WORDS.has(low.slice(0, -1));
+      if (m.index > last) out.push(['text', text.slice(last, m.index)]);
+      out.push(['ipa', enIpa(plural ? low.slice(0, -1) : low, us) + (plural ? 'z' : '')]);
+      last = m.index + m[0].length;
+    }
+    if (last < text.length) out.push(['text', text.slice(last)]);
+    return out;
+  }
+
+  function enExpand(text) {
+    for (const [rx, full] of ABBR) text = text.replace(rx, full);
+    return text.replace(REF, (m, book, a, b) => `${d.en_books[book]} ${a}` + (b ? `, ${b}` : ''));
+  }
+
+  function enPhonemes(voice, idMap, text) {
+    text = enExpand(text);
+    const us = voice === 'en-us';
+    let seq = [];
+    for (const [kind, val] of enParts(text, us)) {
+      let ph = kind === 'text' ? espeak.phonemize(voice, respell(val, 'en')).flat() : [...val];
+      const lead = kind === 'text' ? val.match(/^\s*([,.;:?!])/) : null;
+      if (lead && (!ph.length || ph[0] !== lead[1])) ph = [lead[1], ' ', ...ph];  // espeak drops a leading pause
+      if (ph.length) seq.push(...(seq.length && !',.?!;:'.includes(ph[0]) ? [' '] : []), ...ph);
+    }
+    seq = seq.filter((p, i) => !(p === ' ' && i && seq[i - 1] === ' '));
+    return seq.filter(p => has(idMap, p));
+  }
+
+  function ruSoften(word, phonemes) {
+    const out = [...phonemes];
+    for (const [letter, bases] of Object.entries(d.ru_soften)) {
+      if (!word.includes(letter + 'ь')) continue;
+      const idx = out.flatMap((p, i) => bases.includes(p) ? [i] : []);
+      const letters = [...word.matchAll(new RegExp(letter, 'g'))].map(m => m.index);
+      if (idx.length !== letters.length) continue;
+      for (let k = letters.length - 1; k >= 0; k--) {
+        const pos = letters[k], i = idx[k];
+        if (word.slice(pos + 1, pos + 2) === 'ь' && (i + 1 >= out.length || out[i + 1] !== 'ʲ')) out.splice(i + 1, 0, 'ʲ');
+      }
+    }
+    return out;
+  }
+
+  function ruPhonemes(voice, text) {
+    text = respell(text, 'ru');
+    const words = text.toLowerCase().match(RU_WORD) || [];
+    const sents = espeak.phonemize(voice, text).filter(s => s.length);
+    const tokens = [];
+    let cur = [];
+    for (const p of sents.flatMap(s => [...s, ' '])) {
+      if (p !== ' ') cur.push(p);
+      else {
+        if (cur.length) tokens.push(cur);
+        cur = [];
+      }
+    }
+    if (tokens.filter(t => t.some(alpha)).length !== words.length) return sents;
+    const fixed = new Map();
+    let wi = 0;
+    tokens.forEach((t, ti) => {
+      if (!t.some(alpha)) return;
+      const w = words[wi++];
+      if (has(d.ru_stress, w)) fixed.set(ti, [...d.ru_stress[w], ...t.filter(c => !alpha(c) && !'ˈˌːʲ'.includes(c))]);
+      else if (w.includes('ь')) fixed.set(ti, ruSoften(w, t));
+    });
+    let ti = 0;
+    return sents.map(s => {
+      const out = [];
+      let word = [];
+      for (const p of [...s, ' ']) {
+        if (p !== ' ') word.push(p);
+        else {
+          if (word.length) out.push(...(fixed.get(ti++) ?? word));
+          word = [];
+          out.push(' ');
+        }
+      }
+      return out.slice(0, -1);
+    });
+  }
+
+  // tts_server.synth_pcm's phoneme lists for one sentence of a translation
+  const phonemes = (lang, voice, idMap, sent) => lang === 'en' ? [enPhonemes(voice, idMap, sent)].filter(p => p.length)
+    : ruPhonemes(voice, sent).filter(p => p.length);
+  return { respell, enParts, enExpand, phonemes };
+}
+
 // tts_server.synth_pcm for a 'pi' voice: sentence by sentence, 0.35 s between; a lone word read inside "W, W." and the
 // second W cut out by the model's own durations (needs the align model: its second output is per-id frames).
 const SENTENCE = /(?<=[.?!;:])\s+/;
 const HOP = 256;
 
-export async function makeSpeaker(ort, pali, modelBytes, modelJson, { noise = 0.6, noiseW = 0.7 } = {}) {
+export async function makeSpeaker(ort, pali, modelBytes, modelJson, { noise = 0.6, noiseW = 0.7, translation = null, lang = 'pi' } = {}) {
   const session = await ort.InferenceSession.create(modelBytes, { executionProviders: ['wasm'] });
   const idMap = modelJson.phoneme_id_map, sr = modelJson.audio.sample_rate;
   const ids = chars => {
@@ -96,8 +256,15 @@ export async function makeSpeaker(ort, pali, modelBytes, modelJson, { noise = 0.
     return audio.slice(Math.max(first - Math.trunc(0.03 * sr), 0));
   }
   async function speak(text, rate = 1) {
-    const length = 1.15 / rate, gap = new Float32Array(Math.trunc(sr * 0.35)), parts = [];
+    // pratham: our tuned pace (length 1.15 at rate 1); translations: the recorded pace
+    const length = (translation ? 1 : 1.15) / rate, gap = new Float32Array(Math.trunc(sr * 0.35)), parts = [];
     for (const sent of text.trim().split(SENTENCE)) {
+      if (translation) {  // en/ru: no lone-word trick (Pali only)
+        const lists = translation.phonemes(lang, modelJson.espeak.voice, idMap, sent);
+        for (const ph of lists) parts.push((await run(ph, length)).audio);
+        if (lists.length) parts.push(gap);
+        continue;
+      }
       const ipa = pali.tune(pali.toIpa(sent, { fullA: true }));
       const word = ipa.replace(/^[ ,.?!:;]+|[ ,.?!:;]+$/g, '');
       if (word && !word.includes(' ')) parts.push(await loneWord(word, length), gap);
