@@ -294,7 +294,7 @@ def memo_mp3(segments, vid, rate, delay, end_delay, sound):
         return open(f.name, 'rb').read()
 
 
-OWN_VOICES = {'dg', 'dgru'}  # the owner's timbre: never handed out as a file
+OWN_VOICES = {'dg', 'dgru'}  # the owner's timbre: downloadable offline under CC BY-NC-SA 4.0 (owner, 2026-10-10)
 # piper's own espeak-ng-data, in packs a device downloads once: core with the first en/ru voice, then its language
 ESPEAK_DATA = os.path.join(os.path.dirname(os.path.abspath(__import__('piper').__file__)), 'espeak-ng-data')
 ESPEAK_PACKS = {'core': ['phontab', 'phonindex', 'phondata', 'intonations'],
@@ -351,10 +351,8 @@ class Handler(BaseHTTPRequestHandler):
         self.reply(404, {'error': {'message': 'not found'}})
 
     def offline(self, name):
-        """DG offline: rules + engine + models. The Pali voices fed tune()'s rules and the en/ru voices; the own voices
-        (pi-own 'dg', 'dgru') stay here."""
-        offered = {vid: os.path.join(MODELS, VOICES[vid][0]) for vid in VOICES
-                   if VOICES[vid][1] in ('pi', 'en', 'ru') and vid not in OWN_VOICES}
+        """DG offline: rules + engine + models, every voice (the owner's own ones too, 2026-10-10: CC BY-NC-SA 4.0)."""
+        offered = {vid: os.path.join(MODELS, VOICES[vid][0]) for vid in VOICES if VOICES[vid][1] in ('pi', 'pi-own', 'en', 'ru')}
         model = lambda vid: offered[vid] + '.align.onnx' if os.path.exists(offered[vid] + '.align.onnx') else offered[vid] + '.onnx'
         web = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'web')
         if name == 'pali-ipa.json':  # 'voices': a new tag tells a device its downloaded model is stale
@@ -364,6 +362,7 @@ class Handler(BaseHTTPRequestHandler):
                                                **{pack: len(espeak_pack(pack)) for pack in ESPEAK_PACKS},
                                                'gz': {pack: len(espeak_pack(pack, gz=True)) for pack in ESPEAK_PACKS}}, 'voices': {
                 vid: {'label': VOICES[vid][2], 'lang': VOICES[vid][1], 'bytes': os.path.getsize(model(vid)),
+                      **({'license': 'CC BY-NC-SA 4.0'} if vid in OWN_VOICES else {}),
                       'tag': f'{int(os.path.getmtime(model(vid)))}'} for vid in offered}})
         m = re.fullmatch(r'([a-z]+)\.onnx(\.json)?', name)
         if name == 'pali-tts.js':

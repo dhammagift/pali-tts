@@ -225,7 +225,9 @@ export function makeTranslation(d, pali, espeak) {
   return { respell, enParts, enExpand, phonemes };
 }
 
-// tts_server.synth_pcm for a 'pi' voice: sentence by sentence, 0.35 s between; a lone word read inside "W, W." and the
+// tts_server.synth_pcm: lang 'pi' (pratham, priyamvada), 'pi-own' (the owner's own voice: plain IPA, the recorded pace,
+// no lone-word trick, brought up to the others' loudness), 'en'/'ru' (translation).
+// For a 'pi' voice: sentence by sentence, 0.35 s between; a lone word read inside "W, W." and the
 // second W cut out by the model's own durations (needs the align model: its second output is per-id frames).
 const SENTENCE = /(?<=[.?!;:])\s+/;
 const HOP = 256;
@@ -257,7 +259,8 @@ export async function makeSpeaker(ort, pali, modelBytes, modelJson, { noise = 0.
   }
   async function speak(text, rate = 1) {
     // pratham: our tuned pace (length 1.15 at rate 1); translations: the recorded pace
-    const length = (translation ? 1 : 1.15) / rate, gap = new Float32Array(Math.trunc(sr * 0.35)), parts = [];
+    const own = lang === 'pi-own';
+    const length = (translation || own ? 1 : 1.15) / rate, gap = new Float32Array(Math.trunc(sr * 0.35)), parts = [];
     for (const sent of text.trim().split(SENTENCE)) {
       if (translation) {  // en/ru: no lone-word trick (Pali only)
         const lists = translation.phonemes(lang, modelJson.espeak.voice, idMap, sent);
@@ -265,14 +268,18 @@ export async function makeSpeaker(ort, pali, modelBytes, modelJson, { noise = 0.
         if (lists.length) parts.push(gap);
         continue;
       }
-      const ipa = pali.tune(pali.toIpa(sent, { fullA: true }));
-      const word = ipa.replace(/^[ ,.?!:;]+|[ ,.?!:;]+$/g, '');
+      const raw = pali.toIpa(sent, { fullA: true }), ipa = own ? raw : pali.tune(raw);  // pratham's fixes would confuse it
+      const word = own ? '' : ipa.replace(/^[ ,.?!:;]+|[ ,.?!:;]+$/g, '');
       if (word && !word.includes(' ')) parts.push(await loneWord(word, length), gap);
       else if (ipa.replace(/^[ ,.?!]+|[ ,.?!]+$/g, '')) parts.push((await run([...ipa], length)).audio, gap);
     }
     if (!parts.length) parts.push(new Float32Array(sr >> 2));
     const pcm = new Float32Array(parts.reduce((n, p) => n + p.length, 0));
     parts.reduce((o, p) => (pcm.set(p, o), o + p.length), 0);
+    if (own) {  // its recordings were quiet: ~16 dB under pratham
+      const peak = pcm.reduce((m, v) => Math.max(m, Math.abs(v)), 0);
+      if (peak > 0) pcm.forEach((v, i) => { pcm[i] = v * (0.9 / peak); });
+    }
     return { pcm, sr };
   }
   return { speak };
