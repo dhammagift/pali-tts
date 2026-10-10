@@ -57,6 +57,8 @@ VOICES = {
     'ruslan': ('ru_RU-ruslan-medium', 'ru', 'ruslan ♂'),
     'irina': ('ru_RU-irina-medium', 'ru', 'irina ♀'),
 }
+# dgru came out ~6 dB under ruslan/irina (RMS -29 vs -23 dB): brought to their level (pali-tts.js gets it in the offer)
+GAIN = {'dgru': 2.0}
 CACHE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cache', 'tts')
 SENTENCE = re.compile(r'(?<=[.?!;:])\s+')
 
@@ -221,7 +223,7 @@ def synth_pcm(text, vid, rate):
     pcm = np.concatenate(parts) if parts else np.zeros(sr // 4, dtype=np.float32)
     if lang == 'pi-own' and np.abs(pcm).max() > 0:  # its recordings were quiet: comes out ~16 dB under pratham
         pcm = pcm * (0.9 / np.abs(pcm).max())
-    return pcm, sr
+    return pcm * GAIN.get(vid, 1.0), sr
 
 
 SOUNDS = '/var/www/html/assets/sounds'
@@ -356,13 +358,15 @@ class Handler(BaseHTTPRequestHandler):
         model = lambda vid: offered[vid] + '.align.onnx' if os.path.exists(offered[vid] + '.align.onnx') else offered[vid] + '.onnx'
         web = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'web')
         if name == 'pali-ipa.json':  # 'voices': a new tag tells a device its downloaded model is stale
-            return self.reply(200, {'rules': RULES_VERSION, 'data': export(), 'respell': respell_export(),
+            # 'engine': pali-tts.js's hash - a device holding an older engine fetches it again
+            engine = hashlib.sha1(open(os.path.join(web, 'pali-tts.js'), 'rb').read()).hexdigest()[:12]
+            return self.reply(200, {'rules': RULES_VERSION, 'engine': engine, 'data': export(), 'respell': respell_export(),
                                     'espeak': {'code': sum(os.path.getsize(os.path.join(web, 'espeak', f)) for f in ('espeak.mjs', 'espeak.wasm')),
                                                'tag': str(int(max(os.path.getmtime(os.path.join(web, 'espeak', f)) for f in ('espeak.mjs', 'espeak.wasm')))),
                                                **{pack: len(espeak_pack(pack)) for pack in ESPEAK_PACKS},
                                                'gz': {pack: len(espeak_pack(pack, gz=True)) for pack in ESPEAK_PACKS}}, 'voices': {
                 vid: {'label': VOICES[vid][2], 'lang': VOICES[vid][1], 'bytes': os.path.getsize(model(vid)),
-                      **({'license': 'CC BY-NC-SA 4.0'} if vid in OWN_VOICES else {}),
+                      **({'license': 'CC BY-NC-SA 4.0'} if vid in OWN_VOICES else {}), **({'gain': GAIN[vid]} if vid in GAIN else {}),
                       'tag': f'{int(os.path.getmtime(model(vid)))}'} for vid in offered}})
         m = re.fullmatch(r'([a-z]+)\.onnx(\.json)?', name)
         if name == 'pali-tts.js':
@@ -459,7 +463,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.reply(400, {'error': {'message': 'unknown voice'}})
         if not text.strip():
             return self.reply(400, {'error': {'message': 'empty text'}})
-        key = hashlib.sha1(f'{VOICES[vid][0]}|{RULES_VERSION}|{rate:.2f}|{text}'.encode()).hexdigest()
+        gain = f'|g{GAIN[vid]}' if vid in GAIN else ''  # a changed gain must not replay the old mp3
+        key = hashlib.sha1(f'{VOICES[vid][0]}|{RULES_VERSION}|{rate:.2f}|{text}{gain}'.encode()).hexdigest()
         path = os.path.join(CACHE, key + '.mp3')
         if os.path.exists(path):
             os.utime(path)  # recently played: keep it longer

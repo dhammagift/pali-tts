@@ -232,7 +232,7 @@ export function makeTranslation(d, pali, espeak) {
 const SENTENCE = /(?<=[.?!;:])\s+/;
 const HOP = 256;
 
-export async function makeSpeaker(ort, pali, modelBytes, modelJson, { noise = 0.6, noiseW = 0.7, translation = null, lang = 'pi' } = {}) {
+export async function makeSpeaker(ort, pali, modelBytes, modelJson, { noise = 0.6, noiseW = 0.7, translation = null, lang = 'pi', gain = 1 } = {}) {
   const session = await ort.InferenceSession.create(modelBytes, { executionProviders: ['wasm'] });
   const idMap = modelJson.phoneme_id_map, sr = modelJson.audio.sample_rate;
   const ids = chars => {
@@ -280,6 +280,7 @@ export async function makeSpeaker(ort, pali, modelBytes, modelJson, { noise = 0.
       const peak = pcm.reduce((m, v) => Math.max(m, Math.abs(v)), 0);
       if (peak > 0) pcm.forEach((v, i) => { pcm[i] = v * (0.9 / peak); });
     }
+    if (gain !== 1) pcm.forEach((v, i) => { pcm[i] = v * gain; });  // the service's GAIN (a quiet voice)
     return { pcm, sr };
   }
   return { speak };
