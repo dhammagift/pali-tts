@@ -1,4 +1,5 @@
-"""Kaggle GPU job: a two-speaker Pali voice from rohan (the only Hindi voice with published training weights) on
+"""Kaggle GPU job: a two-speaker Pali voice warm-started from pratham ITSELF (pratham.ckpt, rebuilt from its ONNX by
+rebuild_pratham_ckpt.py, dataset pratham-ckpt; rohan's checkpoint only if that is missing) on
 pali-mix-voice-data (make_pi_mix_dataset.py): speaker 'pratham' = pratham's own readings (its timbre and quality),
 speaker 'owner' = the owner's 2 h (his pronunciation; ṁ as ŋ, ṭṭh as ʈʈʰ, symbols only his half has). The aim: speaker
 pratham with the owner's symbols. Samples: speaker pratham with our rules, and with plain to_ipa (the owner's symbols).
@@ -11,7 +12,7 @@ import subprocess
 import sys
 
 SMOKE = os.environ.get('SMOKE', '0') == '1' or bool(glob.glob('/kaggle/input/**/SMOKE', recursive=True))
-MAX_TIME = '00:00:12:00' if SMOKE else os.environ.get('MAX_TIME', '00:10:15:00')  # Kaggle sessions stop at 12 h; leave time for export
+MAX_TIME = '00:00:12:00' if SMOKE else os.environ.get('MAX_TIME', '00:07:00:00')  # from pratham: less to learn than from rohan  # Kaggle sessions stop at 12 h; leave time for export
 W = '/kaggle/working'
 DATA = os.path.dirname(glob.glob('/kaggle/input/**/metadata.csv', recursive=True)[0])
 CKPT_URL = ('https://huggingface.co/datasets/rhasspy/piper-checkpoints/resolve/main/hi/hi_IN/rohan/medium/'
@@ -52,8 +53,12 @@ src = open(main_py).read()
 open(main_py, 'w').write(re.sub(r'\n\s*ModelCheckpoint\(\s*monitor="val_mos".*?\),(?=\n)', '', src, flags=re.S))
 sh("pip install -q cython scikit-build 'cmake<4' ninja onnx onnxscript -e '.[train]'")
 sh('bash build_monotonic_align.sh && python setup.py build_ext --inplace -q')
-if not os.path.exists(f'{W}/rohan.ckpt'):
-    sh(f'wget -q -O {W}/rohan.ckpt "{CKPT_URL}"')
+BASE = (glob.glob('/kaggle/input/**/pratham.ckpt', recursive=True) or [None])[0]
+if not BASE:
+    BASE = f'{W}/rohan.ckpt'
+    if not os.path.exists(BASE):
+        sh(f'wget -q -O {BASE} "{CKPT_URL}"')
+print('warm start from', BASE, flush=True)
 os.makedirs(f'{W}/out', exist_ok=True)
 sh(' '.join([
     'python -m piper.train fit',
@@ -69,7 +74,7 @@ sh(' '.join([
     '--data.dataset_type phoneme_ids',
     '--data.num_symbols 256',
     f'--data.phonemes_path {DATA}/phonemes.json',
-    f'--model.warmstart_ckpt {W}/rohan.ckpt',
+    f'--model.warmstart_ckpt {BASE}',
     '--model.num_speakers 2',
     f"--trainer.max_epochs {'2' if SMOKE else '3000'}",
     f'--trainer.max_time {MAX_TIME}',
