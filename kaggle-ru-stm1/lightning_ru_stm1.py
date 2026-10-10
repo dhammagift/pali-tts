@@ -29,8 +29,16 @@ def run(base, smoke=False):
             STUDIO.upload_file(DATA_ZIP, 'data.zip')
             STUDIO.run(f'for i in $(seq 60); do test -f {HOME}/data.zip && break; sleep 5; done; ls -la {HOME}/data.zip')
             STUDIO.run(f'mkdir -p {HOME}/input && cd {HOME}/input && python -m zipfile -e ../data.zip . && rm ../data.zip')
-        env = f'INPUT={HOME}/input WORK={work} BASE={base} SMOKE={int(smoke)}'
-        STUDIO.run(f'rm -rf {work} && mkdir -p {work} && cd {HOME} && (nohup env {env} python train.py > {work}/log.txt 2>&1 &)')
+        # a run cut short (the studio stopped: the free tier's 4 h seem to count across restarts) goes on from its last.ckpt
+        ckpt = STUDIO.run(f'ls {work}/train/lightning_logs/*/checkpoints/last.ckpt 2>/dev/null | tail -1; true').strip()
+        if ckpt.startswith('/') and not STUDIO.run(f'tail -c 300 {work}/log.txt | grep -q "^done" && echo done; true').strip():
+            print(time.strftime('%H:%M'), base, 'resumes from', ckpt, flush=True)
+            STUDIO.run(f'cp {ckpt} {HOME}/resume-{base}.ckpt')
+            env = f'INPUT={HOME}/input WORK={work} BASE={base} SMOKE={int(smoke)} RESUME={HOME}/resume-{base}.ckpt'
+            STUDIO.run(f'cd {HOME} && (nohup env {env} python train.py >> {work}/log.txt 2>&1 &)')
+        else:
+            env = f'INPUT={HOME}/input WORK={work} BASE={base} SMOKE={int(smoke)}'
+            STUDIO.run(f'rm -rf {work} && mkdir -p {work} && cd {HOME} && (nohup env {env} python train.py > {work}/log.txt 2>&1 &)')
         while True:
             time.sleep(300)
             state = STUDIO.run(f'tail -c 300 {work}/log.txt | grep -q "^done" && echo done || '
@@ -49,12 +57,14 @@ def run(base, smoke=False):
             STUDIO.download_file(f'{rel}/error.txt', f'{out}/error.txt')
         return state == 'done'
     finally:
-        STUDIO.stop()
+        if str(STUDIO.status).endswith('Running'):
+            STUDIO.stop()
         print(time.strftime('%H:%M'), 'stopped', flush=True)
 
 
 if __name__ == '__main__':
-    if not run(BASES[0], smoke=True):
+    if os.environ.get('SKIP_SMOKE') != '1' and not run(BASES[0], smoke=True):
         sys.exit('smoke run failed: see /root/st-m1/runs/*-smoke/')
     for b in BASES:
-        run(b)
+        if not os.path.exists(f'{LOCAL}/{b}/ru_stm1-medium.onnx'):  # done before: skip
+            run(b)

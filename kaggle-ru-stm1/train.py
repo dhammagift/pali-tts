@@ -15,7 +15,7 @@ SMOKE = os.environ.get('SMOKE', '0') == '1' or bool(glob.glob(f"{os.environ.get(
 # (optimizer, epoch counter) instead of a fresh warm start from ruslan
 # Lightning AI (lightning_ru_stm1.py) runs the same file with INPUT / WORK / BASE / MAX_TIME in the environment
 INPUT = os.environ.get('INPUT', '/kaggle/input')
-RESUME = (glob.glob(f'{INPUT}/**/last.ckpt', recursive=True) or [None])[0]  # Kaggle flattens the dataset: at its root
+RESUME = os.environ.get('RESUME') or (glob.glob(f'{INPUT}/**/last.ckpt', recursive=True) or [None])[0]  # Kaggle flattens the dataset: at its root
 # the comparison runs: 2:30 each (push_ru_stm1.sh rewrites it); a GPU session ends at 12 h, so at most ~11 h
 MAX_TIME = '00:00:08:00' if SMOKE else os.environ.get('MAX_TIME', '00:02:30:00')
 W = os.environ.get('WORK', '/kaggle/working')
