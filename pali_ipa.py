@@ -170,6 +170,8 @@ PRATHAM_RULES = [
     (re.compile(r'(?<=ɾ)ʌjj(?=aː)'), 'aj'),  # only after r: paccayā (round 41) keeps ʌjj
     # round 52: pucchāmi «паччхами» - its u heard as a; a long uː best + ok (tense u and the current bad in both takes)
     (re.compile(r'pʊccʰ'), 'puːccʰ'),
+    # round 53: bhikkhusammutiyā «самматья», the i before yā lost; jj ok in both takes (tense u, i and the current: bad)
+    (re.compile(r'(?<=mmʊtɪ)j(?=aː)'), 'jj'),
     # round 51: uposathassa etāni ran together (bad both takes); the open a before the e: ok in both (a pause: best + ok,
     # but a pause inside a phrase is what round 45 threw out for So)
     (re.compile(r'ʌ(?= ˈ?eː)'), 'a'),
@@ -277,6 +279,7 @@ if __name__ == '__main__':
         'soːoːoː ɪmʌmˈeːʋʌ kˈaːjən ʌɲjˈeːnʌ bjjʌɡɡʰˈeːhɪ', tune(to_ipa('So imameva kāyaṁ aññena byagghehi', full_a=True))  # round 43
     assert tune(to_ipa('uposathassa etāni mama vacanāya', full_a=True)) == 'ʊpoːsʌtʰˈʌssa eːtˈaːnɪ mˈʌma ʋʌccʌnˈaːjʌ'  # round 51
     assert tune(to_ipa('dhārayāmīti pucchāmi', full_a=True)) == 'dʰaːɾajaːmˈiːtɪ puːccʰˈaːmɪ'  # round 52
+    assert tune(to_ipa('bhikkhusammutiyā', full_a=True)) == 'bʰɪkkʰʊsˈʌmmʊtɪjjaː'  # round 53
     assert tune(to_ipa('Katamā ca, bhikkhave, jarā?', full_a=True)) == 'kˈʌtʌmaː cˈʌ, bʰˈɪkkʰʌʋeː, ɟʌɾˈaː?'  # round 46
     assert tune(to_ipa('Taṇhā kattha uppajjati', full_a=True)) == 'tˈʌɳhaː kˈʌttʰaː ʊppˈʌɟɟatɪ'  # round 46
     assert tune(to_ipa('phoṭṭhabba gāminiyā paṭipadāya paṭipadā', full_a=True)) == \
