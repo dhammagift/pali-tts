@@ -1,0 +1,1 @@
+{"id": "dhammagift/pali-mix-voice-train", "title": "pali-mix-voice-train", "code_file": "train.py", "language": "python", "kernel_type": "script", "is_private": true, "enable_gpu": true, "enable_internet": true, "dataset_sources": ["dhammagift/pali-mix-voice-data"], "competition_sources": [], "kernel_sources": []}
