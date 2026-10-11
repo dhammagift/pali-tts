@@ -37,7 +37,7 @@ from piper import PiperVoice, SynthesisConfig
 from pali_ipa import export, to_ipa, tune
 from respell import en_phonemes, export as respell_export, respell, ru_phonemes
 
-RULES_VERSION = 'r40'  # bump when pali_ipa rules change, so cached mp3 are not reused
+RULES_VERSION = 'r41'  # bump when pali_ipa rules change, so cached mp3 are not reused
 MAX_CHARS = 2000
 RATE_LIMIT = 60  # requests per client IP per minute
 # id -> (model file, language, menu label). Sites build their voice menus from GET /voices (in this order; the first
@@ -61,6 +61,22 @@ VOICES = {
 GAIN = {'dgru': 2.0}
 CACHE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cache', 'tts')
 SENTENCE = re.compile(r'(?<=[.?!;:])\s+')
+PIECE = 150  # chars: a VITS input's memory grows faster than its length (AN 11.18's 575-char line took >2 GB and OOM-killed us)
+
+
+def pieces(text):
+    """Sentences; a long one cut into runs of up to PIECE chars, at the run's last comma or …pe… (else between words):
+    [(text, pause after it in s)]."""
+    for sent in SENTENCE.split(text.strip()):
+        run = []
+        for w in sent.split() if len(sent) > PIECE else [sent]:
+            run.append(w)
+            if len(run) > 1 and len(' '.join(run)) > PIECE:
+                cut = max((i for i, x in enumerate(run[:-1]) if x.endswith((',', '…'))), default=len(run) - 2)
+                yield ' '.join(run[:cut + 1]), 0.15 if run[cut].endswith((',', '…')) else 0.05
+                run = run[cut + 1:]
+        yield ' '.join(run), 0.35
+
 
 args = argparse.ArgumentParser()
 args.add_argument('--port', type=int, default=3011)
@@ -200,7 +216,7 @@ def synth_pcm(text, vid, rate):
     # pratham: our tuned pace (length 1.15 at rate 1); own voice and translations: the recorded pace
     cfg = SynthesisConfig(length_scale=(1.15 if lang == 'pi' else 1.0) / rate, noise_scale=0.6, noise_w_scale=0.7)
     parts = []
-    for sent in SENTENCE.split(text.strip()):
+    for sent, pause in pieces(text):
         if lang.startswith('pi'):
             ipa = to_ipa(sent, full_a=True)
             ipa = tune(ipa) if lang == 'pi' else ipa  # pratham's fixes would only confuse the own voice
@@ -215,11 +231,11 @@ def synth_pcm(text, vid, rate):
         if word and ' ' not in word:
             parts.append(lone_word(vid, word, cfg))
             phonemes = []  # read
-            parts.append(np.zeros(int(sr * 0.35), dtype=np.float32))
+            parts.append(np.zeros(int(sr * pause), dtype=np.float32))
         for ph in phonemes:
             parts.append(voice.phoneme_ids_to_audio(voice.phonemes_to_ids(ph), cfg))
         if phonemes:
-            parts.append(np.zeros(int(sr * 0.35), dtype=np.float32))
+            parts.append(np.zeros(int(sr * pause), dtype=np.float32))
     pcm = np.concatenate(parts) if parts else np.zeros(sr // 4, dtype=np.float32)
     if lang == 'pi-own' and np.abs(pcm).max() > 0:  # its recordings were quiet: comes out ~16 dB under pratham
         pcm = pcm * (0.9 / np.abs(pcm).max())

@@ -106,7 +106,7 @@ export function makeTranslation(d, pali, espeak) {
   const WORD = new RegExp(d.word, 'g'), HINT = new RegExp(d.en_pali_hint), RU_RX = new RegExp(d.ru_rx, 'g');
   const EN_RX = new RegExp(d.en_rx, 'g'), EN_IPA_RX = new RegExp(d.en_ipa_rx, 'g'), REF = new RegExp(d.en_ref, 'g');
   const ABBR = d.en_abbr.map(([p, full]) => [new RegExp(p, 'g'), full]), RU_WORD = new RegExp(d.ru_word, 'g');
-  const PALI_WORDS = new Set(d.en_pali_words);
+  const PALI_WORDS = new Set(d.en_pali_words), EN_PENULT = new Set(d.en_penult), NUCLEUS = new RegExp(d.nucleus, 'g');
   const alpha = c => /\p{L}/u.test(c);  // Python's str.isalpha
   const cased = (src, out) => {
     const c = src.slice(0, 1);
@@ -124,10 +124,16 @@ export function makeTranslation(d, pali, espeak) {
     });
   }
 
-  const isPaliEn = low => PALI_WORDS.has(low.endsWith('s') && PALI_WORDS.has(low.slice(0, -1)) ? low.slice(0, -1) : low);
+  const known = w => PALI_WORDS.has(w) || EN_PENULT.has(w);
+  const isPaliEn = low => known(low.endsWith('s') && known(low.slice(0, -1)) ? low.slice(0, -1) : low);
 
   function enIpa(word, us) {
-    let ipa = pali.toIpa(word, { finalM: true }).replace(EN_IPA_RX, m => d.en_ipa[m]);
+    let ipa = pali.toIpa(word, { stress: !EN_PENULT.has(word), finalM: true });
+    if (EN_PENULT.has(word)) {  // a name: the stress on the penult, a stressed short a full (as toIpa does)
+      const v = [...ipa.matchAll(NUCLEUS)].at(-2);
+      ipa = ipa.slice(0, v.index) + 'ˈ' + (v[0] === 'ə' ? 'ʌ' : v[0]) + ipa.slice(v.index + v[0].length);
+    }
+    ipa = ipa.replace(EN_IPA_RX, m => d.en_ipa[m]);
     ipa = ipa.replaceAll('ə', us ? 'ə' : 'ɐ').replace(/oː|o/g, us ? 'oʊ' : 'əʊ');
     return ipa.replace(/(tʃ|dʒ|[kɡtdpbmnlsvhjɹ])\1/g, '$1');
   }
@@ -138,10 +144,11 @@ export function makeTranslation(d, pali, espeak) {
     for (const m of text.normalize('NFC').matchAll(WORD)) {
       const low = m[0].toLowerCase();
       if (!isPaliEn(low)) continue;
-      const plural = low.endsWith('s') && PALI_WORDS.has(low.slice(0, -1));
+      const plural = low.endsWith('s') && known(low.slice(0, -1));
+      const poss = /^['’]s\b/.test(text.slice(m.index + m[0].length));  // Ānanda's: -z, not "es" read apart
       if (m.index > last) out.push(['text', text.slice(last, m.index)]);
-      out.push(['ipa', enIpa(plural ? low.slice(0, -1) : low, us) + (plural ? 'z' : '')]);
-      last = m.index + m[0].length;
+      out.push(['ipa', enIpa(plural ? low.slice(0, -1) : low, us) + (plural || poss ? 'z' : '')]);
+      last = m.index + m[0].length + (poss ? 2 : 0);
     }
     if (last < text.length) out.push(['text', text.slice(last)]);
     return out;
@@ -182,7 +189,7 @@ export function makeTranslation(d, pali, espeak) {
   }
 
   function ruPhonemes(voice, text) {
-    text = respell(text, 'ru');
+    text = respell(text, 'ru').replace(/[А-Яа-яЁё]+/g, w => has(d.ru_accent, w.toLowerCase()) ? cased(w, d.ru_accent[w.toLowerCase()]) : w);
     const words = text.toLowerCase().match(RU_WORD) || [];
     const sents = espeak.phonemize(voice, text).filter(s => s.length);
     const tokens = [];
@@ -230,6 +237,22 @@ export function makeTranslation(d, pali, espeak) {
 // For a 'pi' voice: sentence by sentence, 0.35 s between; a lone word read inside "W, W." and the
 // second W cut out by the model's own durations (needs the align model: its second output is per-id frames).
 const SENTENCE = /(?<=[.?!;:])\s+/;
+const PIECE = 150;  // tts_server.pieces: sentences; a long one cut into runs of up to PIECE chars at the run's last comma (else between
+// words), with the pause after each
+export function* pieces(text) {
+  for (const sent of text.trim().split(SENTENCE)) {
+    let run = [];
+    for (const w of sent.length > PIECE ? sent.split(/\s+/).filter(Boolean) : [sent]) {
+      run.push(w);
+      if (run.length > 1 && run.join(' ').length > PIECE) {
+        const comma = run.slice(0, -1).findLastIndex(x => /[,…]$/.test(x)), cut = comma >= 0 ? comma : run.length - 2;
+        yield [run.slice(0, cut + 1).join(' '), /[,…]$/.test(run[cut]) ? 0.15 : 0.05];
+        run = run.slice(cut + 1);
+      }
+    }
+    yield [run.join(' '), 0.35];
+  }
+}
 const HOP = 256;
 
 export async function makeSpeaker(ort, pali, modelBytes, modelJson, { noise = 0.6, noiseW = 0.7, translation = null, lang = 'pi', gain = 1 } = {}) {
@@ -260,8 +283,9 @@ export async function makeSpeaker(ort, pali, modelBytes, modelJson, { noise = 0.
   async function speak(text, rate = 1) {
     // pratham: our tuned pace (length 1.15 at rate 1); translations: the recorded pace
     const own = lang === 'pi-own';
-    const length = (translation || own ? 1 : 1.15) / rate, gap = new Float32Array(Math.trunc(sr * 0.35)), parts = [];
-    for (const sent of text.trim().split(SENTENCE)) {
+    const length = (translation || own ? 1 : 1.15) / rate, parts = [];
+    for (const [sent, pause] of pieces(text)) {
+      const gap = new Float32Array(Math.trunc(sr * pause));
       if (translation) {  // en/ru: no lone-word trick (Pali only)
         const lists = translation.phonemes(lang, modelJson.espeak.voice, idMap, sent);
         for (const ph of lists) parts.push((await run(ph, length)).audio);

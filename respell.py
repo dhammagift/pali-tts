@@ -4,6 +4,7 @@ The en/ru voices phonemize with espeak, which reads IAST as English/Russian lett
 Tathāgata -> "th" as in "think", phassa -> "f"). Russian: Pali in Latin -> Cyrillic by Pali sound.
 English: diacritics off, aspirates folded into plain stops (an English voice can't aspirate on cue).
 """
+import os
 import re
 import unicodedata
 
@@ -39,6 +40,13 @@ EN_PALI_WORDS = set('sutta dhamma sangha vinaya nikaya nibbana jhana metta karun
                     'samatha sila panna kamma bhikkhu bhikkhuni tathagata arahant arahat dukkha anatta anicca sati '
                     'satipatthana abhidhamma bodhisatta uposatha patimokkha gotama sariputta moggallana ananda '
                     'kassapa jataka devadatta rahula vassa dana khandha nama rupa vedana sanna sankhara vinnana'.split())
+# Pali names stressed on the penult, as the owner hears them (make_stress_names.py): ru forms with U+0301 on the
+# stressed vowel (espeak ru reads it), en forms that go through our phonemes with that stress
+_NAMES = [line.split() for line in open(os.path.join(os.path.dirname(__file__), 'stress_names.tsv'), encoding='utf-8')]
+RU_ACCENT = {w.replace('́', ''): w for lang, w in _NAMES if lang == 'ru'}
+EN_PENULT = {w for lang, w in _NAMES if lang == 'en'}
+RU_NAME = re.compile(r'[А-Яа-яЁё]+')
+NUCLEUS = re.compile(r'[əaɪiʊueoʌ]ː?')  # a vowel of our Pali IPA
 # our Pali IPA (espeak-hi symbols) -> what the English voices were trained on: plain stops (an English voice
 # can't aspirate on cue), no retroflex, single consonants
 EN_IPA = [('kʰ', 'k'), ('ɡʰ', 'ɡ'), ('cʰ', 'tʃ'), ('ɟʰ', 'dʒ'), ('ʈʰ', 't'), ('ɖʰ', 'd'), ('tʰ', 't'),
@@ -49,7 +57,11 @@ EN_IPA_RX = re.compile('|'.join(re.escape(k) for k, _ in sorted(EN_IPA, key=lamb
 
 def en_ipa(word, us=False):
     """One Pali word as English-voice phonemes: dhamma -> dˈʌmɐ, sutta -> sˈʊtɐ, Vārāṇasī -> vɑːɹˈɑːnɐsiː."""
-    ipa = EN_IPA_RX.sub(lambda m: dict(EN_IPA)[m.group()], to_ipa(word, final_m=True))
+    ipa = to_ipa(word, stress=word not in EN_PENULT, final_m=True)
+    if word in EN_PENULT:  # a name: the stress on the penult, a stressed short a full (as to_ipa does)
+        v = list(NUCLEUS.finditer(ipa))[-2]
+        ipa = ipa[:v.start()] + 'ˈ' + ('ʌ' if v.group() == 'ə' else v.group()) + ipa[v.end():]
+    ipa = EN_IPA_RX.sub(lambda m: dict(EN_IPA)[m.group()], ipa)
     ipa = re.sub(r'oː|o', 'oʊ' if us else 'əʊ', ipa.replace('ə', 'ə' if us else 'ɐ'))
     return re.sub(r'(tʃ|dʒ|[kɡtdpbmnlsvhjɹ])\1', r'\1', ipa)  # geminates: English has none
 
@@ -57,8 +69,8 @@ def en_ipa(word, us=False):
 def is_pali_en(low):
     # Round 16: our phonemes won for the common plain-spelled words (sutta, Dhamma, bhikkhus); for words
     # with diacritics (Vārāṇasī, Nibbāna) the respelling was as good or better, so those stay respelled.
-    stem = low[:-1] if low.endswith('s') and low[:-1] in EN_PALI_WORDS else low
-    return stem in EN_PALI_WORDS
+    stem = low[:-1] if low.endswith('s') and (low[:-1] in EN_PALI_WORDS or low[:-1] in EN_PENULT) else low
+    return stem in EN_PALI_WORDS or stem in EN_PENULT
 
 
 def en_parts(text, us=False):
@@ -68,11 +80,12 @@ def en_parts(text, us=False):
         low = m.group().lower()
         if not is_pali_en(low):
             continue
-        plural = low.endswith('s') and low[:-1] in EN_PALI_WORDS
+        plural = low.endswith('s') and (low[:-1] in EN_PALI_WORDS or low[:-1] in EN_PENULT)
+        poss = re.match(r"['’]s\b", text[m.end():])  # Ānanda's: -z, not "es" read apart
         if m.start() > last:
             out.append(('text', text[last:m.start()]))
-        out.append(('ipa', en_ipa(low[:-1] if plural else low, us) + ('z' if plural else '')))
-        last = m.end()
+        out.append(('ipa', en_ipa(low[:-1] if plural else low, us) + ('z' if plural or poss else '')))
+        last = m.end() + (2 if poss else 0)
     if last < len(text):
         out.append(('text', text[last:]))
     return out
@@ -116,7 +129,7 @@ def en_phonemes(voice, text):
 # espeak-ng (issue #1045, open since 2021) leaves some consonants hard before a soft sign: боль = бол,
 # день, кровь, только, учитель. т and с it softens itself. Letter -> the phonemes espeak gives it.
 RU_SOFTEN = {'л': ('ɭ', 'l'), 'н': ('n',), 'в': ('v', 'f'), 'м': ('m',), 'р': ('r',)}
-RU_WORD = re.compile(r'[а-яё]+(?:-[а-яё]+)*')
+RU_WORD = re.compile('[а-яё\u0301]+(?:-[а-яё\u0301]+)*')
 
 
 # espeak's stress is wrong for some names (owner, ruvoice1/2: Варанаси, Исипатане): whole words in espeak's style
@@ -145,7 +158,8 @@ def ru_soften(word, phonemes):
 
 def ru_phonemes(voice, text):
     """Phoneme lists (one per sentence) for a Piper Russian voice, with the soft sign restored."""
-    text = respell(text, 'ru')
+    text = RU_NAME.sub(lambda m: _case(m.group(), RU_ACCENT[m.group().lower()]) if m.group().lower() in RU_ACCENT else m.group(),
+                       respell(text, 'ru'))
     words = RU_WORD.findall(text.lower())
     sents = [list(s) for s in voice.phonemize(text) if s]
     flat = [p for s in sents for p in s + [' ']]  # a space between sentences too, or their edge words merge
@@ -192,7 +206,8 @@ def export():
             'ru_rx': RU_RX.pattern, 'ru_map': RU_MAP, 'en_rx': EN_RX.pattern, 'en_map': EN_MAP,
             'en_pali_words': sorted(EN_PALI_WORDS), 'en_ipa_rx': EN_IPA_RX.pattern, 'en_ipa': dict(EN_IPA),
             'en_abbr': [[rx.pattern, full] for rx, full in EN_ABBR], 'en_books': EN_BOOKS, 'en_ref': EN_REF.pattern,
-            'ru_soften': {k: list(v) for k, v in RU_SOFTEN.items()}, 'ru_word': RU_WORD.pattern, 'ru_stress': RU_STRESS}
+            'ru_soften': {k: list(v) for k, v in RU_SOFTEN.items()}, 'ru_word': RU_WORD.pattern, 'ru_stress': RU_STRESS,
+            'ru_accent': RU_ACCENT, 'en_penult': sorted(EN_PENULT), 'nucleus': NUCLEUS.pattern}
 
 
 def _case(src, out):
@@ -226,10 +241,12 @@ if __name__ == '__main__':
     assert en_ipa('sutta') == 'sˈʊtɐ', en_ipa('sutta')
     assert en_ipa('gotamo') == 'ɡˈəʊtɐməʊ', en_ipa('gotamo')
     assert en_parts('the suttas, monks') == [('text', 'the '), ('ipa', 'sˈʊtɐz'), ('text', ', monks')], en_parts('the suttas, monks')
+    assert en_parts("Sāriputta's bowl")[:2] == [('ipa', 'sɑːɹɪpˈʊtɐz'), ('text', ' bowl')], en_parts("Sāriputta's bowl")
     assert [k for k, _ in en_parts('in Vārāṇasī the Dhamma')] == ['text', 'ipa']  # diacritics: respelled
     assert en_expand('There Ven. Sāriputta said, i.e. the Buddha (SN 56.11; MN 10).') == \
         'There Venerable Sāriputta said, that is, the Buddha (Saṁyutta Nikāya 56, 11; Majjhima Nikāya 10).', en_expand('There Ven. Sāriputta said, i.e. the Buddha (SN 56.11; MN 10).')
     assert en_expand('he said "Venus" and Seven Sāriputta') == 'he said "Venus" and Seven Sāriputta'  # not inside words
+    assert RU_ACCENT['раджагахе'] == 'раджага\u0301хе' and en_ipa('sāriputta') == 'sɑːɹɪpˈʊtɐ', en_ipa('sāriputta')
     assert ru_soften('боль', ['b', 'ˈ', 'o', 'ɭ']) == ['b', 'ˈ', 'o', 'ɭ', 'ʲ']
     assert ru_soften('мать', ['m', 'ˈ', 'ɑ', 't', 'ʲ']) == ['m', 'ˈ', 'ɑ', 't', 'ʲ']  # т: espeak got it right
 
