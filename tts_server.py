@@ -56,9 +56,14 @@ VOICES = {
     'dgru': ('ru_dg2-medium', 'ru', 'o Dhamma.Gift ♂ · beta'),
     'ruslan': ('ru_RU-ruslan-medium', 'ru', 'ruslan ♂'),
     'irina': ('ru_RU-irina-medium', 'ru', 'irina ♀'),
+    # Piper students of Supertonic M1 from ruslan, 2:30 vs 12:30 on Kaggle; blind A/B for the owner (2026-10-16)
+    'stm1a': ('ru_stm1a-medium', 'ru', 'M1 · A ♂ · test'),
+    'stm1b': ('ru_stm1b-medium', 'ru', 'M1 · B ♂ · test'),
 }
 # dgru came out ~6 dB under ruslan/irina (RMS -29 vs -23 dB): brought to their level (pali-tts.js gets it in the offer)
 GAIN = {'dgru': 2.0}
+TEST_ONLY = {'stm1a', 'stm1b'}  # in the menus of test.dhamma.gift only, never offered offline
+TEST_ORIGIN = 'https://test.dhamma.gift'
 CACHE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cache', 'tts')
 SENTENCE = re.compile(r'(?<=[.?!;:])\s+')
 PIECE = 150  # chars: a VITS input's memory grows faster than its length (AN 11.18's 575-char line took >2 GB and OOM-killed us)
@@ -362,15 +367,16 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == '/health':
             return self.reply(200, {'ok': True, 'loaded': list(loaded), 'rules': RULES_VERSION})
         if self.path == '/voices':  # the menus of DG's voice.js; 'pi-own' is a Pali voice like the others
+            test = self.headers.get('origin') == TEST_ORIGIN
             return self.reply(200, {'voices': [{'id': vid, 'lang': lang[:2], 'label': label}
-                                               for vid, (_, lang, label) in VOICES.items()]})
+                                               for vid, (_, lang, label) in VOICES.items() if test or vid not in TEST_ONLY]})
         if self.path.startswith('/offline/'):
             return self.offline(self.path[len('/offline/'):])
         self.reply(404, {'error': {'message': 'not found'}})
 
     def offline(self, name):
         """DG offline: rules + engine + models, every voice (the owner's own ones too, 2026-10-10: CC BY-NC-SA 4.0)."""
-        offered = {vid: os.path.join(MODELS, VOICES[vid][0]) for vid in VOICES if VOICES[vid][1] in ('pi', 'pi-own', 'en', 'ru')}
+        offered = {vid: os.path.join(MODELS, VOICES[vid][0]) for vid in VOICES if VOICES[vid][1] in ('pi', 'pi-own', 'en', 'ru') and vid not in TEST_ONLY}
         model = lambda vid: offered[vid] + '.align.onnx' if os.path.exists(offered[vid] + '.align.onnx') else offered[vid] + '.onnx'
         web = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'web')
         if name == 'pali-ipa.json':  # 'voices': a new tag tells a device its downloaded model is stale
