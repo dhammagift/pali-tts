@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Kaggle GPU queue for 2026-10-17 (owner: «завтра на gpu запустим»), on f3, one job at a time, each smoke first:
 # M1 re-read with stress marks -> dataset; after the weekly quota reset: Miles demo (2 h), then the M1 student (2:30).
-# A failed or output-less step stops the queue. Log: /root/gpu-queue.log
+# The M1 student waits for /root/st-m1s/APPROVED (the owner OKs M1's marked reading). A failed or output-less step stops the queue. Log: /root/gpu-queue.log
 set -uo pipefail
 cd /var/www/pali-tts
 K=(/root/.local/bin/uvx --python 3.12 kaggle@2.2.4)
@@ -36,6 +36,7 @@ log "quota reset: Miles smoke"
 push_miles 1 && wait_kernel dhammagift/en-miles-voice-train && fetch dhammagift/en-miles-voice-train /root/en-miles/smoke || exit 1
 log "Miles full"
 push_miles 0 && wait_kernel dhammagift/en-miles-voice-train && fetch dhammagift/en-miles-voice-train /root/en-miles/run || exit 1
+until [ -e /root/st-m1s/APPROVED ]; do sleep 300; done  # owner: hear M1's stress-marked reading first (round stm4)
 log "M1s smoke"
 (cd kaggle-ru-stm1 && SET=stm1s SMOKE=1 ./push_ru_stm1.sh ruslan) && wait_kernel dhammagift/ru-stm1s-ruslan \
   && fetch dhammagift/ru-stm1s-ruslan /root/st-m1/runs/ruslan-s-smoke || exit 1
