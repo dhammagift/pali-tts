@@ -136,7 +136,9 @@ RU_WORD = re.compile('[а-яё\u0301]+(?:-[а-яё\u0301]+)*')
 RU_STRESS = {'варанаси': 'vʌrʌnˈɑsʲɪ', 'исипатана': 'ɪsʲɪpʌtˈɑna', 'исипатане': 'ɪsʲɪpʌtˈɑnʲi',
              'исипатану': 'ɪsʲɪpʌtˈɑnu', 'исипатаной': 'ɪsʲɪpʌtˈɑnəj',
              # корпус текстов: espeak reads the plural корпуса́ (buildings); our texts mean ко́рпуса
-             'корпуса': 'kˈorpusʌ'}
+             'корпуса': 'kˈorpusʌ',
+             # роды (childbirth): espeak reads рода́ми (clans); owner, stm2: «с болезненными родами»
+             'родами': 'rˈodʌmʲɪ'}
 
 
 def ru_soften(word, phonemes):

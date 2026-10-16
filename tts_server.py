@@ -37,7 +37,7 @@ from piper import PiperVoice, SynthesisConfig
 from pali_ipa import export, to_ipa, tune
 from respell import en_phonemes, export as respell_export, respell, ru_phonemes
 
-RULES_VERSION = 'r41'  # bump when pali_ipa rules change, so cached mp3 are not reused
+RULES_VERSION = 'r42'  # bump when pali_ipa rules change, so cached mp3 are not reused
 MAX_CHARS = 2000
 RATE_LIMIT = 60  # requests per client IP per minute
 # id -> (model file, language, menu label). Sites build their voice menus from GET /voices (in this order; the first
@@ -56,13 +56,12 @@ VOICES = {
     'dgru': ('ru_dg2-medium', 'ru', 'o Dhamma.Gift ♂ · beta'),
     'ruslan': ('ru_RU-ruslan-medium', 'ru', 'ruslan ♂'),
     'irina': ('ru_RU-irina-medium', 'ru', 'irina ♀'),
-    # Piper students of Supertonic M1 from ruslan, 2:30 vs 12:30 on Kaggle; blind A/B for the owner (2026-10-16)
-    'stm1a': ('ru_stm1a-medium', 'ru', 'M1 · A ♂ · test'),
-    'stm1b': ('ru_stm1b-medium', 'ru', 'M1 · B ♂ · test'),
+    # Piper student of Supertonic M1 from ruslan, 2:30 on Kaggle (stm2: the 12:30 run sounded the same, dropped)
+    'stm1a': ('ru_stm1a-medium', 'ru', 'M1 ♂ · test'),
 }
 # dgru came out ~6 dB under ruslan/irina (RMS -29 vs -23 dB): brought to their level (pali-tts.js gets it in the offer)
 GAIN = {'dgru': 2.0}
-TEST_ONLY = {'stm1a', 'stm1b'}  # in the menus of test.dhamma.gift only, never offered offline
+TEST_ONLY = {'stm1a'}  # in the menus of test.dhamma.gift only, never offered offline
 TEST_ORIGIN = 'https://test.dhamma.gift'
 CACHE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cache', 'tts')
 SENTENCE = re.compile(r'(?<=[.?!;:])\s+')
