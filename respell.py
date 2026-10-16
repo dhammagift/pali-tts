@@ -199,6 +199,31 @@ def ru_phonemes(voice, text):
     return out
 
 
+RU_VOWELS, IPA_VOWELS = 'аеёиоуыэюя', 'aɑʌəoɔuʊiɪyɨeɛæɐ'
+
+
+def ru_stress_marks(voice, text):
+    """text with U+0301 on every word's stressed vowel, as our phonemes stress it (espeak + RU_STRESS), for a voice that
+    reads letters (Supertonic). A word whose vowel letters and phoneme vowels don't pair one to one stays as it is."""
+    def mark(m):
+        w = m.group()
+        letters = [i for i, c in enumerate(w.lower()) if c in RU_VOWELS]
+        if len(letters) < 2 or 'ё' in w.lower() or '\u0301' in w:
+            return w
+        ph = ''.join(p for s in ru_phonemes(voice, w) for p in s)
+        groups = re.findall(f"ˈ?[{IPA_VOWELS}]+", ph)
+        stressed = [k for k, g in enumerate(groups) if g.startswith('ˈ')]
+        if len(stressed) != 1:
+            return w
+        k = stressed[0]
+        if len(groups) != len(letters):  # espeak adds a vowel (четырьмя: tʃʲityrɪ^mʲˈɑ): only a first or last stress is sure
+            k = 0 if k == 0 else -1 if k == len(groups) - 1 else None
+            if k is None:
+                return w
+        i = letters[k] + 1
+        return w[:i] + '\u0301' + w[i:]
+    return re.sub('[А-Яа-яЁё]+', mark, text)
+
 def export():
     """The tables as JSON-able data for web/pali-tts.js (DG reads en/ru translations offline with the same respelling:
     the service hands this out, so the tables live here only). check_js.py runs translations through both."""
@@ -257,4 +282,13 @@ if __name__ == '__main__':
         def phonemize(t):
             return [list('bˈoɭ?'), list('ˈɛtʌ bˈoɭ.')]
     assert [''.join(x) for x in ru_phonemes(_V, 'Боль? Это боль.')] == ['bˈoɭʲ?', 'ˈɛtʌ bˈoɭʲ.']
+
+    class _W:  # espeak's phonemes for single words
+        phonemize = staticmethod(lambda t: [list({'каково': 'kʌkʌvˈo', 'таковым': 'tʌkʌvˈym', 'это': 'ˈɛtʌ',
+                                                  'учитель': 'utʃʲˈitʲɪl', 'родами': 'rʌdˈɑmʲɪ',
+                                                  'четырьмя': 'tʃʲityrɪ^mʲˈɑ'}[t.lower()])])
+    assert ru_stress_marks(_W, 'Каково это, таковым учитель') == 'Каково\u0301 э\u0301то, таковы\u0301м учи\u0301тель'
+    assert ru_stress_marks(_W, 'родами')[:4] == 'ро\u0301д'  # from RU_STRESS
+    assert ru_stress_marks(_W, 'четырьмя') == 'четырьмя\u0301'
+    assert ru_stress_marks(_W, 'всё и я') == 'всё и я'  # ё and one-vowel words: nothing to mark
     print('ok')
