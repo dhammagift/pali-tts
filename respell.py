@@ -215,7 +215,8 @@ def ru_stress_marks(voice, text):
     def mark(m):
         w = m.group()
         letters = [i for i, c in enumerate(w.lower()) if c in RU_VOWELS]
-        if len(letters) < 2 or 'ё' in w.lower() or '\u0301' in w:
+        # -ого/-его, сегодня: M1 reads его́ with a г (owner, stm4) and stresses them right unmarked
+        if len(letters) < 2 or 'ё' in w.lower() or '\u0301' in w or re.search('[ое]го$|сегодн', w.lower()):
             return w
         ph = ''.join(p for s in ru_phonemes(voice, w) for p in s)
         ph = re.sub(f"ˈ([^{IPA_VOWELS}]*)", r"\1ˈ", ph)  # ˈja -> jˈa: the mark right before its vowel
@@ -229,6 +230,8 @@ def ru_stress_marks(voice, text):
             if k is None:
                 return w
         i = letters[k] + 1
+        if w[i:i + 1].lower() == 'й':  # одно́й: M1 misreads a marked vowel before й (owner, stm4)
+            return w
         return w[:i] + '\u0301' + w[i:]
     return re.sub('[А-Яа-яЁё]+', mark, text)
 
@@ -300,5 +303,6 @@ if __name__ == '__main__':
     assert ru_stress_marks(_W, 'Каково это, таковым учитель') == 'Каково\u0301 э\u0301то, таковы\u0301м учи\u0301тель'
     assert ru_stress_marks(_W, 'родами')[:4] == 'ро\u0301д'  # from RU_STRESS
     assert ru_stress_marks(_W, 'четырьмя') == 'четырьмя\u0301'
+    assert ru_stress_marks(_W, 'его чего того') == 'его чего того'  # M1 would read the г
     assert ru_stress_marks(_W, 'всё и я') == 'всё и я'  # ё and one-vowel words: nothing to mark
     print('ok')
