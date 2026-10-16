@@ -211,7 +211,8 @@ def ru_stress_marks(voice, text):
         if len(letters) < 2 or 'ё' in w.lower() or '\u0301' in w:
             return w
         ph = ''.join(p for s in ru_phonemes(voice, w) for p in s)
-        groups = re.findall(f"ˈ?[{IPA_VOWELS}]+", ph)
+        ph = re.sub(f"ˈ([^{IPA_VOWELS}]*)", r"\1ˈ", ph)  # ˈja -> jˈa: the mark right before its vowel
+        groups = re.findall(f"ˈ?[{IPA_VOWELS}]", ph)  # one vowel each: наблюдении's ии are two
         stressed = [k for k, g in enumerate(groups) if g.startswith('ˈ')]
         if len(stressed) != 1:
             return w
