@@ -27,7 +27,8 @@ TEXTS = json.load(open('/root/st-m1/eval/texts.json', encoding='utf-8')) + [
 
 
 def session(model):
-    align = model.replace('.onnx', '.align.onnx')
+    # in /tmp, never next to the model: tts_server offers a voice's .align.onnx for offline download when it exists
+    align = '/tmp/' + os.path.basename(model).replace('.onnx', '.align.onnx')
     if not os.path.exists(align):
         m = onnx.load(model)
         m.graph.output.append(onnx.helper.make_tensor_value_info('/Ceil_output_0', onnx.TensorProto.FLOAT, None))
