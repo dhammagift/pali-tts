@@ -45,6 +45,9 @@ EN_PALI_WORDS = set('sutta dhamma sangha vinaya nikaya nibbana jhana metta karun
 _NAMES = [line.split() for line in open(os.path.join(os.path.dirname(__file__), 'stress_names.tsv'), encoding='utf-8')]
 RU_ACCENT = {w.replace('́', ''): w for lang, w in _NAMES if lang == 'ru'}
 EN_PENULT = {w for lang, w in _NAMES if lang == 'en'}
+# common words espeak stresses wrongly, the same way (owner, 2026-10-16: «видЕнию вместо вИдению» - vision, not apparition);
+# per word, so they also hold inside a compound (знание-видение)
+RU_ACCENT.update({w.replace('́', ''): w for w in ('ви́дение', 'ви́дения', 'ви́дению', 'ви́дением', 'ви́дении')})
 RU_NAME = re.compile(r'[А-Яа-яЁё]+')
 NUCLEUS = re.compile(r'[əaɪiʊueoʌ]ː?')  # a vowel of our Pali IPA
 # our Pali IPA (espeak-hi symbols) -> what the English voices were trained on: plain stops (an English voice
@@ -274,6 +277,7 @@ if __name__ == '__main__':
     assert en_expand('There Ven. Sāriputta said, i.e. the Buddha (SN 56.11; MN 10).') == \
         'There Venerable Sāriputta said, that is, the Buddha (Saṁyutta Nikāya 56, 11; Majjhima Nikāya 10).', en_expand('There Ven. Sāriputta said, i.e. the Buddha (SN 56.11; MN 10).')
     assert en_expand('he said "Venus" and Seven Sāriputta') == 'he said "Venus" and Seven Sāriputta'  # not inside words
+    assert RU_ACCENT['видению'] == 'ви\u0301дению'
     assert RU_ACCENT['раджагахе'] == 'раджага\u0301хе' and en_ipa('sāriputta') == 'sɑːɹɪpˈʊtɐ', en_ipa('sāriputta')
     assert ru_soften('боль', ['b', 'ˈ', 'o', 'ɭ']) == ['b', 'ˈ', 'o', 'ɭ', 'ʲ']
     assert ru_soften('мать', ['m', 'ˈ', 'ɑ', 't', 'ʲ']) == ['m', 'ˈ', 'ɑ', 't', 'ʲ']  # т: espeak got it right
