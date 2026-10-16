@@ -1,0 +1,1 @@
+{"id": "dhammagift/en-miles-voice-train", "title": "en-miles-voice-train", "code_file": "train.py", "language": "python", "kernel_type": "script", "is_private": true, "enable_gpu": true, "enable_internet": true, "dataset_sources": ["dhammagift/en-miles-voice-data"], "competition_sources": [], "kernel_sources": []}
