@@ -185,6 +185,8 @@ export function makeTranslation(d, pali, espeak) {
         if (word.slice(pos + 1, pos + 2) === 'ь' && (i + 1 >= out.length || out[i + 1] !== 'ʲ')) out.splice(i + 1, 0, 'ʲ');
       }
     }
+    for (let i = out.length - 4; i >= 0; i--)  // espeak's рь = r ɪ ^: rʲ, as respell.ru_soften
+      if (out.slice(i, i + 4).join('|') === 'r|ʲ|ɪ|^') out.splice(i + 2, 2);
     return out;
   }
 

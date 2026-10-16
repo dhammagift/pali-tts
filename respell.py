@@ -158,6 +158,10 @@ def ru_soften(word, phonemes):
             pos, i = letters[k], idx[k]
             if word[pos + 1:pos + 2] == 'ь' and (i + 1 >= len(out) or out[i + 1] != 'ʲ'):
                 out.insert(i + 1, 'ʲ')
+    # espeak writes рь as r ɪ ^ (a stray vowel and the voices' start-of-text id: четырьмя = четырьиmя, owner stm3): rʲ
+    for i in range(len(out) - 3, -1, -1):
+        if out[i:i + 4] == ['r', 'ʲ', 'ɪ', '^']:
+            del out[i + 2:i + 4]
     return out
 
 
@@ -280,6 +284,7 @@ if __name__ == '__main__':
     assert RU_ACCENT['видению'] == 'ви\u0301дению'
     assert RU_ACCENT['раджагахе'] == 'раджага\u0301хе' and en_ipa('sāriputta') == 'sɑːɹɪpˈʊtɐ', en_ipa('sāriputta')
     assert ru_soften('боль', ['b', 'ˈ', 'o', 'ɭ']) == ['b', 'ˈ', 'o', 'ɭ', 'ʲ']
+    assert ru_soften('четырьмя', list('tʃʲityrɪ^mʲˈɑ')) == list('tʃʲityrʲmʲˈɑ')
     assert ru_soften('мать', ['m', 'ˈ', 'ɑ', 't', 'ʲ']) == ['m', 'ˈ', 'ɑ', 't', 'ʲ']  # т: espeak got it right
 
     class _V:  # stand-in for a Piper voice: two sentences, as espeak splits them
