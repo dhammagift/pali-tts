@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pali TTS тест</title>
+<style>
+:root{--bg:#faf8f4;--fg:#222;--muted:#6b6560;--card:#fff;--line:#e6e0d8;--accent:#b5651d;--good:#2e7d32;--bad:#c62828;--best:#b8860b;--chip:#f1ece4;--mark:#ffd9d6}
+@media (prefers-color-scheme:dark){:root{--bg:#16140f;--fg:#ece6dc;--muted:#a59d92;--card:#211e18;--line:#3a352c;--accent:#e0a060;--good:#66bb6a;--bad:#ef5350;--best:#f0c040;--chip:#2c2820;--mark:#5a2420}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 system-ui,sans-serif}
+main{max-width:820px;margin:auto;padding:16px 16px 80px}
+h1{font-size:1.35rem;margin:.2em 0}
+.lead{color:var(--muted);font-size:.95rem}
+.lead b{color:var(--fg)}
+.bar{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:8px 0;display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:.9rem}
+.bar .status{margin-left:auto;color:var(--muted)}
+section{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin:14px 0}
+.words{font-style:italic;font-size:1.08rem;line-height:2}
+.w{display:inline-block;padding:0 4px;margin:1px 0;border-radius:6px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.w:hover{background:var(--chip)}
+.w.on{background:var(--mark);text-decoration:underline wavy var(--bad)}
+.note{color:var(--muted);margin:2px 0 6px;font-size:.88rem}
+h2.sec{font-size:1.15rem;margin:28px 0 4px}
+section.multi .row .label{display:block}
+.hint{color:var(--muted);font-size:.8rem;margin:0 0 6px}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:8px 0;border-top:1px solid var(--line)}
+.row .name{flex:0 0 auto;font-weight:600;min-width:1.6em}
+.row .label{display:none;flex:1 1 100%;font-size:.82rem;color:var(--accent);order:5}
+body.reveal .row .label{display:block}
+.row audio{flex:1 1 220px;min-width:0;height:36px}
+.btns{display:flex;gap:6px}
+.btns button{font:inherit;font-size:.88rem;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--chip);color:var(--fg);cursor:pointer;min-height:36px}
+.btns .pl{min-width:40px;font-weight:700}
+.btns button[data-v=best].sel{background:var(--best);border-color:var(--best);color:#111}
+.btns button[data-v=ok].sel{background:var(--good);border-color:var(--good);color:#fff}
+.btns button[data-v=bad].sel{background:var(--bad);border-color:var(--bad);color:#fff}
+textarea{width:100%;margin-top:8px;font:inherit;font-size:.92rem;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);min-height:2.6em;resize:vertical}
+details{font-size:.8rem;color:var(--muted)} code{word-break:break-word}
+section.done{border-color:var(--good)}
+.speed{display:flex;align-items:center;gap:6px}
+.speed input{width:110px}
+.speed button,#empty{font:inherit;font-size:.85rem;padding:4px 8px;border-radius:8px;border:1px solid var(--line);background:var(--chip);color:var(--fg);cursor:pointer}
+.speed button.sel{background:var(--accent);border-color:var(--accent);color:#fff}
+#empty{border-color:var(--bad)} #empty[hidden]{display:none}
+section{scroll-margin-top:120px}
+</style>
+</head>
+<body>
+<main>
+<h1>Русский голос — stm6: Puriso на переводах o</h1>
+<p class="lead">8 строк из ваших переводов (o), которых нет в учебных записях, читает Puriso v2 — как в DG. Уже исправлено: сверхмирско́е. Кликни каждое слово с неправильным ударением.</p>
+<div class="bar"><span id="progress"></span><button id="empty" hidden></button>
+<span class="speed" title="Скорость всех плееров на странице">⏩ <input type="range" id="rate" min="0.5" max="2.5" step="0.05"><b id="rateV"></b><button data-r="1">1×</button><button data-r="1.43">1.43×</button><button data-r="2">2×</button></span><label><input type="checkbox" id="reveal"> показать, кто есть кто</label><span class="status" id="status"></span></div>
+<div id="list"></div>
+</main>
+<script>
+const DATA = {"round": "stm6", "phrases": [{"id": "ru0", "text": "Это как если, монахи, лёгкий пучок хлопка или пучок каппасы ветром удерживаемый на ровный участок земли приземлившийся.", "note": "кликни каждое слово с неправильным ударением или произношением; ✓ норм — если всё верно", "ipa": "", "script": "", "section": "Puriso: ударения на переводах o", "multi": true, "words": ["Это", "как", "если,", "монахи,", "лёгкий", "пучок", "хлопка", "или", "пучок", "каппасы", "ветром", "удерживаемый", "на", "ровный", "участок", "земли", "приземлившийся."], "variants": [{"id": "puriso", "letter": "1", "label": "Puriso v2 (puriso)", "src": "audio/stm6/ru0.puriso.mp3?v=1792221073"}]}, {"id": "ru1", "text": "Увидьте, монахи, и этой горы обозначение исчезло, и те люди умерли, и тот Благословенный достиг Париниббаны.", "note": "кликни каждое слово с неправильным ударением или произношением; ✓ норм — если всё верно", "ipa": "", "script": "", "section": "Puriso: ударения на переводах o", "multi": true, "words": ["Увидьте,", "монахи,", "и", "этой", "горы", "обозначение", "исчезло,", "и", "те", "люди", "умерли,", "и", "тот", "Благословенный", "достиг", "Париниббаны."], "variants": [{"id": "puriso", "letter": "1", "label": "Puriso v2 (puriso)", "src": "audio/stm6/ru1.puriso.mp3?v=1792221073"}]}, {"id": "ru2", "text": "Это, монахи, второе явление истиной Дхаммы к устойчивости, к незамутнению, к неисчезновению ведёт.", "note": "кликни каждое слово с неправильным ударением или произношением; ✓ норм — если всё верно", "ipa": "", "script": "", "section": "Puriso: ударения на переводах o", "multi": true, "words": ["Это,", "монахи,", "второе", "явление", "истиной", "Дхаммы", "к", "устойчивости,", "к", "незамутнению,", "к", "неисчезновению", "ведёт."], "variants": [{"id": "puriso", "letter": "1", "label": "Puriso v2 (puriso)", "src": "audio/stm6/ru2.puriso.mp3?v=1792221073"}]}, {"id": "ru3", "text": "И для этих, монахи, трёх поисков опознания (непосредственного знания) Благородный Восьмеричный Путь следует развить.", "note": "кликни каждое слово с неправильным ударением или произношением; ✓ норм — если всё верно", "ipa": "", "script": "", "section": "Puriso: ударения на переводах o", "multi": true, "words": ["И", "для", "этих,", "монахи,", "трёх", "поисков", "опознания", "(непосредственного", "знания)", "Благородный", "Восьмеричный", "Путь", "следует", "развить."], "variants": [{"id": "puriso", "letter": "1", "label": "Puriso v2 (puriso)", "src": "audio/stm6/ru3.puriso.mp3?v=1792221073"}]}, {"id": "ru4", "text": "И есть, монахи, глазом распознаваемые образы желанные, обожаемые, приятные, миловидные, с-желанием-связанные, очаровывающие.", "note": "кликни каждое слово с неправильным ударением или произношением; ✓ норм — если всё верно", "ipa": "", "script": "", "section": "Puriso: ударения на переводах o", "multi": true, "words": ["И", "есть,", "монахи,", "глазом", "распознаваемые", "образы", "желанные,", "обожаемые,", "приятные,", "миловидные,", "с-желанием-связанные,", "очаровывающие."], "variants": [{"id": "puriso", "letter": "1", "label": "Puriso v2 (puriso)", "src": "audio/stm6/ru4.puriso.mp3?v=1792221073"}]}, {"id": "ru5", "text": "что больше—семь размером с горчичное зерно положенных каменных осколков или Гималаи царь гор”?", "note": "кликни каждое слово с неправильным ударением или произношением; ✓ норм — если всё верно", "ipa": "", "script": "", "section": "Puriso: ударения на переводах o", "multi": true, "words": ["что", "больше", "семь", "размером", "с", "горчичное", "зерно", "положенных", "каменных", "осколков", "или", "Гималаи", "царь", "гор”?"], "variants": [{"id": "puriso", "letter": "1", "label": "Puriso v2 (puriso)", "src": "audio/stm6/ru5.puriso.mp3?v=1792221073"}]}, {"id": "ru6", "text": "Вот, монахи, монах в теле тело-наблюдающий пребывает, пылкий, сознательный, памятующий, выводя (вычищая) к миру-свету алчность-недовольство,", "note": "кликни каждое слово с неправильным ударением или произношением; ✓ норм — если всё верно", "ipa": "", "script": "", "section": "Puriso: ударения на переводах o", "multi": true, "words": ["Вот,", "монахи,", "монах", "в", "теле", "тело-наблюдающий", "пребывает,", "пылкий,", "сознательный,", "памятующий,", "выводя", "(вычищая)", "к", "миру-свету", "алчность-недовольство,"], "variants": [{"id": "puriso", "letter": "1", "label": "Puriso v2 (puriso)", "src": "audio/stm6/ru6.puriso.mp3?v=1792221073"}]}, {"id": "ru7", "text": "Способность глаза, способность уха, способность носа, способность языка, способность ум-представления.", "note": "кликни каждое слово с неправильным ударением или произношением; ✓ норм — если всё верно", "ipa": "", "script": "", "section": "Puriso: ударения на переводах o", "multi": true, "words": ["Способность", "глаза,", "способность", "уха,", "способность", "носа,", "способность", "языка,", "способность", "ум-представления."], "variants": [{"id": "puriso", "letter": "1", "label": "Puriso v2 (puriso)", "src": "audio/stm6/ru7.puriso.mp3?v=1792221073"}]}]};
+const API = (DATA.api || 'vote.php') + '?round=' + DATA.round;
+const $ = (s, el = document) => el.querySelector(s);
+let state = {};
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+function key(p, kind, v = '') { return p + '|' + kind + '|' + v; }
+
+async function save(phrase, kind, variant, value) {
+  state[key(phrase, kind, variant)] = value;
+  $('#status').textContent = 'сохраняю…';
+  try {
+    const r = await fetch(API, { method: 'POST', body: JSON.stringify({ phrase, kind, variant, value }) });
+    $('#status').textContent = r.ok ? 'сохранено ✓' : 'ошибка сохранения';
+  } catch { $('#status').textContent = 'нет сети — не сохранено'; }
+  progress();
+}
+
+function progress() {
+  let n = 0;
+  for (const p of DATA.phrases) {
+    const done = p.variants.some(v => state[key(p.id, 'rating', v.id)] === 'best');
+    document.getElementById(p.id).classList.toggle('done', done);
+    if (done) n++;
+  }
+  $('#progress').textContent = `Оценено: ${n} из ${DATA.phrases.length}`;
+  // phrases with no rating at all (not even listened to, most likely): a button jumps to the first one
+  const empty = DATA.phrases.filter(p => !p.multi && !p.variants.some(v => state[key(p.id, 'rating', v.id)]));
+  $('#empty').hidden = !empty.length;
+  $('#empty').textContent = `без оценок: ${empty.length} →`;
+  $('#empty').onclick = () => document.getElementById(empty[0].id).scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// one speed for every player on the page (rounds are rendered at 0.7x: 1.43× is the site's normal pace); kept per browser
+let rate = 1;
+try { rate = parseFloat(localStorage.getItem('pali_round_rate')) || 1; } catch {}
+function setRate(r) {
+  rate = Math.round(r * 100) / 100;
+  try { localStorage.setItem('pali_round_rate', rate); } catch {}
+  $('#rate').value = rate;
+  $('#rateV').textContent = rate + '×';
+  document.querySelectorAll('.speed button').forEach(b => b.classList.toggle('sel', +b.dataset.r === rate));
+  document.querySelectorAll('audio').forEach(a => { a.defaultPlaybackRate = rate; a.playbackRate = rate; });
+}
+$('#rate').oninput = e => setRate(+e.target.value);
+document.querySelectorAll('.speed button').forEach(b => b.onclick = () => setRate(+b.dataset.r));
+document.addEventListener('play', e => { e.target.playbackRate = rate; }, true);  // also players rendered later
+
+function render() {
+  const list = $('#list');
+  let lastSection = '';
+  for (const p of DATA.phrases) {
+    if (p.section !== lastSection) {
+      lastSection = p.section;
+      const h = document.createElement('h2'); h.className = 'sec'; h.textContent = p.section; list.appendChild(h);
+    }
+    const sec = document.createElement('section');
+    sec.id = p.id;
+    if (p.multi) sec.classList.add('multi');
+    const marked = new Set(state[key(p.id, 'words')] || []);
+    sec.innerHTML = `
+      <div class="words">${p.words.map((w, i) => `<span class="w${marked.has(i + ':' + w) ? ' on' : ''}" data-i="${i}">${w}</span>`).join(' ')}</div>
+      <p class="note">${p.id} · ${p.note}</p>
+      ${p.multi ? '' : '<p class="hint">нажмите на слово, которое лучший вариант читает неправильно</p>'}
+      ${p.variants.map(v => `
+        <div class="row" data-v="${v.id}">
+          <span class="name">${v.letter}</span>
+          <audio controls preload="none" src="${v.src}"></audio>
+          <span class="btns">
+            <button class="pl" title="Слушать / стоп">▶</button><button data-v="best">★ ${p.multi ? 'нравится' : 'лучший'}</button><button data-v="ok">✓ норм</button><button data-v="bad">✗ плохо</button>
+          </span>
+          <span class="label">${v.letter} = ${v.label}</span>
+        </div>`).join('')}
+      <textarea placeholder="Комментарий: что не так, как должно звучать…">${esc(state[key(p.id, 'comment')] || '')}</textarea>
+      ${p.ipa ? `<details><summary>фонемы / письмо каннада</summary><code>${p.ipa}</code><br><code>${p.script}</code></details>` : ''}`;
+    list.appendChild(sec);
+
+    const paint = () => sec.querySelectorAll('.row').forEach(row => {
+      const val = state[key(p.id, 'rating', row.dataset.v)];
+      row.querySelectorAll('button').forEach(b => b.classList.toggle('sel', b.dataset.v === val));
+    });
+    paint();
+    // small ▶ next to the ratings: listen and rate without reaching for the audio bar; one sound at a time
+    sec.querySelectorAll('.row .pl').forEach(b => b.onclick = () => {
+      const a = b.closest('.row').querySelector('audio');
+      if (!a.paused) { a.pause(); return; }
+      document.querySelectorAll('audio').forEach(x => { if (x !== a) x.pause(); });
+      a.currentTime = 0; a.play();
+    });
+    sec.querySelectorAll('.row audio').forEach(a => {
+      const b = a.closest('.row').querySelector('.pl');
+      a.onplay = () => { document.querySelectorAll('audio').forEach(x => { if (x !== a) x.pause(); }); b.textContent = '■'; };
+      a.onpause = a.onended = () => { b.textContent = '▶'; };
+    });
+    sec.querySelectorAll('.row button[data-v]').forEach(b => b.onclick = () => {
+      const row = b.closest('.row'), vid = row.dataset.v;
+      if (b.dataset.v === 'best' && !p.multi) {  // only one best per phrase: the old best becomes "ok"
+        for (const v of p.variants) if (v.id !== vid && state[key(p.id, 'rating', v.id)] === 'best') save(p.id, 'rating', v.id, 'ok');
+      }
+      const cur = state[key(p.id, 'rating', vid)];
+      save(p.id, 'rating', vid, cur === b.dataset.v ? '' : b.dataset.v);
+      paint();
+    });
+    sec.querySelectorAll('.w').forEach(w => w.onclick = () => {
+      w.classList.toggle('on');
+      const on = [...sec.querySelectorAll('.w.on')].map(x => x.dataset.i + ':' + x.textContent);
+      save(p.id, 'words', '', on);
+    });
+    let t;
+    $('textarea', sec).oninput = e => { clearTimeout(t); t = setTimeout(() => save(p.id, 'comment', '', e.target.value), 700); };
+  }
+  // one player at a time
+  document.addEventListener('play', e => document.querySelectorAll('audio').forEach(a => a !== e.target && a.pause()), true);
+  progress();
+  setRate(rate);
+}
+
+$('#reveal').onchange = e => document.body.classList.toggle('reveal', e.target.checked);
+fetch(API).then(r => r.json()).then(s => { state = s || {}; }).catch(() => {}).finally(render);
+</script>
+</body>
+</html>
