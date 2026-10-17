@@ -48,7 +48,11 @@ RU_ACCENT = {w.replace('́', ''): w for lang, w in _NAMES if lang == 'ru'}
 EN_PENULT = {w for lang, w in _NAMES if lang == 'en'}
 # common words espeak stresses wrongly, the same way (owner, 2026-10-16: «видЕнию вместо вИдению» - vision, not apparition);
 # per word, so they also hold inside a compound (знание-видение)
-RU_ACCENT.update({w.replace('́', ''): w for w in ('ви́дение', 'ви́дения', 'ви́дению', 'ви́дением', 'ви́дении')})
+RU_ACCENT.update({w.replace('́', ''): w for w in ('ви́дение', 'ви́дения', 'ви́дению', 'ви́дением', 'ви́дении',
+                                                 # from мирско́й (lokuttara), espeak says сверхми́рское (owner, stm3-stm5)
+                                                 'сверхмирско́й', 'сверхмирско́е', 'сверхмирска́я', 'сверхмирску́ю',
+                                                 'сверхмирски́е', 'сверхмирско́му', 'сверхмирски́х',
+                                                 'сверхмирски́м', 'сверхмирски́ми', 'сверхмирско́м')})
 RU_NAME = re.compile(r'[А-Яа-яЁё]+')
 NUCLEUS = re.compile(r'[əaɪiʊueoʌ]ː?')  # a vowel of our Pali IPA
 # our Pali IPA (espeak-hi symbols) -> what the English voices were trained on: plain stops (an English voice
@@ -146,7 +150,9 @@ RU_STRESS = {'варанаси': 'vʌrʌnˈɑsʲɪ', 'исипатана': 'ɪs�
              # корпус текстов: espeak reads the plural корпуса́ (buildings); our texts mean ко́рпуса
              'корпуса': 'kˈorpusʌ',
              # роды (childbirth): espeak reads рода́ми (clans); owner, stm2: «с болезненными родами»
-             'родами': 'rˈodʌmʲɪ'}
+             'родами': 'rˈodʌmʲɪ',
+             # a mark on -ого makes espeak read г (сверхмирско́го = …skˈoɡʌ): phonemes instead
+             'сверхмирского': 'svʲirxmʲirskˈovʌ'}
 
 
 def ru_soften(word, phonemes):
