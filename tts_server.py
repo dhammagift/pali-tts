@@ -35,9 +35,9 @@ import numpy as np
 from piper import PiperVoice, SynthesisConfig
 
 from pali_ipa import export, to_ipa, tune
-from respell import en_phonemes, export as respell_export, respell, ru_phonemes
+from respell import en_expand, en_phonemes, export as respell_export, respell, ru_phonemes
 
-RULES_VERSION = 'r46'  # bump when pali_ipa rules change, so cached mp3 are not reused
+RULES_VERSION = 'r47'  # bump when pali_ipa rules change, so cached mp3 are not reused
 MAX_CHARS = 2000
 RATE_LIMIT = 60  # requests per client IP per minute
 # id -> (model file, language, menu label). Sites build their voice menus from GET /voices (in this order; the first
@@ -220,6 +220,8 @@ def synth_pcm(text, vid, rate):
     # pratham: our tuned pace (length 1.15 at rate 1); own voice and translations: the recorded pace
     cfg = SynthesisConfig(length_scale=(1.15 if lang == 'pi' else 1.0) / rate, noise_scale=0.6, noise_w_scale=0.7)
     parts = []
+    if lang == 'en':  # before the sentence split, or "Ven." ends a sentence and is never expanded (owner 2026-10-17)
+        text = en_expand(text)
     for sent, pause in pieces(text):
         if lang.startswith('pi'):
             ipa = to_ipa(sent, full_a=True)

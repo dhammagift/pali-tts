@@ -286,6 +286,7 @@ export async function makeSpeaker(ort, pali, modelBytes, modelJson, { noise = 0.
     // pratham: our tuned pace (length 1.15 at rate 1); translations: the recorded pace
     const own = lang === 'pi-own';
     const length = (translation || own ? 1 : 1.15) / rate, parts = [];
+    if (translation && lang === 'en') text = translation.enExpand(text);  // before the split, as tts_server: "Ven." ends no sentence
     for (const [sent, pause] of pieces(text)) {
       const gap = new Float32Array(Math.trunc(sr * pause));
       if (translation) {  // en/ru: no lone-word trick (Pali only)
