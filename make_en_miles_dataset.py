@@ -24,7 +24,18 @@ voice = PiperVoice.load('models/en_US-ryan-medium.onnx')
 os.makedirs(f'{OUT}/wavs', exist_ok=True)
 rows = []
 line = lambda f: int(re.match(r'\d+\.(\d+)\.wav$', os.path.basename(f)).group(1))
-for f in sorted(glob.glob(f'{SRC}/**/*.wav', recursive=True), key=line):
+takes = sorted(glob.glob(f'{SRC}/**/*.wav', recursive=True), key=line)
+# a lost take must stop the build, not shrink the dataset (owner 2026-10-17: gdown dropped 11 of 101-200 unnoticed)
+got = [line(f) for f in takes]
+want = set(range(1, max(got) + 1))  # and the whole range of every <a>-<b> batch folder, so a lost last take shows too
+for d in glob.glob(f'{SRC}/**/', recursive=True):
+    if r := re.fullmatch(r'(\d+)-(\d+)', os.path.basename(os.path.normpath(d))):
+        want |= set(range(int(r[1]), int(r[2]) + 1))
+missing = sorted(want - set(got))
+dups = sorted({n for n in got if got.count(n) > 1})
+if missing or dups:
+    sys.exit(f'missing script lines {missing}, duplicated {dups}: fetch them (fetch_drive.py) before training')
+for f in takes:
     n = line(f)
     text, name = SCRIPT[n - 1]['text'], f'm{n:04d}'
     subprocess.run(['ffmpeg', '-nostdin', '-loglevel', 'error', '-y', '-i', f, '-af', TRIM, '-ar', '22050', '-ac', '1', '-c:a', 'pcm_s16le',
