@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Pali TTS тест</title>
+<title>DG voice test</title>
 <style>
 :root{--bg:#faf8f4;--fg:#222;--muted:#6b6560;--card:#fff;--line:#e6e0d8;--accent:#b5651d;--good:#2e7d32;--bad:#c62828;--best:#b8860b;--chip:#f1ece4;--mark:#ffd9d6}
 @media (prefers-color-scheme:dark){:root{--bg:#16140f;--fg:#ece6dc;--muted:#a59d92;--card:#211e18;--line:#3a352c;--accent:#e0a060;--good:#66bb6a;--bad:#ef5350;--best:#f0c040;--chip:#2c2820;--mark:#5a2420}}
@@ -49,13 +49,13 @@ section{scroll-margin-top:120px}
 <body>
 <main>
 <h1>English — en1: fixes from the DG voice sheet</h1>
-<p class="lead">First three fixes from the sheet (phenomena, Buddha, live), each in a Sujato line, in every English DG voice. ✓ if it sounds right now; click a word that is still wrong.</p>
+<p class="lead">First three fixes from the sheet (phenomena, Buddha, live), each in a Sujato line, in every English DG voice. ✓ ok if it sounds right now; tap a word that is still wrong.</p>
 <div class="bar"><span id="progress"></span><button id="empty" hidden></button>
-<span class="speed" title="Скорость всех плееров на странице">⏩ <input type="range" id="rate" min="0.5" max="2.5" step="0.05"><b id="rateV"></b><button data-r="1">1×</button><button data-r="1.43">1.43×</button><button data-r="2">2×</button></span><label><input type="checkbox" id="reveal"> показать, кто есть кто</label><span class="status" id="status"></span></div>
+<span class="speed" title="Speed of every player on the page">⏩ <input type="range" id="rate" min="0.5" max="2.5" step="0.05"><b id="rateV"></b><button data-r="1">1×</button><button data-r="1.43">1.43×</button><button data-r="2">2×</button></span><label><input type="checkbox" id="reveal"> show who is who</label><span class="status" id="status"></span></div>
 <div id="list"></div>
 </main>
 <script>
-const DATA = {"round": "en1", "phrases": [{"id": "en0", "text": "‘So it seems that these phenomena, not having been, come to be; and having come to be, they flit away.’", "note": "исправлено: phenomena. ✓ норм — если теперь верно; слово с ошибкой — кликни", "ipa": "", "script": "", "section": "Исправления из таблицы", "multi": true, "words": ["‘So", "it", "seems", "that", "these", "phenomena,", "not", "having", "been,", "come", "to", "be;", "and", "having", "come", "to", "be,", "they", "flit", "away.’"], "variants": [{"id": "miles", "letter": "1", "label": "Yojanāni", "src": "audio/en1/en0.miles.mp3?v=1792206644"}, {"id": "alan", "letter": "2", "label": "Alan", "src": "audio/en1/en0.alan.mp3?v=1792206644"}, {"id": "kathleen", "letter": "3", "label": "Kathleen", "src": "audio/en1/en0.kathleen.mp3?v=1792206644"}]}, {"id": "en1", "text": "When he said this, one of the mendicants said to the Buddha,", "note": "исправлено: Buddha. ✓ норм — если теперь верно; слово с ошибкой — кликни", "ipa": "", "script": "", "section": "Исправления из таблицы", "multi": true, "words": ["When", "he", "said", "this,", "one", "of", "the", "mendicants", "said", "to", "the", "Buddha,"], "variants": [{"id": "miles", "letter": "1", "label": "Yojanāni", "src": "audio/en1/en1.miles.mp3?v=1792206644"}, {"id": "alan", "letter": "2", "label": "Alan", "src": "audio/en1/en1.alan.mp3?v=1792206644"}, {"id": "kathleen", "letter": "3", "label": "Kathleen", "src": "audio/en1/en1.kathleen.mp3?v=1792206644"}]}, {"id": "en2", "text": "‘Think like this, not like that. Focus your mind like this, not like that. Give up this, and live having achieved that.’", "note": "исправлено: live. ✓ норм — если теперь верно; слово с ошибкой — кликни", "ipa": "", "script": "", "section": "Исправления из таблицы", "multi": true, "words": ["‘Think", "like", "this,", "not", "like", "that.", "Focus", "your", "mind", "like", "this,", "not", "like", "that.", "Give", "up", "this,", "and", "live", "having", "achieved", "that.’"], "variants": [{"id": "miles", "letter": "1", "label": "Yojanāni", "src": "audio/en1/en2.miles.mp3?v=1792206644"}, {"id": "alan", "letter": "2", "label": "Alan", "src": "audio/en1/en2.alan.mp3?v=1792206644"}, {"id": "kathleen", "letter": "3", "label": "Kathleen", "src": "audio/en1/en2.kathleen.mp3?v=1792206644"}]}]};
+const DATA = {"round": "en1", "phrases": [{"id": "en0", "text": "‘So it seems that these phenomena, not having been, come to be; and having come to be, they flit away.’", "note": "fixed: phenomena. ✓ ok if it sounds right now; tap a word that is still wrong", "ipa": "", "script": "", "section": "Fixes from the sheet", "multi": true, "words": ["‘So", "it", "seems", "that", "these", "phenomena,", "not", "having", "been,", "come", "to", "be;", "and", "having", "come", "to", "be,", "they", "flit", "away.’"], "variants": [{"id": "miles", "letter": "1", "label": "Yojanāni", "src": "audio/en1/en0.miles.mp3?v=1792207270"}, {"id": "alan", "letter": "2", "label": "Alan", "src": "audio/en1/en0.alan.mp3?v=1792207270"}, {"id": "kathleen", "letter": "3", "label": "Kathleen", "src": "audio/en1/en0.kathleen.mp3?v=1792207270"}]}, {"id": "en1", "text": "When he said this, one of the mendicants said to the Buddha,", "note": "fixed: Buddha. ✓ ok if it sounds right now; tap a word that is still wrong", "ipa": "", "script": "", "section": "Fixes from the sheet", "multi": true, "words": ["When", "he", "said", "this,", "one", "of", "the", "mendicants", "said", "to", "the", "Buddha,"], "variants": [{"id": "miles", "letter": "1", "label": "Yojanāni", "src": "audio/en1/en1.miles.mp3?v=1792207270"}, {"id": "alan", "letter": "2", "label": "Alan", "src": "audio/en1/en1.alan.mp3?v=1792207270"}, {"id": "kathleen", "letter": "3", "label": "Kathleen", "src": "audio/en1/en1.kathleen.mp3?v=1792207270"}]}, {"id": "en2", "text": "‘Think like this, not like that. Focus your mind like this, not like that. Give up this, and live having achieved that.’", "note": "fixed: live. ✓ ok if it sounds right now; tap a word that is still wrong", "ipa": "", "script": "", "section": "Fixes from the sheet", "multi": true, "words": ["‘Think", "like", "this,", "not", "like", "that.", "Focus", "your", "mind", "like", "this,", "not", "like", "that.", "Give", "up", "this,", "and", "live", "having", "achieved", "that.’"], "variants": [{"id": "miles", "letter": "1", "label": "Yojanāni", "src": "audio/en1/en2.miles.mp3?v=1792207270"}, {"id": "alan", "letter": "2", "label": "Alan", "src": "audio/en1/en2.alan.mp3?v=1792207270"}, {"id": "kathleen", "letter": "3", "label": "Kathleen", "src": "audio/en1/en2.kathleen.mp3?v=1792207270"}]}]};
 const API = (DATA.api || 'vote.php') + '?round=' + DATA.round;
 const $ = (s, el = document) => el.querySelector(s);
 let state = {};
@@ -65,11 +65,11 @@ function key(p, kind, v = '') { return p + '|' + kind + '|' + v; }
 
 async function save(phrase, kind, variant, value) {
   state[key(phrase, kind, variant)] = value;
-  $('#status').textContent = 'сохраняю…';
+  $('#status').textContent = 'saving…';
   try {
     const r = await fetch(API, { method: 'POST', body: JSON.stringify({ phrase, kind, variant, value }) });
-    $('#status').textContent = r.ok ? 'сохранено ✓' : 'ошибка сохранения';
-  } catch { $('#status').textContent = 'нет сети — не сохранено'; }
+    $('#status').textContent = r.ok ? 'saved ✓' : 'not saved (error)';
+  } catch { $('#status').textContent = 'offline — not saved'; }
   progress();
 }
 
@@ -80,11 +80,11 @@ function progress() {
     document.getElementById(p.id).classList.toggle('done', done);
     if (done) n++;
   }
-  $('#progress').textContent = `Оценено: ${n} из ${DATA.phrases.length}`;
+  $('#progress').textContent = `Rated: ${n} of ${DATA.phrases.length}`;
   // phrases with no rating at all (not even listened to, most likely): a button jumps to the first one
   const empty = DATA.phrases.filter(p => !p.multi && !p.variants.some(v => state[key(p.id, 'rating', v.id)]));
   $('#empty').hidden = !empty.length;
-  $('#empty').textContent = `без оценок: ${empty.length} →`;
+  $('#empty').textContent = `unrated: ${empty.length} →`;
   $('#empty').onclick = () => document.getElementById(empty[0].id).scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -118,18 +118,18 @@ function render() {
     sec.innerHTML = `
       <div class="words">${p.words.map((w, i) => `<span class="w${marked.has(i + ':' + w) ? ' on' : ''}" data-i="${i}">${w}</span>`).join(' ')}</div>
       <p class="note">${p.id} · ${p.note}</p>
-      ${p.multi ? '' : '<p class="hint">нажмите на слово, которое лучший вариант читает неправильно</p>'}
+      ${p.multi ? '' : '<p class="hint">tap a word the best variant reads wrong</p>'}
       ${p.variants.map(v => `
         <div class="row" data-v="${v.id}">
           <span class="name">${v.letter}</span>
           <audio controls preload="none" src="${v.src}"></audio>
           <span class="btns">
-            <button class="pl" title="Слушать / стоп">▶</button><button data-v="best">★ ${p.multi ? 'нравится' : 'лучший'}</button><button data-v="ok">✓ норм</button><button data-v="bad">✗ плохо</button>
+            <button class="pl" title="Play / stop">▶</button><button data-v="best">★ ${p.multi ? 'like' : 'best'}</button><button data-v="ok">✓ ok</button><button data-v="bad">✗ bad</button>
           </span>
           <span class="label">${v.letter} = ${v.label}</span>
         </div>`).join('')}
-      <textarea placeholder="Комментарий: что не так, как должно звучать…">${esc(state[key(p.id, 'comment')] || '')}</textarea>
-      ${p.ipa ? `<details><summary>фонемы / письмо каннада</summary><code>${p.ipa}</code><br><code>${p.script}</code></details>` : ''}`;
+      <textarea placeholder="Comment: what is wrong, how it should sound…">${esc(state[key(p.id, 'comment')] || '')}</textarea>
+      ${p.ipa ? `<details><summary>phonemes / script</summary><code>${p.ipa}</code><br><code>${p.script}</code></details>` : ''}`;
     list.appendChild(sec);
 
     const paint = () => sec.querySelectorAll('.row').forEach(row => {

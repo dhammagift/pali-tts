@@ -7,6 +7,7 @@ import time
 ROUND = 'r54'
 TITLE = 'Pali TTS — раунд 54: paggayha, asaṁvāso, sammutiyā, tikkhattuṁ'
 INTRO = ('Остатки раундов 52–53: paggayha «пагейа» (открытое a, как помогло в dhārayāmīti), asaṁvāso, u в bhikkhusammutiyā, tikkhattuṁ без i и ṁ. 2 дубля, вперемешку, 0.7x.')
+LANG = 'ru'  # 'en': the page's own words in English (owner: English rounds are for Miles, who has no Russian)
 idx = json.load(open(f'out/{ROUND}/index.json', encoding='utf-8'))
 ver = int(time.time())
 phrases = []
@@ -24,6 +25,17 @@ for sec in idx['sections']:
         })
 
 page = open('page_template.html', encoding='utf-8').read()
+if LANG == 'en':
+    for ru, en in [('<html lang="ru">', '<html lang="en">'), ('Pali TTS тест', 'DG voice test'),
+                   ('Скорость всех плееров на странице', 'Speed of every player on the page'), ("'сохраняю…'", "'saving…'"),
+                   ("'сохранено ✓' : 'ошибка сохранения'", "'saved ✓' : 'not saved (error)'"),
+                   ("'нет сети — не сохранено'", "'offline — not saved'"), ('`Оценено: ${n} из ', '`Rated: ${n} of '),
+                   ('`без оценок: ', '`unrated: '), ('нажмите на слово, которое лучший вариант читает неправильно',
+                   'tap a word the best variant reads wrong'), ('Слушать / стоп', 'Play / stop'), ("'нравится' : 'лучший'", "'like' : 'best'"),
+                   ('✓ норм', '✓ ok'), ('✗ плохо', '✗ bad'), ('Комментарий: что не так, как должно звучать…', 'Comment: what is wrong, how it should sound…'),
+                   ('показать, кто есть кто', 'show who is who'), ('фонемы / письмо каннада', 'phonemes / script')]:
+        assert ru in page, ru
+        page = page.replace(ru, en)
 page = page.replace('__TITLE__', TITLE).replace('__INTRO__', INTRO).replace('__DATA__', json.dumps({'round': ROUND, 'phrases': phrases}, ensure_ascii=False))
 # one page per round (site/rNN.html) so an unanswered round is not replaced by the next one;
 # site/index.html stays the latest
