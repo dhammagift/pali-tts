@@ -211,6 +211,8 @@ export function makeTranslation(d, pali, espeak) {
       const w = words[wi++];
       if (has(d.ru_stress, w)) fixed.set(ti, [...d.ru_stress[w], ...t.filter(c => !alpha(c) && !'ˈˌːʲ'.includes(c))]);
       else if (w.includes('ь')) fixed.set(ti, ruSoften(w, t));
+      const f = fixed.get(ti) || t, k = f.findIndex(c => alpha(c) || c === 'ˈ');
+      if (k >= 0 && f[k] === 'ˈ' && f[k + 1] === 'ɑ') fixed.set(ti, [...f.slice(0, k + 1), 'a', ...f.slice(k + 2)]);  // as respell
     });
     let ti = 0;
     return sents.map(s => {

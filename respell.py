@@ -200,6 +200,10 @@ def ru_phonemes(voice, text):
                 fixed[ti] = list(RU_STRESS[words[wi]]) + [c for c in t if not c.isalpha() and c not in 'ˈˌːʲ']
             elif 'ь' in words[wi]:
                 fixed[ti] = ru_soften(words[wi], t)
+            f = fixed.get(ti, t)
+            k = next((j for j, c in enumerate(f) if c.isalpha() or c == 'ˈ'), len(f))
+            if f[k:k + 2] == ['ˈ', 'ɑ']:  # a stressed opening а as ɑ is drawn out, robot-like (owner: алчность); a is not
+                fixed[ti] = f[:k + 1] + ['a'] + f[k + 2:]
             wi += 1
     out, ti, cur = [], 0, []
     for s in sents:  # put the words back into their sentences
@@ -302,6 +306,9 @@ if __name__ == '__main__':
     assert RU_ACCENT['раджагахе'] == 'раджага\u0301хе' and en_ipa('sāriputta') == 'sɑːɹɪpˈʊtɐ', en_ipa('sāriputta')
     assert ru_soften('боль', ['b', 'ˈ', 'o', 'ɭ']) == ['b', 'ˈ', 'o', 'ɭ', 'ʲ']
     assert ru_soften('четырьмя', list('tʃʲityrɪ^mʲˈɑ')) == list('tʃʲityrʲmʲˈɑ')
+    class _A:
+        phonemize = staticmethod(lambda t: [list('ˈɑɭtʃʲnʌstʲ ɪ mʌnˈɑx.')])
+    assert ''.join(ru_phonemes(_A, 'Алчность и монах.')[0]) == 'ˈaɭtʃʲnʌstʲ ɪ mʌnˈɑx.'
     assert ru_soften('мать', ['m', 'ˈ', 'ɑ', 't', 'ʲ']) == ['m', 'ˈ', 'ɑ', 't', 'ʲ']  # т: espeak got it right
 
     class _V:  # stand-in for a Piper voice: two sentences, as espeak splits them

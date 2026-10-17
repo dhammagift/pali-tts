@@ -37,7 +37,7 @@ from piper import PiperVoice, SynthesisConfig
 from pali_ipa import export, to_ipa, tune
 from respell import en_expand, en_phonemes, export as respell_export, respell, ru_phonemes
 
-RULES_VERSION = 'r49'  # bump when pali_ipa rules change, so cached mp3 are not reused
+RULES_VERSION = 'r50'  # bump when pali_ipa rules change, so cached mp3 are not reused
 MAX_CHARS = 2000
 RATE_LIMIT = 60  # requests per client IP per minute
 # id -> (model file, language, menu label). Sites build their voice menus from GET /voices (in this order; the first
