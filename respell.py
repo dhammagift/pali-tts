@@ -12,8 +12,9 @@ from pali_ipa import to_ipa
 
 PALI_CHARS = 'āīūṭḍṅñṇḷṃṁ'
 # Pali without diacritics in an English sentence: doubled aspirates, ññ, or an aspirate opening the word
-# (bhikkhu, dhamma, khandha). Not "ddh"/"tth": Buddha and Matthew read fine as English.
-EN_PALI_HINT = re.compile(r'kkh|ggh|cch|jjh|ṭṭh|bbh|ññ|^(?:bh|dh|kh|gh|jh|ph)(?=[aeiou])')
+# (bhikkhu, dhamma, khandha). Not "ddh"/"tth": Buddha and Matthew read fine as English. An opening ph only in Pali's
+# own ph- words (phassa, phala, phusati, phuṭṭha): phenomena, philosophy, phase are English (owner 2026-10-17: «пеномна»)
+EN_PALI_HINT = re.compile(r'kkh|ggh|cch|jjh|ṭṭh|bbh|ññ|^(?:bh|dh|kh|gh|jh)(?=[aeiou])|^ph(?:ass|us|ut|alas?$)')
 WORD = re.compile(r"[A-Za-z" + PALI_CHARS + PALI_CHARS.upper() + r"ĀĪŪṬḌṄÑṆḶṂṀ]+")
 
 RU = [  # longest first
@@ -273,6 +274,7 @@ if __name__ == '__main__':
     assert respell('Tathāgata and phassa', 'en') == 'Tataagata and passa', respell('Tathāgata and phassa', 'en')
     assert respell('the thing that the Buddha said, abhorred', 'en') == 'the thing that the Buddha said, abhorred'  # English untouched
     assert respell('the Dhamma and dukkha', 'en') == 'the Damma and dukka'
+    assert respell('phenomena, philosophy, phase; phala', 'en') == 'phenomena, philosophy, phase; pala'
     assert RU_STRESS['исипатане'].count('ˈ') == 1
     assert all(v.count('ˈ') == 1 for v in RU_STRESS.values())
     assert en_ipa('dhamma') == 'dˈʌmɐ', en_ipa('dhamma')

@@ -37,26 +37,26 @@ from piper import PiperVoice, SynthesisConfig
 from pali_ipa import export, to_ipa, tune
 from respell import en_phonemes, export as respell_export, respell, ru_phonemes
 
-RULES_VERSION = 'r44'  # bump when pali_ipa rules change, so cached mp3 are not reused
+RULES_VERSION = 'r45'  # bump when pali_ipa rules change, so cached mp3 are not reused
 MAX_CHARS = 2000
 RATE_LIMIT = 60  # requests per client IP per minute
 # id -> (model file, language, menu label). Sites build their voice menus from GET /voices (in this order; the first
 # voice of a language is its default), so a voice is added, renamed or dropped here only, not in DG's voice.js.
 # 'pi*' voices are fed our Pali IPA. Male voices first, then female (owner: the order of the suttas' own lists).
 VOICES = {
-    'pratham': ('hi_IN-pratham-medium', 'pi', 'pratham ♂ · Piper'),
+    'pratham': ('hi_IN-pratham-medium', 'pi', 'Pratham ♂ · Piper'),
     # the owner's own voice, fine-tuned on their readings (v1, epoch 179: round 13); trained on plain to_ipa
     'dg': ('pali_dg-medium', 'pi-own', 'o Dhamma.Gift ♂ · beta'),
     # female Pali voice (round 44: ok 20 of 22 with pratham's rules, as they are)
-    'priyamvada': ('hi_IN-priyamvada-medium', 'pi', 'priyamvada ♀ · Piper'),
-    'alan': ('en_GB-alan-medium', 'en', 'alan ♂ · UK'),
+    'priyamvada': ('hi_IN-priyamvada-medium', 'pi', 'Priyamvada ♀ · Piper'),
+    'alan': ('en_GB-alan-medium', 'en', 'Alan ♂ · UK'),
     # Miles (an English reader of the record-en script): from en_US-ryan on his own takes; replaced norman (owner 2026-10-17)
     'miles': ('en_miles-medium', 'en', 'Miles ♂'),
-    'kathleen': ('en_US-kathleen-low', 'en', 'kathleen ♀ · US (low)'),
+    'kathleen': ('en_US-kathleen-low', 'en', 'Kathleen ♀ · US (low)'),
     # the owner's timbre: Piper fine-tuned from ruslan on 1 h read by a Chatterbox clone of his voice (2026-10-07)
     'dgru': ('ru_dg2-medium', 'ru', 'o Dhamma.Gift ♂ · beta'),
-    'ruslan': ('ru_RU-ruslan-medium', 'ru', 'ruslan ♂'),
-    'irina': ('ru_RU-irina-medium', 'ru', 'irina ♀'),
+    'ruslan': ('ru_RU-ruslan-medium', 'ru', 'Ruslan ♂'),
+    'irina': ('ru_RU-irina-medium', 'ru', 'Irina ♀'),
     # Piper student of Supertonic M1 from ruslan, 2:30 on Kaggle (stm2: the 12:30 run sounded the same, dropped)
     'stm1a': ('ru_stm1a-medium', 'ru', 'M1 ♂ · test'),
 }
