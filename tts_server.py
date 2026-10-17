@@ -52,6 +52,8 @@ VOICES = {
     'alan': ('en_GB-alan-medium', 'en', 'alan ♂ · UK'),
     'norman': ('en_US-norman-medium', 'en', 'norman ♂ · US'),
     'kathleen': ('en_US-kathleen-low', 'en', 'kathleen ♀ · US (low)'),
+    # Miles (an English reader of the record-en script): demo from en_US-ryan on his first 100 takes (2026-10-17)
+    'miles': ('en_miles-medium', 'en', 'Miles ♂ · test'),
     # the owner's timbre: Piper fine-tuned from ruslan on 1 h read by a Chatterbox clone of his voice (2026-10-07)
     'dgru': ('ru_dg2-medium', 'ru', 'o Dhamma.Gift ♂ · beta'),
     'ruslan': ('ru_RU-ruslan-medium', 'ru', 'ruslan ♂'),
@@ -61,7 +63,7 @@ VOICES = {
 }
 # dgru came out ~6 dB under ruslan/irina (RMS -29 vs -23 dB): brought to their level (pali-tts.js gets it in the offer)
 GAIN = {'dgru': 2.0}
-TEST_ONLY = {'stm1a'}  # in the menus of test.dhamma.gift only, never offered offline
+TEST_ONLY = {'stm1a', 'miles'}  # in the menus of test.dhamma.gift only, never offered offline
 TEST_ORIGIN = 'https://test.dhamma.gift'
 CACHE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cache', 'tts')
 SENTENCE = re.compile(r'(?<=[.?!;:])\s+')
