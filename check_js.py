@@ -52,6 +52,8 @@ def check_translations(n):
                 continue
             lines += [t.strip() for t in json.load(open(f, encoding='utf-8')).values() if isinstance(t, str) and t.strip()]
         lines = list(dict.fromkeys(lines))[:n]
+        if not lines:  # nothing read is not a pass (2026-10-17: run on f3 without SC_TR, "0 differ")
+            sys.exit(f'no {lang} translations under {TR}: set SC_TR (f3: /root/sc-translation)')
         voice = PiperVoice.load(f'models/{model}.onnx')
         sents = [s for t in lines for s in sentence.split(t)]
         py.append([[p for p in [en_phonemes(voice, s)] if p] if lang == 'en' else [p for p in ru_phonemes(voice, s) if p]
