@@ -147,7 +147,8 @@ export function makeTranslation(d, pali, espeak) {
       const plural = low.endsWith('s') && known(low.slice(0, -1));
       const poss = /^['’]s\b/.test(text.slice(m.index + m[0].length));  // Ānanda's: -z, not "es" read apart
       if (m.index > last) out.push(['text', text.slice(last, m.index)]);
-      out.push(['ipa', enIpa(plural ? low.slice(0, -1) : low, us) + (plural || poss ? 'z' : '')]);
+      const stem = plural ? low.slice(0, -1) : low;
+      out.push(['ipa', enIpa(has(d.en_pali_long, stem) ? d.en_pali_long[stem] : stem, us) + (plural || poss ? 'z' : '')]);
       last = m.index + m[0].length + (poss ? 2 : 0);
     }
     if (last < text.length) out.push(['text', text.slice(last)]);

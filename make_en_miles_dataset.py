@@ -1,5 +1,5 @@
 """Kaggle dataset for a Piper voice from Miles's readings of the record-en script (owner 2026-10-16: a demo on the first
-100 lines; more may come). <k>.<n>.wav anywhere under SRC is script line n (k counts within a batch: 101-200/96.196.wav is line 196); 48 kHz -> 22050 mono 16-bit, edge silence trimmed.
+100 lines; more may come). <k>.<n>.wav anywhere under SRC is script line n (k counts within a batch: 101-200/96.196.wav is line 196); 48 kHz -> 22050 mono 16-bit, edge silence trimmed at -60 dB, 0.15 s kept at the end.
 Phonemes are what tts_server gives an English voice (respell.en_phonemes: espeak en-us + our phonemes for Pali words),
 ids from ryan's map (the fine-tune starts from en_US-ryan-medium).
 Usage (on f3): .venv/bin/python make_en_miles_dataset.py /var/www/en-tts /root/en-miles/data [dataset name]
@@ -18,7 +18,10 @@ from respell import en_phonemes
 SRC, OUT = sys.argv[1:3]
 NAME = sys.argv[3] if len(sys.argv) > 3 else 'en-miles-voice-data'
 SCRIPT = json.load(open('site/record-en/script.json', encoding='utf-8'))
-TRIM = 'silenceremove=start_periods=1:start_threshold=-45dB,areverse,silenceremove=start_periods=1:start_threshold=-45dB,areverse'
+# -60 dB, not -45: the takes are clean (floor ~-75 dB) and -45 also cut each line's fading last sound, so the voice
+# learnt to stop a split second early (Miles and owner, miles2, 2026-10-17); 0.15 s of silence after, as a voice ends
+TRIM = ('silenceremove=start_periods=1:start_threshold=-60dB,areverse,silenceremove=start_periods=1:start_threshold=-60dB,'
+        'areverse,apad=pad_dur=0.15')
 
 voice = PiperVoice.load('models/en_US-ryan-medium.onnx')
 os.makedirs(f'{OUT}/wavs', exist_ok=True)

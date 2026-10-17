@@ -40,7 +40,10 @@ EN_MAP = dict(EN)
 EN_PALI_WORDS = set('sutta dhamma sangha vinaya nikaya nibbana jhana metta karuna mudita upekkha samadhi vipassana '
                     'samatha sila panna kamma bhikkhu bhikkhuni tathagata arahant arahat dukkha anatta anicca sati '
                     'satipatthana abhidhamma bodhisatta uposatha patimokkha gotama sariputta moggallana ananda '
-                    'kassapa jataka devadatta rahula vassa dana khandha nama rupa vedana sanna sankhara vinnana buddha'.split())
+                    'kassapa jataka devadatta rahula vassa dana khandha nama rupa vedana sanna sankhara vinnana buddha deva'.split())
+# plain spellings read with the long vowel they stand for (DG sheet 2026-10-17: nibbana read nIbbana, should be nibbAAna)
+EN_PALI_LONG = {'nibbana': 'nibbāna', 'nikaya': 'nikāya', 'jhana': 'jhāna', 'samadhi': 'samādhi', 'tathagata': 'tathāgata',
+                'satipatthana': 'satipaṭṭhāna', 'sila': 'sīla', 'rupa': 'rūpa'}
 # Pali names stressed on the penult, as the owner hears them (make_stress_names.py): ru forms with U+0301 on the
 # stressed vowel (espeak ru reads it), en forms that go through our phonemes with that stress
 _NAMES = [line.split() for line in open(os.path.join(os.path.dirname(__file__), 'stress_names.tsv'), encoding='utf-8')]
@@ -92,7 +95,8 @@ def en_parts(text, us=False):
         poss = re.match(r"['’]s\b", text[m.end():])  # Ānanda's: -z, not "es" read apart
         if m.start() > last:
             out.append(('text', text[last:m.start()]))
-        out.append(('ipa', en_ipa(low[:-1] if plural else low, us) + ('z' if plural or poss else '')))
+        stem = low[:-1] if plural else low
+        out.append(('ipa', en_ipa(EN_PALI_LONG.get(stem, stem), us) + ('z' if plural or poss else '')))
         last = m.end() + (2 if poss else 0)
     if last < len(text):
         out.append(('text', text[last:]))
@@ -257,7 +261,7 @@ def export():
         assert '\\' not in full and '$' not in full, full
     return {'word': WORD.pattern, 'pali_chars': PALI_CHARS, 'en_pali_hint': EN_PALI_HINT.pattern,
             'ru_rx': RU_RX.pattern, 'ru_map': RU_MAP, 'en_rx': EN_RX.pattern, 'en_map': EN_MAP,
-            'en_pali_words': sorted(EN_PALI_WORDS), 'en_ipa_rx': EN_IPA_RX.pattern, 'en_ipa': dict(EN_IPA),
+            'en_pali_words': sorted(EN_PALI_WORDS), 'en_pali_long': EN_PALI_LONG, 'en_ipa_rx': EN_IPA_RX.pattern, 'en_ipa': dict(EN_IPA),
             'en_abbr': [[rx.pattern, full] for rx, full in EN_ABBR], 'en_books': EN_BOOKS, 'en_ref': EN_REF.pattern,
             'ru_soften': {k: list(v) for k, v in RU_SOFTEN.items()}, 'ru_word': RU_WORD.pattern, 'ru_stress': RU_STRESS,
             'ru_accent': RU_ACCENT, 'en_penult': sorted(EN_PENULT), 'nucleus': NUCLEUS.pattern}
@@ -294,6 +298,9 @@ if __name__ == '__main__':
     assert RU_STRESS['исипатане'].count('ˈ') == 1
     assert all(v.count('ˈ') == 1 for v in RU_STRESS.values())
     assert en_ipa('dhamma') == 'dˈʌmɐ', en_ipa('dhamma')
+    # DG sheet 2026-10-17: devas day-vuz (espeak dˈɛvᵻs), nibbana nibbAAna (was nIbbana)
+    assert en_parts('the devas of') == [('text', 'the '), ('ipa', 'dˈeɪvɐz'), ('text', ' of')], en_parts('the devas of')
+    assert en_parts('Nibbana.') == [('ipa', 'nɪbˈɑːnɐ'), ('text', '.')], en_parts('Nibbana.')
     assert en_ipa('sutta') == 'sˈʊtɐ', en_ipa('sutta')
     assert en_ipa('gotamo') == 'ɡˈəʊtɐməʊ', en_ipa('gotamo')
     assert en_parts('the suttas, monks') == [('text', 'the '), ('ipa', 'sˈʊtɐz'), ('text', ', monks')], en_parts('the suttas, monks')
