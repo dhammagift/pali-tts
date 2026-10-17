@@ -149,7 +149,8 @@ function show() {
   const line = script[i];
   $('text').textContent = line.text;
   const top = Math.min(300, script.length), topDone = script.slice(0, top).filter(l => done.has(l.id)).length;
-  $('pos').textContent = i < top ? T(`${i + 1} из ${top} главных (${topDone} готово)`, `${i + 1} of the first ${top} (${topDone} done)`) : T(`${i + 1} из ${script.length}, дополнительные`, `${i + 1} of ${script.length}, extra`);
+  // the whole script's size first (owner: «5 of the first 300» read as if there were only 300 lines)
+  $('pos').textContent = i < top ? T(`${i + 1} из ${script.length} · первые ${top} главные (${topDone} готово)`, `${i + 1} of ${script.length} · the first ${top} matter most (${topDone} done)`) : T(`${i + 1} из ${script.length}`, `${i + 1} of ${script.length}`);
   $('sid').textContent = line.id;
   $('status').textContent = pending.has(line.id) ? T('⏳ в очереди', '⏳ queued') : done.has(line.id) ? T('✓ записано', '✓ recorded') : '';
   $('done').style.width = (100 * done.size / script.length) + '%';
@@ -336,6 +337,8 @@ async function load() {
   let saved = null; try { saved = localStorage.getItem(LS + 'pos'); } catch (e) {}
   const todo = script.findIndex(l => !done.has(l.id));
   i = Math.min(saved !== null ? +saved || 0 : Math.max(todo, 0), script.length - 1);
+  const n = +new URLSearchParams(location.search).get('n');  // ?n=301: open at that line
+  if (n >= 1) i = Math.min(n, script.length) - 1;
   $('start').hidden = $('textOnly').hidden = true; $('ui').hidden = false;
   return true;
 }
