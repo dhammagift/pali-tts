@@ -1,8 +1,8 @@
 """Kaggle dataset for a Piper voice from Miles's readings of the record-en script (owner 2026-10-16: a demo on the first
-100 lines; more may come). <n>.<n>.wav in SRC is script line n; 48 kHz -> 22050 mono 16-bit, edge silence trimmed.
+100 lines; more may come). <k>.<n>.wav anywhere under SRC is script line n (k counts within a batch: 101-200/96.196.wav is line 196); 48 kHz -> 22050 mono 16-bit, edge silence trimmed.
 Phonemes are what tts_server gives an English voice (respell.en_phonemes: espeak en-us + our phonemes for Pali words),
 ids from ryan's map (the fine-tune starts from en_US-ryan-medium).
-Usage (on f3): .venv/bin/python make_en_miles_dataset.py /var/www/en-tts/1-100 /root/en-miles/data [dataset name]
+Usage (on f3): .venv/bin/python make_en_miles_dataset.py /var/www/en-tts /root/en-miles/data [dataset name]
 """
 import glob
 import json
@@ -23,8 +23,9 @@ TRIM = 'silenceremove=start_periods=1:start_threshold=-45dB,areverse,silenceremo
 voice = PiperVoice.load('models/en_US-ryan-medium.onnx')
 os.makedirs(f'{OUT}/wavs', exist_ok=True)
 rows = []
-for f in sorted(glob.glob(f'{SRC}/*.wav'), key=lambda f: int(re.match(r'(\d+)', os.path.basename(f)).group(1))):
-    n = int(re.match(r'(\d+)', os.path.basename(f)).group(1))
+line = lambda f: int(re.match(r'\d+\.(\d+)\.wav$', os.path.basename(f)).group(1))
+for f in sorted(glob.glob(f'{SRC}/**/*.wav', recursive=True), key=line):
+    n = line(f)
     text, name = SCRIPT[n - 1]['text'], f'm{n:04d}'
     subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-i', f, '-af', TRIM, '-ar', '22050', '-ac', '1', '-c:a', 'pcm_s16le',
                     f'{OUT}/wavs/{name}.wav'], check=True)
