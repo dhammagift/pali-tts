@@ -40,7 +40,7 @@ EN_MAP = dict(EN)
 EN_PALI_WORDS = set('sutta dhamma sangha vinaya nikaya nibbana jhana metta karuna mudita upekkha samadhi vipassana '
                     'samatha sila panna kamma bhikkhu bhikkhuni tathagata arahant arahat dukkha anatta anicca sati '
                     'satipatthana abhidhamma bodhisatta uposatha patimokkha gotama sariputta moggallana ananda '
-                    'kassapa jataka devadatta rahula vassa dana khandha nama rupa vedana sanna sankhara vinnana'.split())
+                    'kassapa jataka devadatta rahula vassa dana khandha nama rupa vedana sanna sankhara vinnana buddha'.split())
 # Pali names stressed on the penult, as the owner hears them (make_stress_names.py): ru forms with U+0301 on the
 # stressed vowel (espeak ru reads it), en forms that go through our phonemes with that stress
 _NAMES = [line.split() for line in open(os.path.join(os.path.dirname(__file__), 'stress_names.tsv'), encoding='utf-8')]
@@ -100,7 +100,9 @@ def en_parts(text, us=False):
 # Venerable Sariputta and so on).
 EN_ABBR = [(re.compile(r'\bVens\.?(?=\s+[A-ZĀĪŪÑ])'), 'Venerables'), (re.compile(r'\bVen\.?(?=\s+[A-ZĀĪŪÑ])'), 'Venerable'),
            (re.compile(r'\bi\.\s?e\.,?'), 'that is,'), (re.compile(r'\be\.\s?g\.,?'), 'for example,'),
-           (re.compile(r'\bcf\.'), 'compare'), (re.compile(r'\blit\.'), 'literally'), (re.compile(r'\bSkt\.'), 'Sanskrit')]
+           (re.compile(r'\bcf\.'), 'compare'), (re.compile(r'\blit\.'), 'literally'), (re.compile(r'\bSkt\.'), 'Sanskrit'),
+           # live is a verb in the suttas (lɪv): espeak says laɪv after "and" (Miles, DG sheet 2026-10-17)
+           (re.compile(r'\blive\b'), 'liv'), (re.compile(r'\bLive\b'), 'Liv')]
 EN_BOOKS = {'DN': 'Dīgha Nikāya', 'MN': 'Majjhima Nikāya', 'SN': 'Saṁyutta Nikāya', 'AN': 'Aṅguttara Nikāya',
             'Snp': 'Sutta Nipāta', 'Dhp': 'Dhammapada', 'Ud': 'Udāna', 'Iti': 'Itivuttaka', 'Thag': 'Theragāthā',
             'Thig': 'Therīgāthā', 'Kp': 'Khuddakapāṭha'}
@@ -274,6 +276,7 @@ if __name__ == '__main__':
     assert respell('Tathāgata and phassa', 'en') == 'Tataagata and passa', respell('Tathāgata and phassa', 'en')
     assert respell('the thing that the Buddha said, abhorred', 'en') == 'the thing that the Buddha said, abhorred'  # English untouched
     assert respell('the Dhamma and dukkha', 'en') == 'the Damma and dukka'
+    assert en_expand('and live having achieved it. Live!') == 'and liv having achieved it. Liv!'
     assert respell('phenomena, philosophy, phase; phala', 'en') == 'phenomena, philosophy, phase; pala'
     assert RU_STRESS['исипатане'].count('ˈ') == 1
     assert all(v.count('ˈ') == 1 for v in RU_STRESS.values())
