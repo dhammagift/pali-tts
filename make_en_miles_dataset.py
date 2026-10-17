@@ -27,7 +27,7 @@ line = lambda f: int(re.match(r'\d+\.(\d+)\.wav$', os.path.basename(f)).group(1)
 for f in sorted(glob.glob(f'{SRC}/**/*.wav', recursive=True), key=line):
     n = line(f)
     text, name = SCRIPT[n - 1]['text'], f'm{n:04d}'
-    subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-i', f, '-af', TRIM, '-ar', '22050', '-ac', '1', '-c:a', 'pcm_s16le',
+    subprocess.run(['ffmpeg', '-nostdin', '-loglevel', 'error', '-y', '-i', f, '-af', TRIM, '-ar', '22050', '-ac', '1', '-c:a', 'pcm_s16le',
                     f'{OUT}/wavs/{name}.wav'], check=True)
     rows.append(f"{name}.wav|{text}|{' '.join(map(str, voice.phonemes_to_ids(en_phonemes(voice, text))))}")
 open(f'{OUT}/metadata.csv', 'w', encoding='utf-8').write('\n'.join(rows) + '\n')
