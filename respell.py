@@ -100,6 +100,8 @@ def en_parts(text, us=False):
 # Venerable Sariputta and so on).
 EN_ABBR = [(re.compile(r'\bVens\.?(?=\s+[A-ZĀĪŪÑ])'), 'Venerables'), (re.compile(r'\bVen\.?(?=\s+[A-ZĀĪŪÑ])'), 'Venerable'),
            (re.compile(r'\bi\.\s?e\.,?'), 'that is,'), (re.compile(r'\be\.\s?g\.,?'), 'for example,'),
+           (re.compile(r'\bI\.\s?e\.,?'), 'That is,'), (re.compile(r'\bE\.\s?g\.,?'), 'For example,'),
+           (re.compile(r'\betc\.(?=\s*[,;:)])'), 'et cetera'), (re.compile(r'\betc\.'), 'et cetera.'),
            (re.compile(r'\bcf\.'), 'compare'), (re.compile(r'\blit\.'), 'literally'), (re.compile(r'\bSkt\.'), 'Sanskrit'),
            # live is a verb in the suttas (lɪv): espeak says laɪv after "and" (Miles, DG sheet 2026-10-17)
            (re.compile(r'\blive\b'), 'liv'), (re.compile(r'\bLive\b'), 'Liv')]
@@ -276,6 +278,7 @@ if __name__ == '__main__':
     assert respell('Tathāgata and phassa', 'en') == 'Tataagata and passa', respell('Tathāgata and phassa', 'en')
     assert respell('the thing that the Buddha said, abhorred', 'en') == 'the thing that the Buddha said, abhorred'  # English untouched
     assert respell('the Dhamma and dukkha', 'en') == 'the Damma and dukka'
+    assert en_expand('E.g. form, feeling, etc., and so on etc. Then') == 'For example, form, feeling, et cetera, and so on et cetera. Then'
     assert en_expand('and live having achieved it. Live!') == 'and liv having achieved it. Liv!'
     assert respell('phenomena, philosophy, phase; phala', 'en') == 'phenomena, philosophy, phase; pala'
     assert RU_STRESS['исипатане'].count('ˈ') == 1
