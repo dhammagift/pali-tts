@@ -1,4 +1,4 @@
-"""Kaggle GPU job: fine-tune Piper (VITS, medium) from en_US-ryan on Miles's own readings of the record-en script
+"""Kaggle GPU job: fine-tune Piper (VITS, medium) from en_US-joe on Miles's own readings of the record-en script
 (dataset en-miles-voice-data: make_en_miles_dataset.py; demo on the first 100 lines, ~8.5 min, owner 2026-10-16).
 Copy of kaggle-ru-stm1/train.py; export ONNX, render samples. Phoneme ids are what tts_server gives an English voice
 (respell.en_phonemes). SMOKE=1 runs a few minutes to validate the environment.
@@ -11,14 +11,16 @@ import sys
 
 SMOKE = os.environ.get('SMOKE', '0') == '1' or bool(glob.glob(f"{os.environ.get('INPUT', '/kaggle/input')}/**/SMOKE", recursive=True))
 # RESUME: a previous run's last.ckpt in the inputs (a dataset with last.ckpt) - training continues from it
-# (optimizer, epoch counter) instead of a fresh warm start from ryan
+# (optimizer, epoch counter) instead of a fresh warm start from joe
 INPUT = os.environ.get('INPUT', '/kaggle/input')
 RESUME = os.environ.get('RESUME') or (glob.glob(f'{INPUT}/**/last.ckpt', recursive=True) or [None])[0]  # Kaggle flattens the dataset: at its root
 # 100 clips, ~8.5 min: 2 h is plenty for a demo
 MAX_TIME = '00:00:08:00' if SMOKE else os.environ.get('MAX_TIME', '00:02:00:00')
 W = os.environ.get('WORK', '/kaggle/working')
 DATA = os.path.dirname(glob.glob(f'{INPUT}/**/metadata.csv', recursive=True)[0])
-CKPT_URL = 'https://huggingface.co/datasets/rhasspy/piper-checkpoints/resolve/main/en/en_US/ryan/medium/epoch%3D4641-step%3D3104302.ckpt'
+# joe, not ryan (2026-10-18): ryan gives the end of a line 3-5 frames and cuts its last sound; Miles's voice kept that
+# even from clips with silence after the line. joe and the other male voices give 10-17 frames and end in silence; CC0.
+CKPT_URL = 'https://huggingface.co/datasets/rhasspy/piper-checkpoints/resolve/main/en/en_US/joe/medium/epoch%3D7889-step%3D1221224.ckpt'
 SAMPLES = [
     'So I have heard. At one time the Buddha was staying near Sāvatthī in Jeta’s Grove, Anāthapiṇḍika’s monastery.',
     'There the Buddha addressed the mendicants, “Mendicants!”',
