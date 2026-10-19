@@ -146,6 +146,13 @@ def en_phonemes(voice, text):
 # день, кровь, только, учитель. т and с it softens itself. Letter -> the phonemes espeak gives it.
 RU_SOFTEN = {'л': ('ɭ', 'l'), 'н': ('n',), 'в': ('v', 'f'), 'м': ('m',), 'р': ('r',)}
 RU_WORD = re.compile('[а-яё\u0301]+(?:-[а-яё\u0301]+)*')
+# a sutta ref at the end of a title or sentence: 4.200 -> «4, 200» (espeak: 4200), 1.1-10 -> «1, 1 — 10», 1-20 -> «1 — 20»
+# (owner 2026-10-19); followed by a word it is a number and stays (2.5 часа). web/pali-tts.js: ruRefs, the same
+RU_REF = re.compile(r'(?<![\d.])(\d+)(?:\.(\d+))?(?:[-–](\d+))?(?=[^\w\s]|\s*$)')
+
+
+def ru_refs(text):
+    return RU_REF.sub(lambda m: m.group(1) + (f', {m.group(2)}' if m.group(2) else '') + (f' — {m.group(3)}' if m.group(3) else ''), text)
 
 
 # espeak's stress is wrong for some names (owner, ruvoice1/2: Варанаси, Исипатане): whole words in espeak's style
@@ -186,7 +193,7 @@ def ru_soften(word, phonemes):
 def ru_phonemes(voice, text):
     """Phoneme lists (one per sentence) for a Piper Russian voice, with the soft sign restored."""
     text = RU_NAME.sub(lambda m: _case(m.group(), RU_ACCENT[m.group().lower()]) if m.group().lower() in RU_ACCENT else m.group(),
-                       respell(text, 'ru'))
+                       respell(ru_refs(text), 'ru'))
     words = RU_WORD.findall(text.lower())
     sents = [list(s) for s in voice.phonemize(text) if s]
     flat = [p for s in sents for p in s + [' ']]  # a space between sentences too, or their edge words merge
@@ -334,6 +341,10 @@ if __name__ == '__main__':
     assert ru_stress_marks(_W, 'Каково это, таковым учитель') == 'Каково\u0301 э\u0301то, таковы\u0301м учи\u0301тель'
     assert ru_stress_marks(_W, 'родами')[:4] == 'ро\u0301д'  # from RU_STRESS
     assert ru_stress_marks(_W, 'Памятование')[:3] == 'Па\u0301'
+    assert ru_refs('Восходящие Наставления 4.200') == 'Восходящие Наставления 4, 200'
+    assert ru_refs('Наставления 1.1-10.') == 'Наставления 1, 1 — 10.'
+    assert ru_refs('Дхаммапада 1–20') == 'Дхаммапада 1 — 20'
+    assert ru_refs('Длилось 2.5 часа, в 1990-х') == 'Длилось 2.5 часа, в 1990-х'
     assert ru_stress_marks(_W, 'четырьмя') == 'четырьмя\u0301'
     assert ru_stress_marks(_W, 'его чего того') == 'его чего того'  # M1 would read the г
     assert ru_stress_marks(_W, 'всё и я') == 'всё и я'  # ё and one-vowel words: nothing to mark

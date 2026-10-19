@@ -191,8 +191,11 @@ export function makeTranslation(d, pali, espeak) {
     return out;
   }
 
+  // respell.py RU_REF / ru_refs: a sutta ref at the end of a title or sentence, 4.200 -> «4, 200»
+  const ruRefs = text => text.replace(/(?<![\d.])(\d+)(?:\.(\d+))?(?:[-–](\d+))?(?=[^\p{L}\p{N}_\s]|\s*$)/gu,
+    (_, a, b, c) => a + (b ? `, ${b}` : '') + (c ? ` — ${c}` : ''));
   function ruPhonemes(voice, text) {
-    text = respell(text, 'ru').replace(/[А-Яа-яЁё]+/g, w => has(d.ru_accent, w.toLowerCase()) ? cased(w, d.ru_accent[w.toLowerCase()]) : w);
+    text = respell(ruRefs(text), 'ru').replace(/[А-Яа-яЁё]+/g, w => has(d.ru_accent, w.toLowerCase()) ? cased(w, d.ru_accent[w.toLowerCase()]) : w);
     const words = text.toLowerCase().match(RU_WORD) || [];
     const sents = espeak.phonemize(voice, text).filter(s => s.length);
     const tokens = [];
