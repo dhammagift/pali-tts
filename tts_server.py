@@ -157,8 +157,9 @@ def get_voice(vid):
         if vid in loaded:
             loaded[vid] = loaded.pop(vid)  # mark as recently used
         else:
-            while len(loaded) >= MAX_LOADED:  # evict the least recently used, but keep the Pali voice
-                loaded.pop(next(v for v in loaded if v != 'pratham'))
+            while len(loaded) >= MAX_LOADED:  # evict the least recently used, the Pali voice last
+                # (--max-loaded 1 on test: with only pratham loaded, every other voice failed with StopIteration)
+                loaded.pop(next((v for v in loaded if v != 'pratham'), next(iter(loaded))))
             loaded[vid] = PiperVoice.load(os.path.join(MODELS, VOICES[vid][0] + '.onnx'))
         return loaded[vid]
 
