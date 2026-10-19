@@ -156,7 +156,10 @@ RU_STRESS = {'варанаси': 'vʌrʌnˈɑsʲɪ', 'исипатана': 'ɪs�
              # роды (childbirth): espeak reads рода́ми (clans); owner, stm2: «с болезненными родами»
              'родами': 'rˈodʌmʲɪ',
              # a mark on -ого makes espeak read г (сверхмирско́го = …skˈoɡʌ): phonemes instead
-             'сверхмирского': 'svʲirxmʲirskˈovʌ'}
+             'сверхмирского': 'svʲirxmʲirskˈovʌ',
+             # owner 2026-10-19: па́мятование (espeak: памято́вание)
+             **{'памятовани' + e: 'pˈɑmʲɪtʌvʌnʲi' + ph for e, ph in
+                {'е': 'jɪ', 'я': 'ja', 'ю': 'ju', 'ем': 'jɪm', 'и': 'ɪ', 'й': 'j', 'ям': 'jʌm', 'ями': 'jʌmʲɪ', 'ях': 'jʌx'}.items()}}
 
 
 def ru_soften(word, phonemes):
@@ -327,9 +330,10 @@ if __name__ == '__main__':
     class _W:  # espeak's phonemes for single words
         phonemize = staticmethod(lambda t: [list({'каково': 'kʌkʌvˈo', 'таковым': 'tʌkʌvˈym', 'это': 'ˈɛtʌ',
                                                   'учитель': 'utʃʲˈitʲɪl', 'родами': 'rʌdˈɑmʲɪ',
-                                                  'четырьмя': 'tʃʲityrɪ^mʲˈɑ'}[t.lower()])])
+                                                  'четырьмя': 'tʃʲityrɪ^mʲˈɑ', 'памятование': 'pʌmʲatˈovʌnʲijɪ'}[t.lower()])])
     assert ru_stress_marks(_W, 'Каково это, таковым учитель') == 'Каково\u0301 э\u0301то, таковы\u0301м учи\u0301тель'
     assert ru_stress_marks(_W, 'родами')[:4] == 'ро\u0301д'  # from RU_STRESS
+    assert ru_stress_marks(_W, 'Памятование')[:3] == 'Па\u0301'
     assert ru_stress_marks(_W, 'четырьмя') == 'четырьмя\u0301'
     assert ru_stress_marks(_W, 'его чего того') == 'его чего того'  # M1 would read the г
     assert ru_stress_marks(_W, 'всё и я') == 'всё и я'  # ё and one-vowel words: nothing to mark
