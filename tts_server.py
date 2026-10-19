@@ -51,7 +51,7 @@ VOICES = {
     'priyamvada': ('hi_IN-priyamvada-medium', 'pi', 'Priyamvada ♀ · Piper'),
     'alan': ('en_GB-alan-medium', 'en', 'Alan ♂ · UK'),
     # Miles (an English reader of the record-en script): from en_US-ryan on his own takes; replaced norman (owner 2026-10-17)
-    'miles': ('en_miles-medium', 'en', 'Yojanāni ♂'),  # owner: Miles in Pali, freely (yojana, plural)
+    'miles': ('en_miles2-medium', 'en', 'Yojanāni ♂'),  # owner: Miles in Pali, freely (yojana, plural); 2: from joe, line ends whole
     'kathleen': ('en_US-kathleen-low', 'en', 'Kathleen ♀ · US (low)'),
     # the owner's timbre: Piper fine-tuned from ruslan on 1 h read by a Chatterbox clone of his voice (2026-10-07)
     'dgru': ('ru_dg2-medium', 'ru', 'o Dhamma.Gift ♂ · beta'),
