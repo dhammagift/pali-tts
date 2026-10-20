@@ -1,0 +1,71 @@
+{
+ "questions": [
+  {
+   "id": "drama3",
+   "who": "owner",
+   "title": "Drama 3 (Fish Audio): как она читает пали",
+   "text": "Вставить строки в их редактор на fish.audio (модель Drama 3), послушать, прислать 2–3 файла — поставлю вслепую рядом с pratham. Смотреть: короткое a в конце, долгие ā ī ū, ph как «пх», ṁ.",
+   "lines": [
+    "Namo tassa bhagavato arahato sammāsambuddhassa.",
+    "Itthirūpaṁ, bhikkhave, purisassa cittaṁ pariyādāya tiṭṭhatī”ti.",
+    "Paṭhamaṁ. Dutiyaṁ. Tatiyaṁ. Catutthaṁ. Pañcamaṁ.",
+    "Idaṁ kho pana, bhikkhave, dukkhaṁ ariyasaccaṁ: jātipi dukkhā, jarāpi dukkhā, maraṇampi dukkhaṁ.",
+    "इदं खो पन, भिक्खवे, दुक्खं अरियसच्चं: जातिपि दुक्खा, जरापि दुक्खा, मरणम्पि दुक्खं।"
+   ],
+   "links": [
+    [
+     "fish.audio/drama-3",
+     "https://fish.audio/drama-3/"
+    ]
+   ]
+  },
+  {
+   "id": "speed",
+   "who": "owner",
+   "title": "tiṭṭhati: 1.0x (mp3 сутт) против 0.7x (сайт)",
+   "text": "Одна строка AN 1.1, одни правила, разная скорость. Вы сказали «нормально, но не идеально» — про какой файл и что именно (ещё «ч» или другое)? Если «ч» только в 1.0x — правило верное, нужна только переозвучка пали на 0.7x.",
+   "audio": [
+    "misc/tiṭṭhati-скорость-1.0-как-в-mp3-сутт.mp3",
+    "misc/tiṭṭhati-скорость-0.7-как-на-сайте.mp3"
+   ]
+  },
+  {
+   "id": "hooks",
+   "who": "owner",
+   "title": "Хуки против повторяющихся ошибок",
+   "text": "Проверки в Claude Code, которые не дают сессии повторить ошибку («попросил доступ, не проверив», «сказал готово без проверки», «потерял файл»). Да/нет и какие ошибки самые частые."
+  },
+  {
+   "id": "supertonic",
+   "who": "owner",
+   "title": "Удалить Supertonic на f3?",
+   "text": "/var/www/supertonic (копия есть на GitHub dhammagift/supertonic) и /root/st-m1 (4.6 ГБ, данные обучения Puriso). Удалять?"
+  },
+  {
+   "id": "laya",
+   "who": "owner",
+   "title": "Лая: список действий",
+   "text": "Между какими действиями Лая должна выбирать по вопросу (поиск, словарь, сутта, перевод…). Без списка не начать."
+  },
+  {
+   "id": "miles4",
+   "who": "miles",
+   "title": "Miles: Yojanāni before / 30 min / now",
+   "text": "Ждём, что скажет Miles: стал ли голос ближе к нему. От этого зависит, доучивать ли ещё 5 часов.",
+   "links": [
+    [
+     "miles4",
+     "miles4.html"
+    ]
+   ]
+  }
+ ],
+ "closed": [
+  "miles1",
+  "miles2",
+  "miles3",
+  "en1",
+  "stm6",
+  "stm3"
+ ]
+}
