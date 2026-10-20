@@ -52,7 +52,7 @@ if __name__ == '__main__':
             vs.append({'id': vid, 'label': label, 'file': f, 'sent': ipa})
         phrases.append({'id': f'o{i}', 'text': f'{word}. ({i + 1})', 'ipa': ipa, 'script': '', 'variants': vs,
                         'note': '★ где числительное прочитано правильно; ✗ где непонятное слово'})
-    json.dump({'round': 'r55', 'sections': [{'id': 'o', 'title': 'Порядковые в конце сутты, 0.7x', 'multi_best': True,
+    json.dump({'round': 'r55', 'sections': [{'id': 'o', 'title': 'Порядковые в конце сутты, 0.7x', 'multi_best': False,
                                              'phrases': phrases}]},
               open(f'{OUT}/index.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     print('ok', len(phrases) * len(VARIANTS))
