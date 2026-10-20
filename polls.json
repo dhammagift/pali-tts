@@ -39,7 +39,8 @@
    "id": "supertonic",
    "who": "owner",
    "title": "Удалить Supertonic на f3?",
-   "text": "/var/www/supertonic (копия есть на GitHub dhammagift/supertonic) и /root/st-m1 (4.6 ГБ, данные обучения Puriso). Удалять?"
+   "text": "/var/www/supertonic (копия есть на GitHub dhammagift/supertonic) и /root/st-m1 (4.6 ГБ, данные обучения Puriso). Удалять? — Ответ: да; удалено 2026-10-20, чекпойнт Puriso сохранён в /root/voice-ckpt.",
+   "done": true
   },
   {
    "id": "laya",
