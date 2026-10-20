@@ -242,8 +242,8 @@ export function makeTranslation(d, pali, espeak) {
 
 // tts_server.synth_pcm: lang 'pi' (pratham, priyamvada), 'pi-own' (the owner's own voice: plain IPA, the recorded pace,
 // no lone-word trick, brought up to the others' loudness), 'en'/'ru' (translation).
-// For a 'pi' voice: sentence by sentence, 0.35 s between; a lone word read inside "W, W." and the
-// second W cut out by the model's own durations (needs the align model: its second output is per-id frames).
+// For a 'pi' voice: sentence by sentence, 0.35 s between; a lone word read after LONE_LEAD and cut where the
+// model's own durations say it starts (needs the align model: its second output is per-id frames).
 const SENTENCE = /(?<=[.?!;:])\s+/;
 const PIECE = 150;  // tts_server.pieces: sentences; a long one cut into runs of up to PIECE chars at the run's last comma (else between
 // words), with the pause after each
@@ -271,21 +271,23 @@ export async function makeSpeaker(ort, pali, modelBytes, modelJson, { noise = 0.
     for (const c of chars) if (idMap[c]) out.push(...idMap[c], ...idMap['_']);
     return [...out, ...idMap['$']];
   };
-  async function run(chars, length) {
+  async function run(chars, length, [n, nW] = [noise, noiseW]) {
     const x = ids(chars);
     const r = await session.run({
       input: new ort.Tensor('int64', BigInt64Array.from(x, BigInt), [1, x.length]),
       input_lengths: new ort.Tensor('int64', BigInt64Array.from([BigInt(x.length)]), [1]),
-      scales: new ort.Tensor('float32', Float32Array.from([noise, length, noiseW]), [3]),
+      scales: new ort.Tensor('float32', Float32Array.from([n, length, nW]), [3]),
     });
     const [audio, dur] = session.outputNames.map(n => r[n]);
     return { audio: audio.data, dur: dur && dur.data };
   }
+  // tts_server.LONE_LEAD, LONE_NOISE (round 55): after a sutta's own last word, steadier
+  const LONE_LEAD = 'ʌbʰɪnʌndˈʊntɪ ', LONE_NOISE = [0.3, 0.5];
   async function loneWord(ipa, length) {
-    const { audio, dur } = await run([...`${ipa}, ${ipa}.`], length);
+    const { audio, dur } = await run([...`${LONE_LEAD}${ipa}.`], length, LONE_NOISE);
     if (!dur) return (await run([...ipa + '.'], length)).audio;
     let first = 0;
-    for (let i = 0; i < 2 + 2 * ([...ipa].length + 2); i++) first += Math.trunc(Number(dur[i])) * HOP;
+    for (let i = 0; i < 2 + 2 * [...LONE_LEAD].length; i++) first += Math.trunc(Number(dur[i])) * HOP;
     return audio.slice(Math.max(first - Math.trunc(0.03 * sr), 0));
   }
   async function speak(text, rate = 1) {

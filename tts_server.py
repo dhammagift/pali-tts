@@ -37,7 +37,7 @@ from piper import PiperVoice, SynthesisConfig
 from pali_ipa import export, to_ipa, tune
 from respell import en_expand, en_phonemes, export as respell_export, respell, ru_phonemes
 
-RULES_VERSION = 'r53'  # bump when pali_ipa rules change, so cached mp3 are not reused
+RULES_VERSION = 'r54'  # bump when pali_ipa rules change, so cached mp3 are not reused
 MAX_CHARS = 2000
 RATE_LIMIT = 60  # requests per client IP per minute
 # id -> (model file, language, menu label). Sites build their voice menus from GET /voices (in this order; the first
@@ -178,20 +178,25 @@ def align_session(vid):
         return aligned[vid]
 
 
+# round 55 (the ordinals alone at a sutta's end): read after a sutta's own last word, not after itself, and steadier -
+# 9 of 10 ok against 6 of 10 for round 50's "W, W."; web/pali-tts.js LONE_LEAD, LONE_NOISE: the same
+LONE_LEAD, LONE_NOISE = 'ʌbʰɪnʌndˈʊntɪ ', (0.3, 0.5)  # abhinandunti
+
+
 def lone_word(vid, ipa, cfg):
-    """A word on its own (a rule's title: Sañcaritta, Aññabhāgiya) is misread far worse than inside a sentence. Round 50:
-    read inside "W, W." with the second W cut out by the model's own durations, 4 of 6 ok; with a full stop 2 of 6;
-    alone 0 of 6. Without an align model, the full stop."""
+    """A word on its own (a rule's title, a sutta's ordinal) is misread far worse than inside a sentence (round 50: alone
+    0 of 6 ok, with a full stop 2 of 6): read after LONE_LEAD and cut where the model's own durations say the word starts.
+    Without an align model, the full stop."""
     sess = align_session(vid)
     voice = get_voice(vid)
     if sess is None:
         return voice.phoneme_ids_to_audio(voice.phonemes_to_ids(list(ipa + '.')), cfg)
-    ids = voice.phonemes_to_ids(list(f'{ipa}, {ipa}.'))  # ^ _ (phoneme _)* $
+    ids = voice.phonemes_to_ids(list(f'{LONE_LEAD}{ipa}.'))  # ^ _ (phoneme _)* $
     audio, dur = sess.run(None, {'input': np.array([ids], dtype=np.int64), 'input_lengths': np.array([len(ids)], dtype=np.int64),
-                                 'scales': np.array([cfg.noise_scale, cfg.length_scale, cfg.noise_w_scale], dtype=np.float32)})
+                                 'scales': np.array([LONE_NOISE[0], cfg.length_scale, LONE_NOISE[1]], dtype=np.float32)})
     audio, dur = audio.reshape(-1), dur.reshape(-1).astype(int) * HOP
     starts = np.concatenate([[0], np.cumsum(dur)])
-    first = starts[2 + 2 * (len(ipa) + 2)]  # the second W's first phoneme, after ", "
+    first = starts[2 + 2 * len(LONE_LEAD)]  # the word's first phoneme
     return audio[max(first - int(0.03 * voice.config.sample_rate), 0):].astype(np.float32)
 
 
