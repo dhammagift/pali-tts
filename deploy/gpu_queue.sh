@@ -5,7 +5,7 @@
 set -uo pipefail
 cd /var/www/pali-tts
 K=(/root/.local/bin/uvx --python 3.12 kaggle@2.2.4)
-export KAGGLE_API_TOKEN=$(cat /root/.secrets/kaggle)
+set -a; . /root/.secrets/tools.env; set +a  # KAGGLE_API_TOKEN
 log() { echo "$(date -u +%FT%H:%M) $*"; }
 wait_kernel() {  # $1 kernel; until it leaves queued/running
   while :; do

@@ -5,6 +5,7 @@ Usage: python3 ears_kaggle.py r28 [es7 ...]  -> out/ears/scored.json (and a shor
 """
 import json
 import os
+import shlex
 import shutil
 import subprocess
 import sys
@@ -15,7 +16,9 @@ from ears import score
 from pali_ipa import to_ipa
 
 K = ['/root/.local/bin/uvx', '--python', '3.12', 'kaggle@2.2.4']
-ENV = dict(os.environ, KAGGLE_API_TOKEN=open('/root/.secrets/kaggle').read().strip())
+# tokens: /root/.secrets/tools.env, KEY='value' lines (owner 2026-10-20)
+ENV = dict(os.environ, KAGGLE_API_TOKEN=next(shlex.split(l.split('=', 1)[1])[0] for l in open('/root/.secrets/tools.env')
+                                            if l.startswith('KAGGLE_API_TOKEN=')))
 
 
 def kaggle(*a):

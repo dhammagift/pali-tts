@@ -7,7 +7,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 K=(/root/.local/bin/uvx --python 3.12 kaggle@2.2.4)
-export KAGGLE_API_TOKEN=$(cat /root/.secrets/kaggle)
+set -a; . /root/.secrets/tools.env; set +a  # KAGGLE_API_TOKEN
 TIME=${MAX_TIME:-00:02:30:00}
 for base in "$@"; do
   d=$(mktemp -d)

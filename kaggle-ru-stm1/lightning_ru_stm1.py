@@ -1,7 +1,7 @@
 """Run kaggle-ru-stm1/train.py on Lightning AI (free tier: one studio, up to 80 GPU h; a free studio turns paid after
 4 h, so every run starts the studio, trains 2:30 and stops it). One run per base voice, in order, outputs to
 /root/st-m1/runs/<base>/ on f3. A smoke run (8 min) first proves the environment.
-Usage (f3): set -a; . /root/.secrets/lightning; set +a
+Usage (f3): set -a; . /root/.secrets/tools.env; set +a
   uvx --python 3.12 --with lightning-sdk python kaggle-ru-stm1/lightning_ru_stm1.py /root/st-m1/data.zip ruslan denis dmitri
 """
 import os
