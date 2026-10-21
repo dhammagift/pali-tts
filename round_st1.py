@@ -16,7 +16,10 @@ import numpy as np
 
 ST = '/var/www/supertonic'
 sys.path.insert(0, f'{ST}/py')
-from helper import load_text_to_speech, load_voice_style  # noqa: E402
+try:  # Supertonic was deleted from f3 on 2026-10-20; other rounds still import mp3() from here
+    from helper import load_text_to_speech, load_voice_style  # noqa: E402
+except ImportError:
+    pass
 
 OUT = 'out/st1'
 TEXTS = {
