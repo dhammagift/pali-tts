@@ -290,6 +290,17 @@ export async function makeSpeaker(ort, pali, modelBytes, modelJson, { noise = 0.
     for (let i = 0; i < 2 + 2 * [...LONE_LEAD].length; i++) first += Math.trunc(Number(dur[i])) * HOP;
     return audio.slice(Math.max(first - Math.trunc(0.03 * sr), 0));
   }
+  // tts_server.with_tail: a voice whose json has "tail" cuts a sentence's last sound; read with the tail after it, cut there
+  async function withTail(ph, length) {
+    const tail = modelJson.tail, { audio, dur } = await run(tail ? [...ph, ...tail] : ph, length);
+    if (!tail || !dur) return tail ? (await run(ph, length)).audio : audio;
+    const n = [...ph].filter(c => idMap[c]).length + 1;  // ids() leaves out what the model lacks; + the tail's space
+    let end = 0;
+    for (let i = 0; i < 2 + 2 * n; i++) end += Math.trunc(Number(dur[i])) * HOP;
+    const a = audio.slice(0, end), f = Math.min(Math.trunc(0.03 * sr), a.length);
+    for (let i = 0; i < f; i++) a[a.length - f + i] *= f > 1 ? 1 - i / (f - 1) : 0;
+    return a;
+  }
   async function speak(text, rate = 1) {
     // pratham: our tuned pace (length 1.15 at rate 1); translations: the recorded pace
     const own = lang === 'pi-own';
@@ -299,7 +310,7 @@ export async function makeSpeaker(ort, pali, modelBytes, modelJson, { noise = 0.
       const gap = new Float32Array(Math.trunc(sr * pause));
       if (translation) {  // en/ru: no lone-word trick (Pali only)
         const lists = translation.phonemes(lang, modelJson.espeak.voice, idMap, sent);
-        for (const ph of lists) parts.push((await run(ph, length)).audio);
+        for (const ph of lists) parts.push(await withTail(ph, length));
         if (lists.length) parts.push(gap);
         continue;
       }

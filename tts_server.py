@@ -51,7 +51,9 @@ VOICES = {
     'priyamvada': ('hi_IN-priyamvada-medium', 'pi', 'Priyamvada ♀ · Piper'),
     'alan': ('en_GB-alan-medium', 'en', 'Alan ♂ · UK'),
     # Miles (an English reader of the record-en script): from en_US-ryan on his own takes; replaced norman (owner 2026-10-17)
-    'miles': ('en_miles2-medium', 'en', 'Yojanāni ♂'),  # owner: Miles in Pali, freely (yojana, plural); 2: from joe, line ends whole
+    # back to v1 (round miles5, Miles 2026-10-21: «much higher quality»; A 3 of 3): from ryan, which cuts a sentence's last
+    # sound - its .onnx.json "tail" saves it (with_tail). en_miles2 (from joe, 3 h, ends whole but worse) kept in models/
+    'miles': ('en_miles-medium', 'en', 'Yojanāni ♂'),  # owner: Miles in Pali, freely (yojana, plural)
     'kathleen': ('en_US-kathleen-low', 'en', 'Kathleen ♀ · US (low)'),
     # Supertonic M1 ("male 1") taught to Piper from ruslan; replaced Ruslan (owner 2026-10-17), named puriso, "man"; the Russian default (owner 2026-10-21)
     'puriso': ('ru_puriso2-medium', 'ru', 'Puriso ♂'),  # v2 (2026-10-17): retrained on M1 clips read with our stress marks
@@ -200,6 +202,30 @@ def lone_word(vid, ipa, cfg):
     return audio[max(first - int(0.03 * voice.config.sample_rate), 0):].astype(np.float32)
 
 
+tails = {}  # vid -> its .onnx.json "tail" (None: none)
+
+
+def with_tail(vid, ph, cfg):
+    """A voice whose .onnx.json has "tail" (phonemes, e.g. " ænd") cuts a sentence's last sound (ryan's children): read
+    the sentence with the tail after it and cut where the model's own durations say the tail starts (round miles5).
+    web/pali-tts.js does the same offline."""
+    voice, sess = get_voice(vid), align_session(vid)
+    if vid not in tails:
+        tails[vid] = json.load(open(os.path.join(MODELS, VOICES[vid][0] + '.onnx.json'), encoding='utf-8')).get('tail')
+    tail = tails[vid]
+    if not tail or sess is None:
+        return voice.phoneme_ids_to_audio(voice.phonemes_to_ids(ph), cfg)
+    ids = voice.phonemes_to_ids(list(ph) + list(tail))  # ^ _ (phoneme _)* $, phonemes the model lacks left out
+    audio, dur = sess.run(None, {'input': np.array([ids], dtype=np.int64), 'input_lengths': np.array([len(ids)], dtype=np.int64),
+                                 'scales': np.array([cfg.noise_scale, cfg.length_scale, cfg.noise_w_scale], dtype=np.float32)})
+    audio, dur = audio.reshape(-1), dur.reshape(-1).astype(int) * HOP
+    n = sum(p in voice.config.phoneme_id_map for p in ph) + 1  # + the tail's leading space
+    a = audio[:np.concatenate([[0], np.cumsum(dur)])[2 + 2 * n]].astype(np.float32)
+    fade = min(int(0.03 * voice.config.sample_rate), len(a))
+    a[len(a) - fade:] *= np.linspace(1, 0, fade, dtype=np.float32)
+    return a
+
+
 def synth(text, vid, rate):
     pcm, sr = synth_pcm(text, vid, rate)
     return encode_mp3(pcm, sr)
@@ -245,7 +271,7 @@ def synth_pcm(text, vid, rate):
             phonemes = []  # read
             parts.append(np.zeros(int(sr * pause), dtype=np.float32))
         for ph in phonemes:
-            parts.append(voice.phoneme_ids_to_audio(voice.phonemes_to_ids(ph), cfg))
+            parts.append(with_tail(vid, ph, cfg) if lang in ('en', 'ru') else voice.phoneme_ids_to_audio(voice.phonemes_to_ids(ph), cfg))
         if phonemes:
             parts.append(np.zeros(int(sr * pause), dtype=np.float32))
     pcm = np.concatenate(parts) if parts else np.zeros(sr // 4, dtype=np.float32)
