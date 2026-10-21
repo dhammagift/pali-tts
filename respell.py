@@ -155,6 +155,8 @@ def ru_refs(text):
     return RU_REF.sub(lambda m: m.group(1) + (f', {m.group(2)}' if m.group(2) else '') + (f' — {m.group(3)}' if m.group(3) else ''), text)
 
 
+# endings of a neuter noun in -ние (phonemes after its stem's ni), for the -ние words below
+_NIE = {'е': 'jɪ', 'я': 'ja', 'ю': 'ju', 'ем': 'jɪm', 'и': 'ɪ', 'й': 'j', 'ям': 'jʌm', 'ями': 'jʌmʲɪ', 'ях': 'jʌx'}
 # espeak's stress is wrong for some names (owner, ruvoice1/2: Варанаси, Исипатане): whole words in espeak's style
 RU_STRESS = {'варанаси': 'vʌrʌnˈɑsʲɪ', 'исипатана': 'ɪsʲɪpʌtˈɑna', 'исипатане': 'ɪsʲɪpʌtˈɑnʲi',
              'исипатану': 'ɪsʲɪpʌtˈɑnu', 'исипатаной': 'ɪsʲɪpʌtˈɑnəj',
@@ -165,8 +167,9 @@ RU_STRESS = {'варанаси': 'vʌrʌnˈɑsʲɪ', 'исипатана': 'ɪs�
              # a mark on -ого makes espeak read г (сверхмирско́го = …skˈoɡʌ): phonemes instead
              'сверхмирского': 'svʲirxmʲirskˈovʌ',
              # owner 2026-10-19: па́мятование (espeak: памято́вание)
-             **{'памятовани' + e: 'pˈɑmʲɪtʌvʌnʲi' + ph for e, ph in
-                {'е': 'jɪ', 'я': 'ja', 'ю': 'ju', 'ем': 'jɪm', 'и': 'ɪ', 'й': 'j', 'ям': 'jʌm', 'ями': 'jʌmʲɪ', 'ях': 'jʌx'}.items()}}
+             **{'памятовани' + e: 'pˈɑmʲɪtʌvʌnʲi' + ph for e, ph in _NIE.items()},
+             # owner 2026-10-21: отбра́сывании (espeak: отбрасы́вании, and отбрасыва́ниям in the plural)
+             **{'отбрасывани' + e: 'ʌdbrˈɑsyvʌnʲi' + ph for e, ph in _NIE.items()}}
 
 
 def ru_soften(word, phonemes):
@@ -337,10 +340,11 @@ if __name__ == '__main__':
     class _W:  # espeak's phonemes for single words
         phonemize = staticmethod(lambda t: [list({'каково': 'kʌkʌvˈo', 'таковым': 'tʌkʌvˈym', 'это': 'ˈɛtʌ',
                                                   'учитель': 'utʃʲˈitʲɪl', 'родами': 'rʌdˈɑmʲɪ',
-                                                  'четырьмя': 'tʃʲityrɪ^mʲˈɑ', 'памятование': 'pʌmʲatˈovʌnʲijɪ'}[t.lower()])])
+                                                  'четырьмя': 'tʃʲityrɪ^mʲˈɑ', 'памятование': 'pʌmʲatˈovʌnʲijɪ', 'отбрасывании': 'ʌdbrasˈyvʌnʲiɪ'}[t.lower()])])
     assert ru_stress_marks(_W, 'Каково это, таковым учитель') == 'Каково\u0301 э\u0301то, таковы\u0301м учи\u0301тель'
     assert ru_stress_marks(_W, 'родами')[:4] == 'ро\u0301д'  # from RU_STRESS
     assert ru_stress_marks(_W, 'Памятование')[:3] == 'Па\u0301'
+    assert ru_stress_marks(_W, 'отбрасывании')[:6] == 'отбра\u0301'
     assert ru_refs('Восходящие Наставления 4.200') == 'Восходящие Наставления 4, 200'
     assert ru_refs('Наставления 1.1-10.') == 'Наставления 1, 1 — 10.'
     assert ru_refs('Дхаммапада 1–20') == 'Дхаммапада 1 — 20'
