@@ -49,14 +49,14 @@
    "text": "Между какими действиями Лая должна выбирать по вопросу (поиск, словарь, сутта, перевод…). Без списка не начать."
   },
   {
-   "id": "miles4",
+   "id": "miles5",
    "who": "miles",
-   "title": "Miles: Yojanāni before / 30 min / now",
-   "text": "Ждём, что скажет Miles: стал ли голос ближе к нему. От этого зависит, доучивать ли ещё 5 часов.",
+   "title": "Miles: old voice with endings fixed vs now",
+   "text": "Miles on miles4: the old voice (from ryan) is much higher quality but cut the endings. Round miles5: the old voice with the endings saved at synthesis time (no retraining) against the one now in DG, blind. If A wins, it goes live.",
    "links": [
     [
-     "miles4",
-     "miles4.html"
+     "miles5",
+     "miles5.html"
     ]
    ]
   }
@@ -67,6 +67,7 @@
   "miles3",
   "en1",
   "stm6",
-  "stm3"
+  "stm3",
+  "miles4"
  ]
 }
