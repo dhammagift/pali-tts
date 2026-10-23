@@ -46,7 +46,7 @@ for f in takes:
     rows.append(f"{name}.wav|{text}|{' '.join(map(str, voice.phonemes_to_ids(en_phonemes(voice, text))))}")
 open(f'{OUT}/metadata.csv', 'w', encoding='utf-8').write('\n'.join(rows) + '\n')
 json.dump(voice.config.phoneme_id_map, open(f'{OUT}/phonemes.json', 'w', encoding='utf-8'), ensure_ascii=False)
-for f in ('respell.py', 'pali_ipa.py', 'stress_names.tsv'):  # respell imports pali_ipa and reads the names
+for f in ('respell.py', 'pali_ipa.py', 'stress_names.tsv', 'ru_yo.tsv'):  # respell imports pali_ipa and reads these
     os.system(f'cp {f} {OUT}/')
 json.dump({'title': NAME, 'id': f'dhammagift/{NAME}', 'licenses': [{'name': 'CC-BY-NC-SA-4.0'}]},
           open(f'{OUT}/dataset-metadata.json', 'w'))

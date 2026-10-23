@@ -56,6 +56,9 @@ RU_ACCENT.update({w.replace('́', ''): w for w in ('ви́дение', 'ви́д
                                                  'сверхмирско́й', 'сверхмирско́е', 'сверхмирска́я', 'сверхмирску́ю',
                                                  'сверхмирски́е', 'сверхмирско́му', 'сверхмирски́х',
                                                  'сверхмирски́м', 'сверхмирски́ми', 'сверхмирско́м')})
+# ё printed as е (owner 2026-10-23: «ненадежны» read ненаде́жны): build_ru_yo.py, eyo-kernel's safe words found in DG's texts
+RU_ACCENT.update({e: yo for e, yo in (line.split() for line in open(os.path.join(os.path.dirname(__file__), 'ru_yo.tsv'),
+                                                                     encoding='utf-8')) if e not in RU_ACCENT})
 RU_NAME = re.compile(r'[А-Яа-яЁё]+')
 NUCLEUS = re.compile(r'[əaɪiʊueoʌ]ː?')  # a vowel of our Pali IPA
 # our Pali IPA (espeak-hi symbols) -> what the English voices were trained on: plain stops (an English voice
@@ -354,6 +357,7 @@ if __name__ == '__main__':
     assert ru_stress_marks(_W, 'Памятование')[:3] == 'Па\u0301'
     assert ru_stress_marks(_W, 'отбрасывании')[:6] == 'отбра\u0301'
     assert ru_stress_marks(_W, 'самому')[-2:] == 'у\u0301'
+    assert RU_ACCENT['ненадежны'] == 'ненадёжны' and RU_ACCENT['еще'] == 'ещё' and 'все' not in RU_ACCENT  # ru_yo.tsv
     class _C:  # espeak reads a hyphenated compound as one word
         phonemize = staticmethod(lambda t: [list('vʲˈidʲinʲijim pʌmʲatˈovʌnʲijim' if ' ' in t else 'vʲˈidʲinʲijimpʌmʲatˈovʌnʲijim')])
     assert ''.join(ru_phonemes(_C, 'видением-памятованием')[0]) == 'vʲˈidʲinʲijim pˈɑmʲɪtʌvʌnʲijɪm'  # apart: RU_STRESS fixes it
