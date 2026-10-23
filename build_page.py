@@ -4,10 +4,10 @@ import random
 import re
 import time
 
-ROUND = 'sa1'
+ROUND = 'miles7'
 TITLE = 'Pali TTS — раунд 54: paggayha, asaṁvāso, sammutiyā, tikkhattuṁ'
 INTRO = ('Остатки раундов 52–53: paggayha «пагейа» (открытое a, как помогло в dhārayāmīti), asaṁvāso, u в bhikkhusammutiyā, tikkhattuṁ без i и ṁ. 2 дубля, вперемешку, 0.7x.')
-LANG = 'ru'  # 'en': the page's own words in English (owner: English rounds are for Miles, who has no Russian)
+LANG = 'en'  # 'en': the page's own words in English (owner: English rounds are for Miles, who has no Russian)
 idx = json.load(open(f'out/{ROUND}/index.json', encoding='utf-8'))
 ver = int(time.time())
 phrases = []

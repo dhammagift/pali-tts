@@ -62,26 +62,27 @@
    "text": "Между какими действиями Лая должна выбирать по вопросу (поиск, словарь, сутта, перевод…). Без списка не начать."
   },
   {
-   "id": "miles5",
+   "id": "miles7",
    "who": "miles",
-   "title": "Miles: old voice with endings fixed vs now",
-   "text": "Miles on miles4: the old voice (from ryan) is much higher quality but cut the endings. Round miles5: the old voice with the endings saved at synthesis time (no retraining) against the one now in DG, blind. If A wins, it goes live.",
+   "title": "Miles: Yojanāni v3 (kNN-VC, 4 h) vs v1 now in DG",
+   "text": "v3: ryan read 2600 sutta sentences, kNN-VC turned them into Miles timbre, Piper trained 4 h on that + his 300 takes. Blind against v1 (live), both with the line-end tail. If v3 wins, it goes live.",
    "links": [
     [
-     "miles5",
-     "miles5.html"
+     "miles7",
+     "miles7.html"
     ]
    ]
   }
  ],
  "closed": [
+  "en1",
   "miles1",
   "miles2",
   "miles3",
-  "en1",
-  "stm6",
-  "stm3",
   "miles4",
-  "miles6"
+  "miles5",
+  "miles6",
+  "stm3",
+  "stm6"
  ]
 }
