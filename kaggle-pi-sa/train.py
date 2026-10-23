@@ -24,6 +24,10 @@ W = os.environ.get('WORK', '/kaggle/working')
 T = os.path.dirname(glob.glob(f'{INPUT}/**/texts.csv', recursive=True)[0])
 PARLER = os.path.dirname(glob.glob(f'{INPUT}/**/model.safetensors', recursive=True)[0])
 DATA = f'{W}/data'
+# Two kernels (run 1, 2026-10-23: Parler + kNN-VC held 5.7 GB of the GPU and the training died of OOM at its first batch,
+# the 80 minutes of data lost with it): pi-sa-data makes the data and leaves it as one tar in its output; pi-sa-voice-train
+# has that kernel as input and only trains.
+TAR = (glob.glob(f'{INPUT}/**/pi-sa-data.tar', recursive=True) or [None])[0]
 DESC = ('Aryan speaks at a moderate pace in a calm, clear voice, reading a text aloud. '
         'The recording is of very high quality with no background noise.')
 SAMPLES = [
@@ -107,14 +111,22 @@ def make_data():
 
 
 sh('nvidia-smi --query-gpu=name,memory.total --format=csv')
-sh('pip install -q git+https://github.com/huggingface/parler-tts.git soundfile')
-try:
-    make_data()
-except Exception:  # keep the reason, and no thousands of files in the output
-    import traceback
-    open(f'{W}/error.txt', 'w').write(traceback.format_exc())
+if not TAR:
+    sh('pip install -q git+https://github.com/huggingface/parler-tts.git soundfile')
+if not TAR:
+    try:
+        make_data()
+    except Exception:  # keep the reason, and no thousands of files in the output
+        import traceback
+        open(f'{W}/error.txt', 'w').write(traceback.format_exc())
+        cleanup()
+        raise
+    os.makedirs(f'{W}/out', exist_ok=True)
+    sh(f'tar -cf {W}/out/pi-sa-data.tar -C {W} data')
     cleanup()
-    raise
+    print('data done')
+    sys.exit(0)
+sh(f'tar -xf {TAR} -C {W}')
 if not os.path.exists(f'{W}/piper1-gpl'):
     sh(f'git clone -q --depth 1 https://github.com/OHF-Voice/piper1-gpl.git {W}/piper1-gpl')
 os.chdir(f'{W}/piper1-gpl')
