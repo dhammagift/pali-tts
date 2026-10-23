@@ -1,7 +1,7 @@
 """Round miles6 (owner 2026-10-23, Yojanāni: «by name-matter» read «ай» - the b at a line's start swallowed): the voice
 from ryan cuts a line's first sound as it cut its last one (round miles5: saved by a tail). The same at the start: a
 head word read before the line and cut where the model's own durations say the line starts.
-As now (tail only) / head + tail; SN 12.2 lines of DG's own translation, which all start with "by". Blind.
+As now (tail only) / head + tail / the newer voice from joe (en_miles2, ends whole, Miles found it worse); SN 12.2 lines of DG's own translation, which all start with "by". Blind.
 Usage (on f3): .venv/bin/python round_miles6.py -> out/miles6/; then build_page.py with ROUND = 'miles6'
 """
 import json
@@ -11,7 +11,7 @@ import re
 import numpy as np
 from piper import PiperVoice
 
-from round_miles2 import CFG, en_expand, en_phonemes
+from round_miles2 import CFG, en_expand, en_phonemes, read as read_plain
 from round_miles5 import CARRIER, HOP, V1, align
 from round_st1 import mp3
 
@@ -40,13 +40,15 @@ def read(voice, sess, text, head):
 
 if __name__ == '__main__':
     v1, sess = PiperVoice.load(V1, config_path=V1 + '.json'), align(V1)
+    v2 = PiperVoice.load('models/en_miles2-medium.onnx', config_path='models/en_miles2-medium.onnx.json')
     os.makedirs(OUT, exist_ok=True)
     phrases = []
     for i, text in enumerate(TEXTS):
         vs = []
-        for vid, label, head in [('a', 'как сейчас', ''), ('b', 'с началом', HEAD)]:
+        for vid, label, fn in [('a', 'как сейчас', lambda: read(v1, sess, text, '')), ('b', 'с началом', lambda: read(v1, sess, text, HEAD)),
+                               ('c', 'новая модель (joe)', lambda: read_plain(v2, text))]:
             f = f'en{i}.{vid}.mp3'
-            mp3(*read(v1, sess, text, head), f'{OUT}/{f}')
+            mp3(*fn(), f'{OUT}/{f}')
             vs.append({'id': vid, 'label': label, 'file': f, 'sent': text})
         phrases.append({'id': f'en{i}', 'text': text, 'ipa': '', 'script': '', 'variants': vs,
                         'note': '★ лучше; ✓ правильно; ✗ неправильно (слышно ли «b» в начале)'})
