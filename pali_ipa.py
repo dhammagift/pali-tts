@@ -180,6 +180,9 @@ PRATHAM_RULES = [
     (re.compile(r'pʰ(?=ˈ?oʈːʰ)'), 'ph'),
     # round 47: gāminiyā read «гаминья» (as now ok 1 of 2); a doubled jj best + ok
     (re.compile(r'(?<=ɡˈaːmɪnɪ)j(?=aː)'), 'jj'),
+    # round 57: vimucciṁsūti read «чиксути» (round 56: 0 of 3); ṁ as m ok (and with a single c), a pause or ti apart bad.
+    # The same ending -ṁsūti (an aorist + ti: jāniṁsūti, samanumodiṁsūti): 36 times in the canon
+    (re.compile(r'ŋ(?=sˈuːtɪ)'), 'm'),
     # rounds 46-47: paṭipadā read «пратипада» (ʈ between vowels as Hindi's flap); a doubled ʈʈ ok 5 of 6, as now 3 of 6
     (re.compile(r'(?<=pʌ)ʈ(?=ˈ?ɪpʌd)'), 'ʈʈ'),
 ]
@@ -281,6 +284,7 @@ if __name__ == '__main__':
     assert 'ʋˈeːdʌjɪtən' in tune(to_ipa('vedayitaṁ', full_a=True))
     assert 'sʌmphˈʌssʌɟɟən' in tune(to_ipa('kāyasamphassajaṁ', full_a=True))
     assert tune(to_ipa('pharitvā', full_a=True)) == 'pʰʌɾˈɪtʋaː'  # round 56: pʰ ok, p + h bad
+    assert tune(to_ipa('vimucciṁsūti', full_a=True)) == 'ʋɪmʊccɪmsˈuːtɪ'  # round 57
     assert tune(to_ipa('arahaṁ ahaṁ', full_a=True)) == 'ˈʌɾʌhʌn ˈʌhʌn'  # round 32
     assert tune(to_ipa('Ātāpī sampajāno satimā.', full_a=True)) == 'aːtˈaːpiː sʌmpʌɟɟˈaːnoːoːoː sˈʌtɪmaː.'  # round 40
     assert tune(to_ipa('yogo karaṇīyo.', full_a=True)) == 'jˈoːɡoːoːoː kʌɾʌɳˈiːjoː.'
