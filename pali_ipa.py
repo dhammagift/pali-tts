@@ -126,10 +126,9 @@ PRATHAM_RULES = [
     (re.compile(r'ɲ(?=c)'), 'n'),
     # round 25: muhuttena - the h between two short u swallowed them; tense u held
     (re.compile(r'ʊhʊ'), 'uhu'),
-    # the aspirated pʰ is read as f: samphassa «сасфасса» (round 33; p + h ok in both takes), phoṭṭhabba «фо» (rounds
-    # 46-47; p + h better), pharitvā «фаритва» (owner 2026-10-23): p + a separate h everywhere
-    # (round 34: j stays ɟ, dʒ and dʲ were bad everywhere)
-    (re.compile(r'pʰ'), 'ph'),
+    # round 33: samphassa from the aspirated pʰ came out as «сасфасса» (m lost, ph as f); p + h was ok in
+    # both takes (round 34: j stays ɟ, dʒ and dʲ were bad everywhere). Not every ph: pharitvā with p + h bad, pʰ ok (round 56)
+    (re.compile(r'mpʰ'), 'mph'),
     # round 24: viharati read "viharti" once the open-a rule was gone; an open a in the verb ending
     # -ati (word-final) brought it back, without the swallowing the general rule caused (round 22)
     (re.compile(r'ʌ(?=tɪ(?=[ ,.?!:;]|$))'), 'a'),
@@ -177,6 +176,8 @@ PRATHAM_RULES = [
     # round 51: uposathassa etāni ran together (bad both takes); the open a before the e: ok in both (a pause: best + ok,
     # but a pause inside a phrase is what round 45 threw out for So)
     (re.compile(r'ʌ(?= ˈ?eː)'), 'a'),
+    # rounds 46-47: phoṭṭhabba with pʰ read «фо» (0 of 2); p + separate h ok 2 of 4 - better, owner: still not right
+    (re.compile(r'pʰ(?=ˈ?oʈːʰ)'), 'ph'),
     # round 47: gāminiyā read «гаминья» (as now ok 1 of 2); a doubled jj best + ok
     (re.compile(r'(?<=ɡˈaːmɪnɪ)j(?=aː)'), 'jj'),
     # rounds 46-47: paṭipadā read «пратипада» (ʈ between vowels as Hindi's flap); a doubled ʈʈ ok 5 of 6, as now 3 of 6
@@ -279,7 +280,7 @@ if __name__ == '__main__':
     assert tune(to_ipa('dutiyaṁ imasmiṁ', full_a=True)) == 'dˈʊtɪjən ɪmˈʌsmɪm'  # one y after i; -aṁ ən, -iṁ m
     assert 'ʋˈeːdʌjɪtən' in tune(to_ipa('vedayitaṁ', full_a=True))
     assert 'sʌmphˈʌssʌɟɟən' in tune(to_ipa('kāyasamphassajaṁ', full_a=True))
-    assert tune(to_ipa('pharitvā', full_a=True)) == 'phʌɾˈɪtʋaː'  # owner 2026-10-23: «фаритва»
+    assert tune(to_ipa('pharitvā', full_a=True)) == 'pʰʌɾˈɪtʋaː'  # round 56: pʰ ok, p + h bad
     assert tune(to_ipa('arahaṁ ahaṁ', full_a=True)) == 'ˈʌɾʌhʌn ˈʌhʌn'  # round 32
     assert tune(to_ipa('Ātāpī sampajāno satimā.', full_a=True)) == 'aːtˈaːpiː sʌmpʌɟɟˈaːnoːoːoː sˈʌtɪmaː.'  # round 40
     assert tune(to_ipa('yogo karaṇīyo.', full_a=True)) == 'jˈoːɡoːoːoː kʌɾʌɳˈiːjoː.'

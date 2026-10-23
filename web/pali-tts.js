@@ -318,7 +318,7 @@ export async function makeSpeaker(ort, pali, modelBytes, modelJson, { noise = 0.
       }
       const raw = pali.toIpa(sent, { fullA: true }), ipa = own ? raw : pali.tune(raw);  // pratham's fixes would confuse it
       const word = own ? '' : ipa.replace(/^[ ,.?!:;]+|[ ,.?!:;]+$/g, '');
-      if (word && !word.includes(' ')) parts.push(await loneWord(word, length), gap);
+      if (word && word.split(' ').length < 3) parts.push(await loneWord(word, length), gap);
       else if (ipa.replace(/^[ ,.?!]+|[ ,.?!]+$/g, '')) parts.push((await run([...ipa], length)).audio, gap);
     }
     if (!parts.length) parts.push(new Float32Array(sr >> 2));

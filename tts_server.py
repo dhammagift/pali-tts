@@ -37,7 +37,7 @@ from piper import PiperVoice, SynthesisConfig
 from pali_ipa import export, to_ipa, tune
 from respell import en_expand, en_phonemes, export as respell_export, respell, ru_phonemes
 
-RULES_VERSION = 'r56'  # bump when pali_ipa rules change, so cached mp3 are not reused
+RULES_VERSION = 'r57'  # bump when pali_ipa rules change, so cached mp3 are not reused
 MAX_CHARS = 2000
 RATE_LIMIT = 60  # requests per client IP per minute
 # id -> (model file, language, menu label). Sites build their voice menus from GET /voices (in this order; the first
@@ -266,7 +266,7 @@ def synth_pcm(text, vid, rate):
         else:
             phonemes = [p for p in voice.phonemize(respell(sent, lang)) if p]  # Pali words in a translation
         word = ipa.strip(' ,.?!:;') if lang == 'pi' else ''
-        if word and ' ' not in word:
+        if word and word.count(' ') < 2:  # one word or two (round 56: «Idamavoca bhagavā.» alone bad, after the lead ok)
             parts.append(lone_word(vid, word, cfg))
             phonemes = []  # read
             parts.append(np.zeros(int(sr * pause), dtype=np.float32))
