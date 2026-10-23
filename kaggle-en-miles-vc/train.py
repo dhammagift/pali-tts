@@ -81,7 +81,7 @@ def make_data():
         sf.write(f'{W}/src/{name}', np.concatenate([np.zeros(2205, np.float32), a, np.zeros(3300, np.float32)]), 22050)
     print('ryan read', len(rows), flush=True)
 
-    knn = torch.hub.load('bshall/knn-vc', 'knn_vc', prematched=True, pretrained=True, device='cuda' if torch.cuda.is_available() else 'cpu')
+    knn = torch.hub.load('bshall/knn-vc', 'knn_vc', trust_repo=True, prematched=True, pretrained=True, device='cuda' if torch.cuda.is_available() else 'cpu')
     def wav16(f):  # tensors, not paths: knn-vc's own torchaudio.load needs torchcodec in new torchaudio
         wav, sr = sf.read(f, dtype='float32')
         return torchaudio.functional.resample(torch.from_numpy(wav), sr, 16000)[None]
@@ -116,7 +116,13 @@ src = open(main_py).read()
 open(main_py, 'w').write(re.sub(r'\n\s*ModelCheckpoint\(\s*monitor="val_mos".*?\),(?=\n)', '', src, flags=re.S))
 sh("pip install -q cython scikit-build 'cmake<4' ninja onnx onnxscript onnxruntime soundfile -e '.[train]'")
 sh('bash build_monotonic_align.sh && python setup.py build_ext --inplace -q')
-make_data()
+try:
+    make_data()
+except Exception:  # keep the reason, and no thousands of files in the output
+    import traceback
+    open(f'{W}/error.txt', 'w').write(traceback.format_exc())
+    cleanup()
+    raise
 sh(f'wget -q -O {W}/base.ckpt "{CKPT_URL}"')
 os.makedirs(f'{W}/out', exist_ok=True)
 sh(' '.join([

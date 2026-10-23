@@ -87,7 +87,7 @@ def make_data():
     del model
     torch.cuda.empty_cache()
 
-    knn = torch.hub.load('bshall/knn-vc', 'knn_vc', prematched=True, pretrained=True, device='cuda')
+    knn = torch.hub.load('bshall/knn-vc', 'knn_vc', trust_repo=True, prematched=True, pretrained=True, device='cuda')
 
     def wav16(f):  # tensors, not paths: knn-vc's own torchaudio.load needs torchcodec in new torchaudio
         w, s = sf.read(f, dtype='float32')
@@ -108,7 +108,13 @@ def make_data():
 
 sh('nvidia-smi --query-gpu=name,memory.total --format=csv')
 sh('pip install -q git+https://github.com/huggingface/parler-tts.git soundfile')
-make_data()
+try:
+    make_data()
+except Exception:  # keep the reason, and no thousands of files in the output
+    import traceback
+    open(f'{W}/error.txt', 'w').write(traceback.format_exc())
+    cleanup()
+    raise
 if not os.path.exists(f'{W}/piper1-gpl'):
     sh(f'git clone -q --depth 1 https://github.com/OHF-Voice/piper1-gpl.git {W}/piper1-gpl')
 os.chdir(f'{W}/piper1-gpl')
