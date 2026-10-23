@@ -14,6 +14,8 @@ import subprocess
 import sys
 import time
 
+# transformers must not load Kaggle's TensorFlow: parler-tts' pins leave its protobuf too old for it (smoke run 1)
+os.environ.update(USE_TF='0', TRANSFORMERS_NO_TF='1')
 INPUT = os.environ.get('INPUT', '/kaggle/input')
 SMOKE = os.environ.get('SMOKE', '0') == '1' or bool(glob.glob(f'{INPUT}/**/SMOKE', recursive=True))
 MAX_TIME = '00:00:08:00' if SMOKE else os.environ.get('MAX_TIME', '00:04:00:00')  # owner: 4 h a voice
