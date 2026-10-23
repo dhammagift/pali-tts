@@ -181,7 +181,10 @@ RU_STRESS = {'варанаси': 'vʌrʌnˈɑsʲɪ', 'исипатана': 'ɪs�
              # owner 2026-10-23: формирова́тель (espeak: формиро́ватель, -и), самому́ (espeak: са́мому; «к самому себе»)
              **{'формировател' + e: 'fʌrmʲirʌvˈɑtʲiɭʲ' + ph for e, ph in
                 {'ь': '', 'я': 'ʌ', 'ю': 'u', 'ем': 'ɪm', 'е': 'ɪ', 'и': 'ɪ', 'ей': 'ɪj', 'ям': 'ʌm', 'ями': 'ʌmʲɪ', 'ях': 'ʌx'}.items()},
-             'самому': 'sʌmʌmˈu'}
+             'самому': 'sʌmʌmˈu',
+             # owner 2026-10-24, SN 56.11 «запуска колеса»: written with е it is the genitive колеса́ (the plural is колёса);
+             # espeak read ко́лЕса
+             'колеса': 'kʌɭʲisˈɑ'}
 
 
 def ru_soften(word, phonemes):
@@ -362,6 +365,7 @@ if __name__ == '__main__':
     assert ru_stress_marks(_W, 'отбрасывании')[:6] == 'отбра\u0301'
     assert ru_stress_marks(_W, 'самому')[-2:] == 'у\u0301'
     assert RU_VSYO.sub(r'\1сё', 'Все же все они, все это, все-таки все, что') == 'Всё же все они, всё это, всё-таки всё, что'
+    assert RU_STRESS['колеса'].count('ˈ') == 1 and RU_STRESS['колеса'].endswith('ˈɑ')
     assert RU_ACCENT['ненадежны'] == 'ненадёжны' and RU_ACCENT['еще'] == 'ещё' and 'все' not in RU_ACCENT  # ru_yo.tsv
     class _C:  # espeak reads a hyphenated compound as one word
         phonemize = staticmethod(lambda t: [list('vʲˈidʲinʲijim pʌmʲatˈovʌnʲijim' if ' ' in t else 'vʲˈidʲinʲijimpʌmʲatˈovʌnʲijim')])
