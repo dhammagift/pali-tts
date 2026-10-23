@@ -59,6 +59,20 @@ RU_ACCENT.update({w.replace('́', ''): w for w in ('ви́дение', 'ви́д
 # ё printed as е (owner 2026-10-23: «ненадежны» read ненаде́жны): build_ru_yo.py, eyo-kernel's safe words found in DG's texts
 RU_ACCENT.update({e: yo for e, yo in (line.split() for line in open(os.path.join(os.path.dirname(__file__), 'ru_yo.tsv'),
                                                                      encoding='utf-8')) if e not in RU_ACCENT})
+# owner 2026-10-24 (SN 56.11 and around): espeak's stress, or a missing ё, in all their forms
+_ADJ = ('ый', 'ая', 'ое', 'ую', 'ой', 'ые', 'ых', 'ым', 'ыми', 'ого', 'ому', 'ом')
+_NOUN_NIE = ('е', 'я', 'ю', 'ем', 'и', 'й', 'ям', 'ями', 'ях')
+_NOUN_OST = ('ь', 'и', 'ью', 'ей', 'ям', 'ями', 'ях')
+RU_ACCENT.update({w.replace('́', '').replace('ё', 'е'): w for w in (  # the key as printed: е for ё
+    *[f'ска́пливани{e}' for e in _NOUN_NIE],  # espeak: скаплива́ние
+    *[f'неви́дени{e}' for e in _NOUN_NIE],  # видение has its fix above; the не- forms read невиде́ние
+    *[f'неслы́шанн{e}' for e in _ADJ],  # espeak: неслыша́нных
+    'обра́дующееся', 'ра́звит', 'ра́звита', 'ра́звито', 'ра́звиты',  # espeak: обраду́ющееся, развита́
+    'двенадцатича́стно',  # espeak: двенадца́тичастно
+    'нимманара́ти',  # the deva realm Nimmānarati; espeak: нимма́нарати
+    *[f'незапылённ{e}' for e in _ADJ],  # no ё in the text: незапы́ленное
+    *[f'{p}вовлечённост{e}' for p in ('', 'не') for e in _NOUN_OST],  # вовлеченности read with е
+)})
 RU_NAME = re.compile(r'[А-Яа-яЁё]+')
 # все printed for всё (owner 2026-10-23): only in the set phrases where it is всё (DG's texts: все же 169, все остальное 47,
 # все это 43, все, что 16 ...); all else stays все - mostly the plural (все они 460, все те 265)
@@ -365,6 +379,7 @@ if __name__ == '__main__':
     assert ru_stress_marks(_W, 'отбрасывании')[:6] == 'отбра\u0301'
     assert ru_stress_marks(_W, 'самому')[-2:] == 'у\u0301'
     assert RU_VSYO.sub(r'\1сё', 'Все же все они, все это, все-таки все, что') == 'Всё же все они, всё это, всё-таки всё, что'
+    assert RU_ACCENT['скапливания'] == 'ска\u0301пливания' and RU_ACCENT['вовлеченности'] == 'вовлечённости'
     assert RU_STRESS['колеса'].count('ˈ') == 1 and RU_STRESS['колеса'].endswith('ˈɑ')
     assert RU_ACCENT['ненадежны'] == 'ненадёжны' and RU_ACCENT['еще'] == 'ещё' and 'все' not in RU_ACCENT  # ru_yo.tsv
     class _C:  # espeak reads a hyphenated compound as one word
