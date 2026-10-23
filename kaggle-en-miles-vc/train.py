@@ -81,11 +81,12 @@ def make_data():
         sf.write(f'{W}/src/{name}', np.concatenate([np.zeros(2205, np.float32), a, np.zeros(3300, np.float32)]), 22050)
     print('ryan read', len(rows), flush=True)
 
-    knn = torch.hub.load('bshall/knn-vc', 'knn_vc', prematched=True, pretrained=True, device='cuda')
+    knn = torch.hub.load('bshall/knn-vc', 'knn_vc', prematched=True, pretrained=True, device='cuda' if torch.cuda.is_available() else 'cpu')
     def wav16(f):  # tensors, not paths: knn-vc's own torchaudio.load needs torchcodec in new torchaudio
         wav, sr = sf.read(f, dtype='float32')
         return torchaudio.functional.resample(torch.from_numpy(wav), sr, 16000)[None]
-    matching = knn.get_matching_set([wav16(f) for f in sorted(glob.glob(f'{REAL}/wavs/*.wav'))])
+    # no VAD: the takes are trimmed already, and its trim left some empty (conv1d on 0 samples)
+    matching = knn.get_matching_set([wav16(f) for f in sorted(glob.glob(f'{REAL}/wavs/*.wav'))], vad_trigger_level=0)
     os.makedirs(f'{DATA}/wavs', exist_ok=True)
     meta = []
     for name, text, ids in rows:
