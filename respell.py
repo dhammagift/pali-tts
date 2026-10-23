@@ -60,6 +60,10 @@ RU_ACCENT.update({w.replace('́', ''): w for w in ('ви́дение', 'ви́д
 RU_ACCENT.update({e: yo for e, yo in (line.split() for line in open(os.path.join(os.path.dirname(__file__), 'ru_yo.tsv'),
                                                                      encoding='utf-8')) if e not in RU_ACCENT})
 RU_NAME = re.compile(r'[А-Яа-яЁё]+')
+# все printed for всё (owner 2026-10-23): only in the set phrases where it is всё (DG's texts: все же 169, все остальное 47,
+# все это 43, все, что 16 ...); all else stays все - mostly the plural (все они 460, все те 265)
+RU_VSYO = re.compile(r'(?<![а-яёА-ЯЁ])([Вв])се(?=(?:\s+|-)(?:же|это|остальное|прочее|равно|еще|ещё|время|таки|дорогое|будет|то)'
+                     r'(?![а-яёА-ЯЁ])|,\s+что(?![а-яёА-ЯЁ]))')
 NUCLEUS = re.compile(r'[əaɪiʊueoʌ]ː?')  # a vowel of our Pali IPA
 # our Pali IPA (espeak-hi symbols) -> what the English voices were trained on: plain stops (an English voice
 # can't aspirate on cue), no retroflex, single consonants
@@ -204,7 +208,7 @@ def ru_soften(word, phonemes):
 def ru_phonemes(voice, text):
     """Phoneme lists (one per sentence) for a Piper Russian voice, with the soft sign restored."""
     text = RU_NAME.sub(lambda m: _case(m.group(), RU_ACCENT[m.group().lower()]) if m.group().lower() in RU_ACCENT else m.group(),
-                       respell(ru_refs(text), 'ru'))
+                       RU_VSYO.sub(r'\1сё', respell(ru_refs(text), 'ru')))
     # a hyphenated compound is one word to espeak, so RU_STRESS never saw its parts (с-прямым-видением-памятованием): apart
     text = RU_COMPOUND.sub(lambda m: m.group().replace('-', ' ') if any(w.lower() in RU_STRESS for w in m.group().split('-'))
                            else m.group(), text)
@@ -288,7 +292,7 @@ def export():
             'en_pali_words': sorted(EN_PALI_WORDS), 'en_pali_long': EN_PALI_LONG, 'en_ipa_rx': EN_IPA_RX.pattern, 'en_ipa': dict(EN_IPA),
             'en_abbr': [[rx.pattern, full] for rx, full in EN_ABBR], 'en_books': EN_BOOKS, 'en_ref': EN_REF.pattern,
             'ru_soften': {k: list(v) for k, v in RU_SOFTEN.items()}, 'ru_word': RU_WORD.pattern, 'ru_stress': RU_STRESS,
-            'ru_accent': RU_ACCENT, 'en_penult': sorted(EN_PENULT), 'nucleus': NUCLEUS.pattern}
+            'ru_accent': RU_ACCENT, 'ru_vsyo': RU_VSYO.pattern, 'en_penult': sorted(EN_PENULT), 'nucleus': NUCLEUS.pattern}
 
 
 def _case(src, out):
@@ -357,6 +361,7 @@ if __name__ == '__main__':
     assert ru_stress_marks(_W, 'Памятование')[:3] == 'Па\u0301'
     assert ru_stress_marks(_W, 'отбрасывании')[:6] == 'отбра\u0301'
     assert ru_stress_marks(_W, 'самому')[-2:] == 'у\u0301'
+    assert RU_VSYO.sub(r'\1сё', 'Все же все они, все это, все-таки все, что') == 'Всё же все они, всё это, всё-таки всё, что'
     assert RU_ACCENT['ненадежны'] == 'ненадёжны' and RU_ACCENT['еще'] == 'ещё' and 'все' not in RU_ACCENT  # ru_yo.tsv
     class _C:  # espeak reads a hyphenated compound as one word
         phonemize = staticmethod(lambda t: [list('vʲˈidʲinʲijim pʌmʲatˈovʌnʲijim' if ' ' in t else 'vʲˈidʲinʲijimpʌmʲatˈovʌnʲijim')])
