@@ -29,12 +29,13 @@ import tempfile
 import shutil
 import threading
 import time
+import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import numpy as np
 from piper import PiperVoice, SynthesisConfig
 
-from pali_ipa import export, to_ipa, tune
+from pali_ipa import export, to_ipa, to_script, tune
 from respell import en_expand, en_phonemes, export as respell_export, respell, ru_phonemes
 
 RULES_VERSION = 'r58'  # bump when pali_ipa rules change, so cached mp3 are not reused
@@ -95,6 +96,11 @@ MAX_LOADED = args.max_loaded
 MODELS = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'models')
 # a copy without some models (the Hugging Face Space has no own voice) just serves fewer voices
 VOICES = {k: v for k, v in VOICES.items() if os.path.exists(os.path.join(MODELS, v[0] + '.onnx'))}
+# test only: a Sanskrit voice reading Pali in Devanagari, from deploy/sa_server.py (torch, its own venv) when DG_SA_URL is set
+SA_URL = os.environ.get('DG_SA_URL')
+if SA_URL:
+    VOICES['sanskrit'] = ('sa-vits-rasa13', 'pi', 'Sanskrit ♂ · AI4Bharat · test')
+    TEST_ONLY.add('sanskrit')
 busy = threading.Semaphore(2)  # 2 vCPU: more parallel syntheses only slow each other down
 loaded, load_lock = {}, threading.Lock()  # insertion order = least recently used first
 hits, hits_lock = {}, threading.Lock()  # ip -> (window start minute, count)
@@ -245,8 +251,24 @@ def encode_mp3(pcm, sr):
         return open(f.name, 'rb').read()
 
 
+def sanskrit_pcm(text, rate):
+    """The test voice 'sanskrit': each piece in Devanagari (ṁ as anusvara, a full stop as danda) to deploy/sa_server.py."""
+    parts, sr = [], 24000  # vits_rasa_13's own rate; the sidecar says it with every answer
+    for sent, pause in pieces(text):
+        deva = re.sub(r'\.(?=\s|$|”|’)', '।', to_script(sent, 'deva', final_m=False)).strip()
+        if not re.search(r'[\u0900-\u097f]', deva):
+            continue
+        r = urllib.request.Request(SA_URL, json.dumps({'text': deva, 'rate': rate}).encode(), {'Content-Type': 'application/json'})
+        with urllib.request.urlopen(r, timeout=120) as resp:
+            sr = int(resp.headers['X-Sample-Rate'])
+            parts += [np.frombuffer(resp.read(), dtype=np.float32), np.zeros(int(sr * pause), dtype=np.float32)]
+    return (np.concatenate(parts) if parts else np.zeros(sr // 4, dtype=np.float32)), sr
+
+
 def synth_pcm(text, vid, rate):
     """Sentence by sentence (VITS degrades on very long inputs), short pauses between."""
+    if vid == 'sanskrit':
+        return sanskrit_pcm(text, rate)
     voice, lang = get_voice(vid), VOICES[vid][1]
     sr = voice.config.sample_rate
     # pratham: our tuned pace (length 1.15 at rate 1); own voice and translations: the recorded pace
@@ -303,7 +325,7 @@ def memo_mp3(segments, vid, rate, delay, end_delay, sound):
     Two limits, because they cost different things: SPEECH (the synthesis, CPU) at most speech_minutes,
     the WHOLE file at most minutes. Silence costs next to nothing, so it is not held in memory: it is
     fed to ffmpeg in chunks, and the pauses are known before the first word is synthesized."""
-    sr = get_voice(vid).config.sample_rate
+    sr = 24000 if vid == 'sanskrit' else get_voice(vid).config.sample_rate  # sa_server's rate: vits_rasa_13 is 24 kHz
     lead, last = 1.0, (end_delay if end_delay > 0 else 0)   # lead-in silence: fade-in players swallow the first syllables
     pauses = lead + last + (delay * (len(segments) - 1) if delay > 0 else 0)
     if pauses > 60 * MEMO_LIMITS['minutes']:
