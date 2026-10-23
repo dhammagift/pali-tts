@@ -146,6 +146,7 @@ def en_phonemes(voice, text):
 # день, кровь, только, учитель. т and с it softens itself. Letter -> the phonemes espeak gives it.
 RU_SOFTEN = {'л': ('ɭ', 'l'), 'н': ('n',), 'в': ('v', 'f'), 'м': ('m',), 'р': ('r',)}
 RU_WORD = re.compile('[а-яё\u0301]+(?:-[а-яё\u0301]+)*')
+RU_COMPOUND = re.compile('[а-яё\u0301]+(?:-[а-яё\u0301]+)+', re.I)
 # a sutta ref at the end of a title or sentence: 4.200 -> «4, 200» (espeak: 4200), 1.1-10 -> «1, 1 — 10», 1-20 -> «1 — 20»
 # (owner 2026-10-19); followed by a word it is a number and stays (2.5 часа). web/pali-tts.js: ruRefs, the same
 RU_REF = re.compile(r'(?<![\d.])(\d+)(?:\.(\d+))?(?:[-–](\d+))?(?=[^\w\s]|\s*$)')
@@ -169,7 +170,11 @@ RU_STRESS = {'варанаси': 'vʌrʌnˈɑsʲɪ', 'исипатана': 'ɪs�
              # owner 2026-10-19: па́мятование (espeak: памято́вание)
              **{'памятовани' + e: 'pˈɑmʲɪtʌvʌnʲi' + ph for e, ph in _NIE.items()},
              # owner 2026-10-21: отбра́сывании (espeak: отбрасы́вании, and отбрасыва́ниям in the plural)
-             **{'отбрасывани' + e: 'ʌdbrˈɑsyvʌnʲi' + ph for e, ph in _NIE.items()}}
+             **{'отбрасывани' + e: 'ʌdbrˈɑsyvʌnʲi' + ph for e, ph in _NIE.items()},
+             # owner 2026-10-23: формирова́тель (espeak: формиро́ватель, -и), самому́ (espeak: са́мому; «к самому себе»)
+             **{'формировател' + e: 'fʌrmʲirʌvˈɑtʲiɭʲ' + ph for e, ph in
+                {'ь': '', 'я': 'ʌ', 'ю': 'u', 'ем': 'ɪm', 'е': 'ɪ', 'и': 'ɪ', 'ей': 'ɪj', 'ям': 'ʌm', 'ями': 'ʌmʲɪ', 'ях': 'ʌx'}.items()},
+             'самому': 'sʌmʌmˈu'}
 
 
 def ru_soften(word, phonemes):
@@ -197,6 +202,9 @@ def ru_phonemes(voice, text):
     """Phoneme lists (one per sentence) for a Piper Russian voice, with the soft sign restored."""
     text = RU_NAME.sub(lambda m: _case(m.group(), RU_ACCENT[m.group().lower()]) if m.group().lower() in RU_ACCENT else m.group(),
                        respell(ru_refs(text), 'ru'))
+    # a hyphenated compound is one word to espeak, so RU_STRESS never saw its parts (с-прямым-видением-памятованием): apart
+    text = RU_COMPOUND.sub(lambda m: m.group().replace('-', ' ') if any(w.lower() in RU_STRESS for w in m.group().split('-'))
+                           else m.group(), text)
     words = RU_WORD.findall(text.lower())
     sents = [list(s) for s in voice.phonemize(text) if s]
     flat = [p for s in sents for p in s + [' ']]  # a space between sentences too, or their edge words merge
@@ -340,11 +348,15 @@ if __name__ == '__main__':
     class _W:  # espeak's phonemes for single words
         phonemize = staticmethod(lambda t: [list({'каково': 'kʌkʌvˈo', 'таковым': 'tʌkʌvˈym', 'это': 'ˈɛtʌ',
                                                   'учитель': 'utʃʲˈitʲɪl', 'родами': 'rʌdˈɑmʲɪ',
-                                                  'четырьмя': 'tʃʲityrɪ^mʲˈɑ', 'памятование': 'pʌmʲatˈovʌnʲijɪ', 'отбрасывании': 'ʌdbrasˈyvʌnʲiɪ'}[t.lower()])])
+                                                  'четырьмя': 'tʃʲityrɪ^mʲˈɑ', 'памятование': 'pʌmʲatˈovʌnʲijɪ', 'отбрасывании': 'ʌdbrasˈyvʌnʲiɪ', 'самому': 'samˈomu', 'видением': 'vʲˈidʲinʲijim'}[t.lower()])])
     assert ru_stress_marks(_W, 'Каково это, таковым учитель') == 'Каково\u0301 э\u0301то, таковы\u0301м учи\u0301тель'
     assert ru_stress_marks(_W, 'родами')[:4] == 'ро\u0301д'  # from RU_STRESS
     assert ru_stress_marks(_W, 'Памятование')[:3] == 'Па\u0301'
     assert ru_stress_marks(_W, 'отбрасывании')[:6] == 'отбра\u0301'
+    assert ru_stress_marks(_W, 'самому')[-2:] == 'у\u0301'
+    class _C:  # espeak reads a hyphenated compound as one word
+        phonemize = staticmethod(lambda t: [list('vʲˈidʲinʲijim pʌmʲatˈovʌnʲijim' if ' ' in t else 'vʲˈidʲinʲijimpʌmʲatˈovʌnʲijim')])
+    assert ''.join(ru_phonemes(_C, 'видением-памятованием')[0]) == 'vʲˈidʲinʲijim pˈɑmʲɪtʌvʌnʲijɪm'  # apart: RU_STRESS fixes it
     assert ru_refs('Восходящие Наставления 4.200') == 'Восходящие Наставления 4, 200'
     assert ru_refs('Наставления 1.1-10.') == 'Наставления 1, 1 — 10.'
     assert ru_refs('Дхаммапада 1–20') == 'Дхаммапада 1 — 20'

@@ -196,6 +196,8 @@ export function makeTranslation(d, pali, espeak) {
     (_, a, b, c) => a + (b ? `, ${b}` : '') + (c ? ` — ${c}` : ''));
   function ruPhonemes(voice, text) {
     text = respell(ruRefs(text), 'ru').replace(/[А-Яа-яЁё]+/g, w => has(d.ru_accent, w.toLowerCase()) ? cased(w, d.ru_accent[w.toLowerCase()]) : w);
+    // respell.RU_COMPOUND: a hyphenated compound is one word to espeak, so ru_stress never saw its parts: apart
+    text = text.replace(/[а-яё\u0301]+(?:-[а-яё\u0301]+)+/giu, m => m.split('-').some(w => has(d.ru_stress, w.toLowerCase())) ? m.replace(/-/g, ' ') : m);
     const words = text.toLowerCase().match(RU_WORD) || [];
     const sents = espeak.phonemize(voice, text).filter(s => s.length);
     const tokens = [];
