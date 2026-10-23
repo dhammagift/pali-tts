@@ -20,7 +20,7 @@ from piper import PiperVoice
 from pali_ipa import to_ipa, to_script
 
 OUT, N = sys.argv[1], int(sys.argv[2]) if len(sys.argv) > 2 else 2400
-ROOT = '/var/www/html/suttacentral.net/sc-data/sc_bilara_data/root/pli/ms/sutta'
+ROOT = os.environ.get('PLI_ROOT', '/var/www/html/suttacentral.net/sc-data/sc_bilara_data/root/pli/ms/sutta')
 voice = PiperVoice.load('models/hi_IN-pratham-medium.onnx')
 segs = []
 for book in ('dn', 'mn', 'sn', 'an'):
