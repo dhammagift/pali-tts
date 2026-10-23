@@ -34,14 +34,14 @@ def align(model):
     return ort.InferenceSession(path, providers=['CPUExecutionProvider'])
 
 
-def read_carried(voice, sess, text):
+def read_carried(voice, sess, text, length=None):
     sr, parts = voice.config.sample_rate, []
     for sent in re.split(r'(?<=[.?!;:])\s+', en_expand(text).strip()):
         ph = en_phonemes(voice, sent)
         ids = voice.phonemes_to_ids(ph + list(CARRIER))
         assert len(ids) == 2 * len(ph + list(CARRIER)) + 3, 'ids are ^ _ (p _)* $'
         audio, dur = sess.run(None, {'input': np.array([ids], dtype=np.int64), 'input_lengths': np.array([len(ids)], dtype=np.int64),
-                                     'scales': np.array([CFG.noise_scale, CFG.length_scale, CFG.noise_w_scale], dtype=np.float32)})
+                                     'scales': np.array([CFG.noise_scale, length or CFG.length_scale, CFG.noise_w_scale], dtype=np.float32)})
         audio, dur = audio.reshape(-1), dur.reshape(-1).astype(int) * HOP
         starts = np.concatenate([[0], np.cumsum(dur)])
         end = starts[2 + 2 * (len(ph) + 1)]  # the carrier's first sound (after its space)

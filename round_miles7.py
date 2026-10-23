@@ -15,6 +15,8 @@ from round_st1 import mp3
 
 OUT = 'out/miles7'
 V3 = 'models/en_miles3-medium.onnx'
+# v3 learnt ryan's pace from its 2600 lines: ~30% faster than Miles (first page: v3/v1 0.68-0.86, owner heard it). Evened
+SLOW = {'v1': None, 'v3': 1.4}
 TEXTS = TEXTS4 + ['by attention conditioned is name-matter;', 'by name-matter conditioned is the six-fold area;']
 
 if __name__ == '__main__':
@@ -25,7 +27,7 @@ if __name__ == '__main__':
         vs = []
         for vid, (name, voice, sess) in zip('ab', voices if i % 2 == 0 else voices[::-1]):  # blind: A is not always v1
             f = f'en{i}.{vid}.mp3'
-            mp3(*read_carried(voice, sess, text), f'{OUT}/{f}')
+            mp3(*read_carried(voice, sess, text, SLOW[name]), f'{OUT}/{f}')
             vs.append({'id': vid, 'label': vid.upper(), 'voice': name, 'file': f, 'sent': text})
         phrases.append({'id': f'en{i}', 'text': text, 'ipa': '', 'script': '', 'variants': vs,
                         'note': '★ best; ✓ ok; ✗ bad. Which sounds more like you, and clearer? Tap a word that is read wrong'})
