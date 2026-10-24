@@ -77,6 +77,12 @@ RU_ACCENT.update({w.replace('́', '').replace('ё', 'е'): w for w in (  # the k
     *[f'ве́дани{e}' for e in _NOUN_NIE], *[f'сосредото́чени{e}' for e in _NOUN_NIE],
     'милы́', 'бе́рег', 'о́браза', 'змея́', 'змею́', 'вели́ко',
     *[f'разви́т{e}' for e in _ADJ],
+    # round rustress2 (owner 2026-10-24, the syllable he tapped): espeak's у́же, мо́я, то́му, пере́д, ду́ша, ве́сти ...
+    'уже́', 'моя́', 'тому́', 'пе́ред', 'душа́', 'вести́', 'прожита́', 'зарождено́',
+    'вычища́я', 'однонапра́влен', 'однонапра́влена', 'однонапра́влено', 'однонапра́влены',
+    *[f'{s}{e}' for s in ('приня́вш', 'па́мятующ') for e in
+      ('ий', 'его', 'ему', 'им', 'ем', 'ая', 'ую', 'ей', 'ее', 'ие', 'их', 'ими', 'ееся')],
+    *[f'безли́чностн{e}' for e in _ADJ],
 )})
 RU_NAME = re.compile(r'[А-Яа-яЁё]+')
 # все printed for всё (owner 2026-10-23): only in the set phrases where it is всё (DG's texts: все же 169, все остальное 47,
@@ -384,6 +390,7 @@ if __name__ == '__main__':
     assert ru_stress_marks(_W, 'отбрасывании')[:6] == 'отбра\u0301'
     assert ru_stress_marks(_W, 'самому')[-2:] == 'у\u0301'
     assert RU_VSYO.sub(r'\1сё', 'Все же все они, все это, все-таки все, что') == 'Всё же все они, всё это, всё-таки всё, что'
+    assert RU_ACCENT['уже'] == 'уже\u0301' and RU_ACCENT['памятующий'] == 'па\u0301мятующий'
     assert RU_ACCENT['скапливания'] == 'ска\u0301пливания' and RU_ACCENT['вовлеченности'] == 'вовлечённости'
     assert RU_STRESS['колеса'].count('ˈ') == 1 and RU_STRESS['колеса'].endswith('ˈɑ')
     assert RU_ACCENT['ненадежны'] == 'ненадёжны' and RU_ACCENT['еще'] == 'ещё' and 'все' not in RU_ACCENT  # ru_yo.tsv
