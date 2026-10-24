@@ -13,7 +13,7 @@ import sys
 
 from piper import PiperVoice
 
-from respell import IPA_VOWELS, RU_VOWELS, ru_phonemes
+from respell import IPA_VOWELS, RU_ACCENT, RU_STRESS, RU_VOWELS, ru_phonemes
 
 voice = PiperVoice.load('models/ru_puriso2-medium.onnx')
 stats = json.load(open(sys.argv[1], encoding='utf-8'))
@@ -44,8 +44,8 @@ def marked(word, k):
 
 rows = []
 for word, forms in stats.items():
-    if sum(c in RU_VOWELS for c in word) < 2 or '-' in word:
-        continue
+    if sum(c in RU_VOWELS for c in word) < 2 or '-' in word or word in RU_ACCENT or word in RU_STRESS:
+        continue  # our own rules (Pali names on the penult, the owner's fixes) are meant, RUAccent's guess is not
     total = sum(forms.values())
     top, n = max(forms.items(), key=lambda kv: kv[1])
     k_them, yo_them = theirs(top)
