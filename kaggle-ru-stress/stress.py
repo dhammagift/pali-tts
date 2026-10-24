@@ -19,11 +19,11 @@ SMOKE = os.environ.get('SMOKE', '0') == '1'
 W = os.environ.get('WORK', '/kaggle/working')
 SEGS = glob.glob(f'{INPUT}/**/segments.tsv', recursive=True)[0]
 
-subprocess.run('pip install -q ruaccent onnxruntime-gpu', shell=True, check=True)
+subprocess.run('pip install -q ruaccent', shell=True, check=True)  # CPU: Kaggle CPU sessions are free (owner: keep the GPU quota)
 from ruaccent import RUAccent  # noqa: E402
 
 acc = RUAccent()
-acc.load(omograph_model_size='turbo3.1', use_dictionary=True, tiny_mode=False, device='CUDA', workdir=f'{W}/ruaccent')
+acc.load(omograph_model_size='turbo3.1', use_dictionary=True, tiny_mode=False, device='CPU', workdir=f'{W}/ruaccent')
 rows = [line.rstrip('\n').split('\t', 1) for line in open(SEGS, encoding='utf-8')]
 rows = rows[:2000] if SMOKE else rows
 stats = collections.defaultdict(collections.Counter)
