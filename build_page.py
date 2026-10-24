@@ -4,11 +4,12 @@ import random
 import re
 import time
 
-ROUND = 'rustress1'
+ROUND = 'rustress2'
 TITLE = 'Pali TTS — раунд 54: paggayha, asaṁvāso, sammutiyā, tikkhattuṁ'
 INTRO = ('Остатки раундов 52–53: paggayha «пагейа» (открытое a, как помогло в dhārayāmīti), asaṁvāso, u в bhikkhusammutiyā, tikkhattuṁ без i и ṁ. 2 дубля, вперемешку, 0.7x.')
 LANG = 'ru'  # 'en': the page's own words in English (owner: English rounds are for Miles, who has no Russian)
 idx = json.load(open(f'out/{ROUND}/index.json', encoding='utf-8'))
+TITLE, INTRO = idx.get('title', TITLE), idx.get('intro', INTRO)  # the round's own words when its index.json has them
 ver = int(time.time())
 phrases = []
 for sec in idx['sections']:
@@ -18,7 +19,7 @@ for sec in idx['sections']:
             random.Random(ROUND + c['id']).shuffle(vs)  # blind: stable per round, different per phrase
         phrases.append({
             'id': c['id'], 'text': c['text'], 'note': c['note'], 'ipa': c['ipa'], 'script': c['script'],
-            'section': sec['title'], 'multi': sec['multi_best'],
+            'section': sec['title'], 'multi': sec['multi_best'], 'stress': sec.get('stress', False),
             'words': re.findall(r"[^\s—–]+", c['text']),
             'variants': [{'id': v['id'], 'letter': str(i + 1) if sec['multi_best'] else chr(65 + i), 'label': v['label'],
                           'src': f'audio/{ROUND}/{v["file"]}?v={ver}'} for i, v in enumerate(vs)],

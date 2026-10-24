@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $v = json_decode($raw, true);
     $ok = is_array($v)
         && preg_match('/^[A-Za-z0-9_.-]{1,40}$/', $v['phrase'] ?? '')
-        && in_array($v['kind'] ?? '', ['rating', 'words', 'comment'], true);
+        && in_array($v['kind'] ?? '', ['rating', 'words', 'comment', 'stress'], true);
     if (!$ok) { http_response_code(400); exit('{"error":"bad answer"}'); }
     if (is_file($file) && filesize($file) > 5 * 1024 * 1024) { http_response_code(507); exit('{"error":"full"}'); }
     $row = [
