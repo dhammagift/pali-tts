@@ -72,6 +72,11 @@ RU_ACCENT.update({w.replace('́', '').replace('ё', 'е'): w for w in (  # the k
     'нимманара́ти',  # the deva realm Nimmānarati; espeak: нимма́нарати
     *[f'незапылённ{e}' for e in _ADJ],  # no ё in the text: незапы́ленное
     *[f'{p}вовлечённост{e}' for p in ('', 'не') for e in _NOUN_OST],  # вовлеченности read with е
+    # round rustress1 (owner 2026-10-24, where RUAccent was right and espeak not): ведА́ние, сосредоточЕ́нии/-ию, ми́лы,
+    # бере́г, обра́за, зме́я/зме́ю; велико́- (велико-плодными: the owner wants вели́ко); разви́тые (RUAccent: ра́звитые, also wrong)
+    *[f'ве́дани{e}' for e in _NOUN_NIE], *[f'сосредото́чени{e}' for e in _NOUN_NIE],
+    'милы́', 'бе́рег', 'о́браза', 'змея́', 'змею́', 'вели́ко',
+    *[f'разви́т{e}' for e in _ADJ],
 )})
 RU_NAME = re.compile(r'[А-Яа-яЁё]+')
 # все printed for всё (owner 2026-10-23): only in the set phrases where it is всё (DG's texts: все же 169, все остальное 47,
