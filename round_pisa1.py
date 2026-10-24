@@ -20,7 +20,7 @@ from pali_ipa import to_ipa
 
 OUT = 'out/pisa1'
 SA = 'models/pali_sa-medium.onnx'
-SA_LENGTH = float(sys.argv[1]) if len(sys.argv) > 1 else 1.15 / 0.7
+SA_LENGTH = float(sys.argv[1]) if len(sys.argv) > 1 and sys.argv[1] != '--pace' else 1.15 / 0.7
 TEXTS = ['Idamavoca bhagavā.',
          'Imasmiñca pana veyyākaraṇasmiṁ bhaññamāne tassa bhikkhusahassassa anupādāya āsavehi cittāni vimucciṁsūti.',
          'Mettāsahagatena cetasā ekaṁ disaṁ pharitvā viharati.',
