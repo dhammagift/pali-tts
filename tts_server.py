@@ -38,7 +38,7 @@ from piper import PiperVoice, SynthesisConfig
 from pali_ipa import export, to_ipa, to_script, tune
 from respell import en_expand, en_phonemes, export as respell_export, respell, ru_phonemes
 
-RULES_VERSION = 'r65'  # bump when pali_ipa rules change, so cached mp3 are not reused
+RULES_VERSION = 'r66'  # bump when pali_ipa rules change, so cached mp3 are not reused
 MAX_CHARS = 2000
 RATE_LIMIT = 60  # requests per client IP per minute
 # id -> (model file, language, menu label). Sites build their voice menus from GET /voices (in this order; the first
@@ -191,24 +191,35 @@ def align_session(vid):
 LONE_LEAD, LONE_NOISE = 'ʌbʰɪnʌndˈʊntɪ ', (0.3, 0.5)  # abhinandunti
 
 
-def lone_word(vid, ipa, cfg):
+def lone_word(vid, ipa, cfg, lead=LONE_LEAD, noise=LONE_NOISE, end='.', margin=0.03):
     """A word on its own (a rule's title, a sutta's ordinal) is misread far worse than inside a sentence (round 50: alone
     0 of 6 ok, with a full stop 2 of 6): read after LONE_LEAD and cut where the model's own durations say the word starts.
-    Without an align model, the full stop."""
+    Without an align model, the full stop. An English voice may give its own lead (.onnx.json "lead", see json_extra)."""
     sess = align_session(vid)
     voice = get_voice(vid)
     if sess is None:
-        return voice.phoneme_ids_to_audio(voice.phonemes_to_ids(list(ipa + '.')), cfg)
-    ids = voice.phonemes_to_ids(list(f'{LONE_LEAD}{ipa}.'))  # ^ _ (phoneme _)* $
+        return voice.phoneme_ids_to_audio(voice.phonemes_to_ids(list(ipa + end)), cfg)
+    ids = voice.phonemes_to_ids(list(f'{lead}{ipa}{end}'))  # ^ _ (phoneme _)* $
     audio, dur = sess.run(None, {'input': np.array([ids], dtype=np.int64), 'input_lengths': np.array([len(ids)], dtype=np.int64),
-                                 'scales': np.array([LONE_NOISE[0], cfg.length_scale, LONE_NOISE[1]], dtype=np.float32)})
+                                 'scales': np.array([noise[0], cfg.length_scale, noise[1]], dtype=np.float32)})
     audio, dur = audio.reshape(-1), dur.reshape(-1).astype(int) * HOP
     starts = np.concatenate([[0], np.cumsum(dur)])
-    first = starts[2 + 2 * len(LONE_LEAD)]  # the word's first phoneme
-    return audio[max(first - int(0.03 * voice.config.sample_rate), 0):].astype(np.float32)
+    first = starts[2 + 2 * sum(p in voice.config.phoneme_id_map for p in lead)]  # the word's first phoneme
+    return audio[max(first - int(margin * voice.config.sample_rate), 0):].astype(np.float32)
 
 
-tails = {}  # vid -> its .onnx.json "tail" (None: none)
+extras = {}  # vid -> its .onnx.json "tail" and "lead" (None: none)
+
+
+def json_extra(vid, key):
+    """Per-voice tricks in its .onnx.json: "tail" (with_tail) and "lead" - phonemes a one- or two-word English line is
+    read after, then cut right at the word (lone_word): Yojanāni on miles2 read "monks" alone as "next"; whisper-small
+    heard 13 of 36 short words right alone, 21 after "the" (30 ms of it kept: "man" -> "Amen"), 31 after "the word" cut
+    at 0 ms (2026-10-25)."""
+    if vid not in extras:
+        j = json.load(open(os.path.join(MODELS, VOICES[vid][0] + '.onnx.json'), encoding='utf-8'))
+        extras[vid] = {'tail': j.get('tail'), 'lead': j.get('lead')}
+    return extras[vid][key]
 
 
 def with_tail(vid, ph, cfg):
@@ -216,9 +227,7 @@ def with_tail(vid, ph, cfg):
     the sentence with the tail after it and cut where the model's own durations say the tail starts (round miles5).
     web/pali-tts.js does the same offline."""
     voice, sess = get_voice(vid), align_session(vid)
-    if vid not in tails:
-        tails[vid] = json.load(open(os.path.join(MODELS, VOICES[vid][0] + '.onnx.json'), encoding='utf-8')).get('tail')
-    tail = tails[vid]
+    tail = json_extra(vid, 'tail')
     if not tail or sess is None:
         return voice.phoneme_ids_to_audio(voice.phonemes_to_ids(ph), cfg)
     ids = voice.phonemes_to_ids(list(ph) + list(tail))  # ^ _ (phoneme _)* $, phonemes the model lacks left out
@@ -290,6 +299,11 @@ def synth_pcm(text, vid, rate):
         word = ipa.strip(' ,.?!:;') if lang == 'pi' else ''
         if word and word.count(' ') < 2:  # one word or two (round 56: «Idamavoca bhagavā.» alone bad, after the lead ok)
             parts.append(lone_word(vid, word, cfg))
+            phonemes = []  # read
+            parts.append(np.zeros(int(sr * pause), dtype=np.float32))
+        lead = json_extra(vid, 'lead') if lang == 'en' else None
+        if lead and len(phonemes) == 1 and len(sent.split()) < 3:
+            parts.append(lone_word(vid, ''.join(phonemes[0]).strip(), cfg, lead, (cfg.noise_scale, cfg.noise_w_scale), '', 0))
             phonemes = []  # read
             parts.append(np.zeros(int(sr * pause), dtype=np.float32))
         for ph in phonemes:

@@ -285,12 +285,13 @@ export async function makeSpeaker(ort, pali, modelBytes, modelJson, { noise = 0.
   }
   // tts_server.LONE_LEAD, LONE_NOISE (round 55): after a sutta's own last word, steadier
   const LONE_LEAD = 'ʌbʰɪnʌndˈʊntɪ ', LONE_NOISE = [0.3, 0.5];
-  async function loneWord(ipa, length) {
-    const { audio, dur } = await run([...`${LONE_LEAD}${ipa}.`], length, LONE_NOISE);
-    if (!dur) return (await run([...ipa + '.'], length)).audio;
+  // an English voice may give its own lead (.onnx.json "lead", tts_server.json_extra)
+  async function loneWord(ipa, length, lead = LONE_LEAD, noise = LONE_NOISE, end = '.', margin = 0.03) {
+    const { audio, dur } = await run([...`${lead}${ipa}${end}`], length, noise);
+    if (!dur) return (await run([...ipa + end], length)).audio;
     let first = 0;
-    for (let i = 0; i < 2 + 2 * [...LONE_LEAD].length; i++) first += Math.trunc(Number(dur[i])) * HOP;
-    return audio.slice(Math.max(first - Math.trunc(0.03 * sr), 0));
+    for (let i = 0; i < 2 + 2 * [...lead].filter(c => idMap[c]).length; i++) first += Math.trunc(Number(dur[i])) * HOP;
+    return audio.slice(Math.max(first - Math.trunc(margin * sr), 0));
   }
   // tts_server.with_tail: a voice whose json has "tail" cuts a sentence's last sound; read with the tail after it, cut there
   async function withTail(ph, length) {
@@ -310,8 +311,12 @@ export async function makeSpeaker(ort, pali, modelBytes, modelJson, { noise = 0.
     if (translation && lang === 'en') text = translation.enExpand(text);  // before the split, as tts_server: "Ven." ends no sentence
     for (const [sent, pause] of pieces(text)) {
       const gap = new Float32Array(Math.trunc(sr * pause));
-      if (translation) {  // en/ru: no lone-word trick (Pali only)
+      if (translation) {  // en/ru: the lone-word trick only for a voice with a json "lead"
         const lists = translation.phonemes(lang, modelJson.espeak.voice, idMap, sent);
+        if (lang === 'en' && modelJson.lead && lists.length === 1 && sent.trim().split(/\s+/).length < 3) {
+          parts.push(await loneWord([...lists[0]].join('').trim(), length, modelJson.lead, [noise, noiseW], '', 0), gap);
+          continue;
+        }
         for (const ph of lists) parts.push(await withTail(ph, length));
         if (lists.length) parts.push(gap);
         continue;
