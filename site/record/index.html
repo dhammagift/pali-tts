@@ -107,9 +107,17 @@ body.prompt #prevBtn,body.prompt #nextBtn{flex:1;padding:16px;font-size:1.2rem}
 <script>
 const KEY = new URLSearchParams(location.search).get('k') || '';
 // the same page records the owner's Pali voice (record/) and a friend's English one (record-en/, symlinked here)
-const EN = location.pathname.includes('/record-en/'), T = (ru, en) => EN ? en : ru, LS = EN ? 'rec_en_' : 'rec_';
+// record-ru/: the owner's Russian - Russian UI, its own progress and queue
+const EN = location.pathname.includes('/record-en/'), RU = location.pathname.includes('/record-ru/'), T = (ru, en) => EN ? en : ru,
+      LS = EN ? 'rec_en_' : RU ? 'rec_ru_' : 'rec_';
 const api = (q = '') => `save.php?k=${encodeURIComponent(KEY)}${q}`;
 const $ = id => document.getElementById(id);
+if (RU) {
+  document.title = 'Запись голоса: русский';
+  document.querySelector('h1').textContent = 'Запись голоса: русский';
+  const li = [...document.querySelectorAll('details li')].find(l => l.textContent.startsWith('Фразы идут'));
+  if (li) li.textContent = 'Для клона голоса хватит первых 20–30 фраз (~2–3 мин); всё сверх — запас для обучения своего голоса. Записывайте частями: прогресс сохранён на сервере.';
+}
 if (EN) {
   document.documentElement.lang = 'en'; document.title = 'Voice recording';
   document.querySelector('h1').textContent = 'Voice recording for Dhamma.Gift';
@@ -175,7 +183,7 @@ function idb(mode, fn) {
 async function openQueue() {
   db = await new Promise(res => {
     try {
-      const r = indexedDB.open(EN ? 'en-rec' : 'pali-rec', 1);
+      const r = indexedDB.open(EN ? 'en-rec' : RU ? 'ru-rec' : 'pali-rec', 1);
       r.onupgradeneeded = () => r.result.createObjectStore('q', { keyPath: 'id' });
       r.onsuccess = () => res(r.result); r.onerror = () => res(null);
     } catch (e) { res(null); }

@@ -6,9 +6,10 @@
 // The key (record.key, not in git) keeps strangers from filling the disk through this public page.
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
-// record/ is the owner's Pali voice; record-en/ (symlinks to these files) a friend's English one: own folder and key
-$sfx = substr(basename(dirname($_SERVER['SCRIPT_FILENAME'])), strlen('record'));  // '' or '-en'
-if (!in_array($sfx, ['', '-en'], true)) { http_response_code(404); exit; }
+// record/ is the owner's Pali voice; record-en/ (symlinks to these files) a friend's English one, record-ru/ the owner's
+// Russian (2026-10-26, for a voice clone): each its own folder and key
+$sfx = substr(basename(dirname($_SERVER['SCRIPT_FILENAME'])), strlen('record'));  // '', '-en' or '-ru'
+if (!in_array($sfx, ['', '-en', '-ru'], true)) { http_response_code(404); exit; }
 $dir = "/var/www/pali-tts/takes$sfx";
 if (!hash_equals(trim(file_get_contents("/var/www/pali-tts/record$sfx.key")), (string)($_GET['k'] ?? ''))) {
     http_response_code(403); exit('{"error":"bad key"}');
