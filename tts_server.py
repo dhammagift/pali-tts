@@ -38,7 +38,7 @@ from piper import PiperVoice, SynthesisConfig
 from pali_ipa import export, to_ipa, to_script, tune
 from respell import en_expand, en_phonemes, export as respell_export, respell, ru_phonemes
 
-RULES_VERSION = 'r66'  # bump when pali_ipa rules change, so cached mp3 are not reused
+RULES_VERSION = 'r67'  # bump when pali_ipa rules change, so cached mp3 are not reused
 MAX_CHARS = 2000
 RATE_LIMIT = 60  # requests per client IP per minute
 # id -> (model file, language, menu label). Sites build their voice menus from GET /voices (in this order; the first
@@ -54,6 +54,8 @@ VOICES = {
     # Miles (an English reader of the record-en script): from en_US-ryan on his own takes; replaced norman (owner 2026-10-17)
     # back to v1 (round miles5, Miles 2026-10-21: «much higher quality»; A 3 of 3): from ryan, which cuts a sentence's last
     # sound - its .onnx.json "tail" saves it (with_tail). en_miles2 (from joe, 3 h, ends whole but worse) kept in models/
+    # now (2026-10-26): from kusal on miles2 (2250 ElevenLabs lines in Miles's cloned voice), 28 epochs, then ~70 more with 699
+    # short lines x3 (make_en_miles_short.py, kaggle-yojanani-*): a word alone heard right 59 of 66 (whisper-small)
     'miles': ('en_miles-medium', 'en', 'Yojanāni ♂'),  # owner: Miles in Pali, freely (yojana, plural)
     'kathleen': ('en_US-kathleen-low', 'en', 'Kathleen ♀ · US (low)'),
     # Supertonic M1 ("male 1") taught to Piper from ruslan; replaced Ruslan (owner 2026-10-17), named puriso, "man"; the Russian default (owner 2026-10-21)
@@ -62,8 +64,9 @@ VOICES = {
     'dgru': ('ru_dg2-medium', 'ru', 'o Dhamma.Gift ♂ · beta'),
     'irina': ('ru_RU-irina-medium', 'ru', 'Irina ♀'),
 }
-# dgru came out ~6 dB under ruslan/irina (RMS -29 vs -23 dB): brought to their level (pali-tts.js gets it in the offer)
-GAIN = {'dgru': 2.0}
+# dgru came out ~6 dB under ruslan/irina (RMS -29 vs -23 dB): brought to their level (pali-tts.js gets it in the offer).
+# miles and kathleen ~12 dB under alan (-30 vs -17.6 LUFS, owner 2026-10-26: "Yojanāni sounds quiet"): as far as their peaks allow
+GAIN = {'dgru': 2.0, 'miles': 3.0, 'kathleen': 3.5}
 TEST_ONLY = set()  # in the menus of test.dhamma.gift only, never offered offline
 TEST_ORIGIN = 'https://test.dhamma.gift'
 CACHE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cache', 'tts')
