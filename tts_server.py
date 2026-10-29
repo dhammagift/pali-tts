@@ -50,13 +50,13 @@ VOICES = {
     'dg': ('pali_dg-medium', 'pi-own', 'o Dhamma.Gift ♂ · beta'),
     # female Pali voice (round 44: ok 20 of 22 with pratham's rules, as they are)
     'priyamvada': ('hi_IN-priyamvada-medium', 'pi', 'Priyamvada ♀ · Piper'),
-    'alan': ('en_GB-alan-medium', 'en', 'Alan ♂ · UK'),
     # Miles (an English reader of the record-en script): from en_US-ryan on his own takes; replaced norman (owner 2026-10-17)
     # back to v1 (round miles5, Miles 2026-10-21: «much higher quality»; A 3 of 3): from ryan, which cuts a sentence's last
     # sound - its .onnx.json "tail" saves it (with_tail). en_miles2 (from joe, 3 h, ends whole but worse) kept in models/
     # now (2026-10-26): from kusal on miles2 (2250 ElevenLabs lines in Miles's cloned voice), 28 epochs, then ~70 more with 699
     # short lines x3 (make_en_miles_short.py, kaggle-yojanani-*): a word alone heard right 59 of 66 (whisper-small)
-    'miles': ('en_miles-medium', 'en', 'Yojanāni ♂'),  # owner: Miles in Pali, freely (yojana, plural)
+    'miles': ('en_miles-medium', 'en', 'Yojanāni ♂'),  # owner: Miles in Pali, freely (yojana, plural); first = the English default (owner 2026-10-29)
+    'alan': ('en_GB-alan-medium', 'en', 'Alan ♂ · UK'),
     'kathleen': ('en_US-kathleen-low', 'en', 'Kathleen ♀ · US (low)'),
     # Supertonic M1 ("male 1") taught to Piper from ruslan; replaced Ruslan (owner 2026-10-17), named puriso, "man"; the Russian default (owner 2026-10-21)
     'puriso': ('ru_puriso2-medium', 'ru', 'Puriso ♂'),  # v2 (2026-10-17): retrained on M1 clips read with our stress marks
