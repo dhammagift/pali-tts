@@ -1,4 +1,4 @@
-"""Recording script for the own voice: SC Pali sentences picked so every sound pair of Pali is covered,
+"""Recording script for the own voice: Pali-text sentences picked so every sound pair of Pali is covered,
 rare ones several times, in about TARGET_MIN minutes of reading.
 
 Greedy set cover over diphones (adjacent letters, word edges included), lazy evaluation: a segment's gain

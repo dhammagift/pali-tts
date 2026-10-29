@@ -1,4 +1,4 @@
-"""Forced alignment of Pali recordings against SuttaCentral root text (torchaudio MMS_FA).
+"""Forced alignment of Pali recordings against the Pali text (torchaudio MMS_FA).
 
 align(wav_path, segments) -> list of words {seg, word, start, end, score}, in reading order.
 A star token between segments absorbs audio that is not in the text (headings, coughs, pauses).

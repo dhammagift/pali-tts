@@ -1,4 +1,4 @@
-"""Pali lexicon for sherpa-onnx (new format: `word || phones`), from every word form in the SC Pali canon.
+"""Pali lexicon for sherpa-onnx (new format: `word || phones`), from every word form in the Pali text (Mahāsaṅgīti).
 Phones are exactly what our server feeds hi_IN-pratham: tune(to_ipa(word, full_a=True)), one codepoint per phone.
 Usage: venv python build_lexicon.py /root/sherpa-pi/canon out/lexicon-pi.txt"""
 import glob, json, re, subprocess, sys, unicodedata
