@@ -102,9 +102,9 @@ body.sn #text,body.sn.prompt #text{font-size:1.3rem;line-height:1.55;font-style:
     </div>
     <label><input type="checkbox" id="auto" checked> после «стоп» сохранять и переходить к следующей</label>
     <div class="bar"><div id="done"></div></div>
-    <div id="queue"></div>
-    <div id="uploads"></div>
   </div>
+  <div id="queue"></div>
+  <div id="uploads"></div>
 </div>
 </main>
 <script>
@@ -163,7 +163,9 @@ function wavBlob(bufs, rate) {
   return new Blob([dv], { type: 'audio/wav' });
 }
 
+let shownI = -1;  // show() also runs when an upload lands: only a move to another line stops playback
 function show() {
+  if (i !== shownI) stopPlay(), shownI = i;
   const line = script[i];
   $('text').textContent = line.text;
   const top = Math.min(300, script.length), topDone = script.slice(0, top).filter(l => done.has(l.id)).length;
@@ -222,8 +224,11 @@ function logRow(it, state, text) {
 }
 function queueInfo(note) {
   const n = pending.size, k = inFlight.size;
-  $('queue').textContent = n ? T(`⏳ ждут отправки: ${n} · отправляются сейчас: ${k}`, `⏳ waiting to upload: ${n} · uploading now: ${k}`)
-    + (note ? ' · ' + note : '') : '';
+  // what is already on the server is always shown (owner 2026-10-31: after leaving the page and coming back
+  // it looked as if nothing had been recorded or uploaded)
+  $('queue').textContent = [script.length ? T(`✓ на сервере: ${done.size} из ${script.length}`, `✓ on the server: ${done.size} of ${script.length}`) : '',
+    n ? T(`⏳ ждут отправки: ${n} · отправляются сейчас: ${k}`, `⏳ waiting to upload: ${n} · uploading now: ${k}`) : '',
+    n && note ? note : ''].filter(Boolean).join(' · ');
 }
 function save(idx, blob) {
   const it = { id: script[idx].id, t: Date.now(), blob };
@@ -318,7 +323,7 @@ async function micAlive() {
 // Record always starts from scratch: pressed while recording, the take so far is dropped
 async function start() {
   if (!await micAlive()) return hint(T('🎙 Микрофон недоступен: обновите страницу и разрешите микрофон.', '🎙 No microphone: reload the page and allow the microphone.'), true);
-  chunks = []; peak = 0;
+  stopPlay(); chunks = []; peak = 0;
   recUi(true);
   clearTimeout(watchdog);
   watchdog = setTimeout(() => {  // no sound data at all: say so now, not after the reading
@@ -353,15 +358,31 @@ async function stop() {
 }
 
 // this session's take of the line if there is one, else the one saved on the server
+// One player: Play toggles to Stop, a second press stops instead of starting another copy on top
+// (owner 2026-10-31: no way to stop, every press added an echo); the button shows where it is
+const player = new Audio(), mmss = x => isFinite(x) ? `${Math.floor(x / 60)}:${String(Math.floor(x % 60)).padStart(2, '0')}` : '…';
+const playLabel = () => $('playBtn').innerHTML = player.paused
+  ? T('▶ Прослушать <kbd>P</kbd>', '▶ Play <kbd>P</kbd>')
+  : T(`■ Стоп ${mmss(player.currentTime)} / ${mmss(player.duration)} <kbd>P</kbd>`, `■ Stop ${mmss(player.currentTime)} / ${mmss(player.duration)} <kbd>P</kbd>`);
+['play', 'pause', 'ended', 'timeupdate', 'loadedmetadata'].forEach(ev => player.addEventListener(ev, playLabel));
+function stopPlay() { if (!player.paused) player.pause(); }
 function play() {
-  if (lastWav && lastWav.idx === i) new Audio(lastUrl).play();
-  else if (pending.has(script[i].id)) new Audio(URL.createObjectURL(pending.get(script[i].id).blob)).play();
+  if (!player.paused) return stopPlay();
+  let src = null;
+  if (lastWav && lastWav.idx === i) src = lastUrl;
+  else if (pending.has(script[i].id)) src = URL.createObjectURL(pending.get(script[i].id).blob);
   // fresh URL every time: the browser kept playing its cached first take after a re-record
-  else if (done.has(script[i].id)) new Audio(api('&play=' + encodeURIComponent(script[i].id) + '&v=' + Date.now())).play();
+  else if (done.has(script[i].id)) src = api('&play=' + encodeURIComponent(script[i].id) + '&v=' + Date.now());
+  if (!src) return;
+  player.src = src; player.play().catch(() => {});
 }
 
 // script.json is served with max-age=86400: no-cache, so an edited script shows up on the next load
-async function load() {
+// Runs once on page open (progress, the queue and its uploads come back without touching any button),
+// the buttons reuse that result
+let loaded = null;
+const load = () => loaded || (loaded = doLoad().then(ok => (ok || (loaded = null), ok)));
+async function doLoad() {
   if (!KEY) return alert(T('Откройте ссылку с ключом (?k=…)', 'Please open the full link (with ?k=…)')), false;
   const [s, d] = await Promise.all([fetch('script.json', { cache: 'no-cache' }).then(r => r.json()), fetch(api()).then(r => r.ok ? r.json() : Promise.reject(r.status))])
     .catch(e => (alert(T('Не удалось загрузить: ', 'Could not load: ') + e), []));
@@ -374,7 +395,8 @@ async function load() {
   i = Math.min(saved !== null ? +saved || 0 : Math.max(todo, 0), script.length - 1);
   const n = +new URLSearchParams(location.search).get('n');  // ?n=301: open at that line
   if (n >= 1) i = Math.min(n, script.length) - 1;
-  $('start').hidden = $('textOnly').hidden = true; $('ui').hidden = false;
+  script.filter(l => done.has(l.id)).forEach(l => logRow({ id: l.id }, 'ok', T('на сервере ✓', 'on the server ✓')));
+  queueInfo();
   return true;
 }
 
@@ -385,6 +407,7 @@ function prompter(on, remember = true) {
 
 $('textOnly').onclick = async () => {
   if (!await load()) return;
+  $('start').hidden = $('textOnly').hidden = true; $('ui').hidden = false;
   document.body.classList.add('nomic');
   $('showBtn').textContent = T('🎙 Записывать здесь', '🎙 Record here');
   prompter(true, false);  // text-only is its own mode, not remembered as hidden controls
@@ -413,10 +436,10 @@ async function connectMic() {
 }
 
 $('start').onclick = async () => {
-  if (!script.length && !await load()) return;
+  if (!await load()) return;
   $('ui').hidden = true;
   if (!await connectMic()) return;
-  $('ui').hidden = false;
+  $('start').hidden = $('textOnly').hidden = true; $('ui').hidden = false;
   document.body.classList.remove('nomic');
   $('showBtn').textContent = T('Показать управление', 'Show controls');
   let p = false; try { p = !!localStorage.getItem(LS + 'prompt'); } catch (e) {}
@@ -424,6 +447,7 @@ $('start').onclick = async () => {
   hint(T(`Частота ${ctx.sampleRate} Гц. Пробел — начать.`, `Sample rate ${ctx.sampleRate} Hz. Press Space to start.`));
   show();
 };
+if (KEY) load();
 $('recBtn').onclick = start;
 $('stopBtn').onclick = stop;
 $('playBtn').onclick = play;
