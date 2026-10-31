@@ -249,7 +249,7 @@ async function upload(it) {
     if (n === parts - 1) {
       const j = await r.json().catch(() => ({}));
       if (!j.saved) return 500;
-      it.secs = j.secs;
+      it.secs = j.secs; it.older = !!j.older;
     }
   }
   return 200;
@@ -266,7 +266,12 @@ async function worker() {
     if (code === 200) {
       if (pending.get(it.id) === it) { pending.delete(it.id); idb('readwrite', st => st.delete(it.id)); }
       done.add(it.id); wait = 2000; show();
-      logRow(it, 'ok', T(`на сервере ✓ ${it.secs} с`, `saved on the server ✓ ${it.secs} s`));
+      // the log lists every take; the server keeps only the newest take of a line, so earlier ones say so
+      if (it.older) logRow(it, 'old', T('не нужна: на сервере уже более новая запись', 'not needed: a newer take is on the server'));
+      else {
+        logRow(it, 'ok', T(`на сервере ✓ ${it.secs} с`, `saved on the server ✓ ${it.secs} s`));
+        for (const [take, el] of rows) if (take !== it && take.id === it.id && el.classList.contains('ok')) logRow(take, 'old', T('заменена более новой записью', 'replaced by a newer take'));
+      }
     } else if (code === 403 || code === 400) {  // will never succeed: keep the take, stop hammering
       hint(T(`Сервер отказал (${code}). Записи сохранены в браузере, обновите страницу позже.`, `The server refused (${code}). Your takes are kept in the browser; reload the page later.`), true);
       logRow(it, 'fail', T(`сервер отказал (${code}), запись хранится в браузере`, `server refused (${code}), take kept in the browser`));

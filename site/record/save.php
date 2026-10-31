@@ -33,10 +33,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $tmp = tempnam(sys_get_temp_dir(), 'take');
     file_put_contents($tmp, $wav);
     $out = "$dir/" . str_replace(':', '_', $id) . '.flac';
+    // takes upload in parallel, so an older take of a line can land after a newer one: the file's mtime is its
+    // take time (t, ms), and an older take never overwrites a newer file
+    $tsec = intdiv((int)$t, 1000);
+    if (is_file($out) && filemtime($out) > $tsec) { unlink($tmp); exit(json_encode(['ok' => true, 'saved' => true, 'older' => true, 'secs' => 0])); }
     exec('ffmpeg -loglevel error -y -f wav -i ' . escapeshellarg($tmp) . ' -c:a flac ' . escapeshellarg($out) . ' 2>&1', $log, $rc);
     unlink($tmp);
     if ($rc) { http_response_code(500); exit(json_encode(['error' => 'ffmpeg failed', 'log' => $log])); }
     if (!is_file($out) || filesize($out) < 1000) { http_response_code(500); exit('{"error":"not written"}'); }
+    if ($tsec > 0) touch($out, $tsec);
     // the page shows a take as saved only on this answer: the FLAC is on disk
     $rate = unpack('V', substr($wav, 28, 4))[1] ?: 1;
     exit(json_encode(['ok' => true, 'saved' => true, 'secs' => round((strlen($wav) - 44) / $rate, 1)]));
