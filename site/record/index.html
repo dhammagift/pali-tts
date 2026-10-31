@@ -61,6 +61,9 @@ body.nomic #nomicNote{display:block}
 body.prompt #text{font-size:2rem;min-height:40vh;cursor:pointer;user-select:none}
 body.prompt #prevBtn,body.prompt #nextBtn{flex:1;padding:16px;font-size:1.2rem}
 @media (max-width:600px){body.prompt #text{font-size:1.6rem}}
+/* record-sn: a whole paragraph per take, so it has to fit on one screen */
+body.sn #text,body.sn.prompt #text{font-size:1.3rem;line-height:1.55;font-style:normal;min-height:0}
+@media (max-width:600px){body.sn #text,body.sn.prompt #text{font-size:1.05rem}}
 </style>
 </head>
 <body>
@@ -108,8 +111,10 @@ body.prompt #prevBtn,body.prompt #nextBtn{flex:1;padding:16px;font-size:1.2rem}
 const KEY = new URLSearchParams(location.search).get('k') || '';
 // the same page records the owner's Pali voice (record/) and a friend's English one (record-en/, symlinked here)
 // record-ru/: the owner's Russian - Russian UI, its own progress and queue
-const EN = location.pathname.includes('/record-en/'), RU = location.pathname.includes('/record-ru/'), T = (ru, en) => EN ? en : ru,
-      LS = EN ? 'rec_en_' : RU ? 'rec_ru_' : 'rec_';
+// record-sn/: one sutta (SN 56.11) in the owner's Russian translation, long blocks for one continuous reading
+const EN = location.pathname.includes('/record-en/'), RU = location.pathname.includes('/record-ru/'),
+      SN = location.pathname.includes('/record-sn/'), T = (ru, en) => EN ? en : ru,
+      LS = EN ? 'rec_en_' : RU ? 'rec_ru_' : SN ? 'rec_sn_' : 'rec_';
 const api = (q = '') => `save.php?k=${encodeURIComponent(KEY)}${q}`;
 const $ = id => document.getElementById(id);
 if (RU) {
@@ -117,6 +122,11 @@ if (RU) {
   document.querySelector('h1').textContent = 'Запись голоса: русский';
   const li = [...document.querySelectorAll('details li')].find(l => l.textContent.startsWith('Фразы идут'));
   if (li) li.textContent = 'Для клона голоса хватит первых 20–30 фраз (~2–3 мин); всё сверх — запас для обучения своего голоса. Записывайте частями: прогресс сохранён на сервере.';
+}
+if (SN) {
+  document.body.classList.add('sn');
+  document.title = 'Запись: СН 56.11';
+  document.querySelector('h1').textContent = 'Запись: СН 56.11 целиком';
 }
 if (EN) {
   document.documentElement.lang = 'en'; document.title = 'Voice recording';
@@ -158,7 +168,7 @@ function show() {
   $('text').textContent = line.text;
   const top = Math.min(300, script.length), topDone = script.slice(0, top).filter(l => done.has(l.id)).length;
   // the whole script's size first (owner: «5 of the first 300» read as if there were only 300 lines)
-  $('pos').textContent = i < top ? T(`${i + 1} из ${script.length} · первые ${top} главные (${topDone} готово)`, `${i + 1} of ${script.length} · the first ${top} matter most (${topDone} done)`) : T(`${i + 1} из ${script.length}`, `${i + 1} of ${script.length}`);
+  $('pos').textContent = i < top && script.length > top ? T(`${i + 1} из ${script.length} · первые ${top} главные (${topDone} готово)`, `${i + 1} of ${script.length} · the first ${top} matter most (${topDone} done)`) : T(`${i + 1} из ${script.length}`, `${i + 1} of ${script.length}`);
   $('sid').textContent = line.id;
   $('status').textContent = pending.has(line.id) ? T('⏳ в очереди', '⏳ queued') : done.has(line.id) ? T('✓ записано', '✓ recorded') : '';
   $('done').style.width = (100 * done.size / script.length) + '%';
@@ -185,7 +195,7 @@ function idb(mode, fn) {
 async function openQueue() {
   db = await new Promise(res => {
     try {
-      const r = indexedDB.open(EN ? 'en-rec' : RU ? 'ru-rec' : 'pali-rec', 1);
+      const r = indexedDB.open(EN ? 'en-rec' : RU ? 'ru-rec' : SN ? 'sn-rec' : 'pali-rec', 1);
       r.onupgradeneeded = () => r.result.createObjectStore('q', { keyPath: 'id' });
       r.onsuccess = () => res(r.result); r.onerror = () => res(null);
     } catch (e) { res(null); }
