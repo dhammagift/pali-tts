@@ -360,9 +360,10 @@ function play() {
   else if (done.has(script[i].id)) new Audio(api('&play=' + encodeURIComponent(script[i].id) + '&v=' + Date.now())).play();
 }
 
+// script.json is served with max-age=86400: no-cache, so an edited script shows up on the next load
 async function load() {
   if (!KEY) return alert(T('Откройте ссылку с ключом (?k=…)', 'Please open the full link (with ?k=…)')), false;
-  const [s, d] = await Promise.all([fetch('script.json').then(r => r.json()), fetch(api()).then(r => r.ok ? r.json() : Promise.reject(r.status))])
+  const [s, d] = await Promise.all([fetch('script.json', { cache: 'no-cache' }).then(r => r.json()), fetch(api()).then(r => r.ok ? r.json() : Promise.reject(r.status))])
     .catch(e => (alert(T('Не удалось загрузить: ', 'Could not load: ') + e), []));
   if (!s) return false;
   script = s; done = new Set(d);
