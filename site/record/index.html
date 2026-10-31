@@ -172,7 +172,9 @@ function hint(msg, warn) { $('hint').textContent = msg; $('hint').className = wa
 // Upload queue. A take is never lost to a bad connection: it waits in IndexedDB (survives closing the
 // page) and goes up in 512 KB slices (the proxy in front rejects bodies over ~1 MB), retried until it lands.
 const SLICE = 512 * 1024, pending = new Map();  // id -> {t, blob}, the newest take of each line
-let db = null, pumping = false;
+const WORKERS = 4, inFlight = new Set();  // takes going up right now (see worker below)
+let wait = 2000;
+let db = null;
 function idb(mode, fn) {
   return new Promise(res => {
     if (!db) return res(null);
@@ -200,16 +202,18 @@ function logRow(it, state, text) {
     el = document.createElement('div');
     rows.set(it, el);
     $('uploads').prepend(el);
-    while ($('uploads').children.length > 6) $('uploads').lastChild.remove();
+    const finished = [...$('uploads').children].filter(r => /\b(ok|old)\b/.test(r.className));
+    finished.slice(6).forEach(r => r.remove());
   }
   el.className = 'up ' + state;
   el.innerHTML = `<span class="ic"></span><b></b> <span class="tx"></span>`;
   el.querySelector('b').textContent = it.id;
   el.querySelector('.tx').textContent = text;
 }
-function queueInfo() {
-  const n = pending.size;
-  $('queue').textContent = n ? T(`⏳ ждут отправки: ${n}`, `⏳ waiting to upload: ${n}`) : '';
+function queueInfo(note) {
+  const n = pending.size, k = inFlight.size;
+  $('queue').textContent = n ? T(`⏳ ждут отправки: ${n} · отправляются сейчас: ${k}`, `⏳ waiting to upload: ${n} · uploading now: ${k}`)
+    + (note ? ' · ' + note : '') : '';
 }
 function save(idx, blob) {
   const it = { id: script[idx].id, t: Date.now(), blob };
@@ -235,13 +239,15 @@ async function upload(it) {
   }
   return 200;
 }
-async function pump() {
-  if (pumping) return;
-  pumping = true;
-  let wait = 2000;
-  while (pending.size) {
-    queueInfo();
-    const it = pending.values().next().value, code = await upload(it);
+// Several takes go up at once (owner 2026-10-31: one at a time, 20 sat in the queue with no way to see it):
+// up to WORKERS uploads in flight, each worker takes the next waiting take no other worker holds.
+async function worker() {
+  for (;;) {
+    const it = [...pending.values()].find(x => !inFlight.has(x.id));
+    if (!it) return;
+    inFlight.add(it.id); queueInfo();
+    const code = await upload(it);
+    inFlight.delete(it.id);
     if (code === 200) {
       if (pending.get(it.id) === it) { pending.delete(it.id); idb('readwrite', st => st.delete(it.id)); }
       done.add(it.id); wait = 2000; show();
@@ -249,15 +255,25 @@ async function pump() {
     } else if (code === 403 || code === 400) {  // will never succeed: keep the take, stop hammering
       hint(T(`Сервер отказал (${code}). Записи сохранены в браузере, обновите страницу позже.`, `The server refused (${code}). Your takes are kept in the browser; reload the page later.`), true);
       logRow(it, 'fail', T(`сервер отказал (${code}), запись хранится в браузере`, `server refused (${code}), take kept in the browser`));
-      break;
+      return 'stop';
     } else {
-      $('queue').textContent = T(`⏳ ждут отправки: ${pending.size} · нет связи, повтор через ${wait / 1000} с`, `⏳ waiting to upload: ${pending.size} · no connection, retry in ${wait / 1000} s`);
       logRow(it, 'fail', T(`нет связи (${code || 'сеть'}), повтор через ${wait / 1000} с`, `no connection (${code || 'network'}), retry in ${wait / 1000} s`));
+      queueInfo(T(`нет связи, повтор через ${wait / 1000} с`, `no connection, retry in ${wait / 1000} s`));
       await new Promise(r => setTimeout(r, wait));
       wait = Math.min(wait * 2, 60000);
     }
+    queueInfo();
   }
-  pumping = false; queueInfo();
+}
+// Called on every new take and on 'online': tops the workers up to WORKERS while there are takes no worker holds
+// (a take saved while one upload runs starts its own worker at once instead of waiting behind it).
+let workers = 0, stopped = false;
+function pump() {
+  stopped = false;
+  while (workers < WORKERS && [...pending.values()].some(x => !inFlight.has(x.id))) {
+    workers++;
+    worker().then(res => { workers--; if (res === 'stop') stopped = true; queueInfo(); if (!stopped && pending.size) pump(); });
+  }
 }
 addEventListener('online', pump);
 addEventListener('beforeunload', e => { if (pending.size && !db) e.preventDefault(); });
