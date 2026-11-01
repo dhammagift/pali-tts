@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Подтверждение голоса</title>
+<style>
+:root{--bg:#faf8f4;--card:#fff;--fg:#222;--mute:#777;--line:#e4dfd6;--accent:#a0522d;--ok:#2e7d32;--bad:#c62828}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b1a18;--card:#262421;--fg:#e8e4dc;--mute:#9a948a;--line:#3a3631;--accent:#e0a070;--ok:#81c784;--bad:#ef9a9a}}
+:root[data-theme="dark"]{--bg:#1b1a18;--card:#262421;--fg:#e8e4dc;--mute:#9a948a;--line:#3a3631;--accent:#e0a070;--ok:#81c784;--bad:#ef9a9a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,sans-serif}
+main{max-width:720px;margin:0 auto;padding:24px 16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px}
+p{color:var(--mute);margin:0 0 16px}
+/* the captcha is black text on a transparent PNG, so it sits on white in both themes */
+#cap{display:none;background:#fff;border-radius:8px;padding:12px;margin:0 0 16px;text-align:center}
+#cap img{max-width:100%;height:auto}
+.meter{height:10px;background:var(--line);border-radius:5px;overflow:hidden;margin:0 0 16px}
+#level{height:100%;width:0;background:var(--ok);transition:width .05s}
+button{font:inherit;font-size:1.1rem;padding:12px 20px;border-radius:10px;border:0;background:var(--accent);color:#fff;cursor:pointer;width:100%}
+button:disabled{opacity:.5;cursor:default}
+#msg{min-height:1.5em;margin-top:14px}
+#msg.ok{color:var(--ok)} #msg.bad{color:var(--bad)}
+</style>
+</head>
+<body>
+<main>
+<h1>Подтверждение голоса</h1>
+<div class="card">
+  <p>ElevenLabs проверяет, что голос ваш: покажет фразу, её нужно сразу прочитать вслух. Время ограничено, поэтому запись начнётся сама, как только фраза появится. Прочитайте и нажмите «Отправить».</p>
+  <div id="cap"><img id="capImg" alt="Фраза для чтения"></div>
+  <div class="meter"><div id="level"></div></div>
+  <button id="go">Показать фразу и записать</button>
+  <div id="msg"></div>
+</div>
+</main>
+<script>
+const KEY = new URLSearchParams(location.search).get('k') || '', $ = id => document.getElementById(id);
+const msg = (t, cls = '') => { $('msg').textContent = t; $('msg').className = cls; };
+let ctx, stream, proc, bufs = [], recording = false;
+
+function wavBlob(bufs, rate) {
+  const n = bufs.reduce((s, b) => s + b.length, 0), dv = new DataView(new ArrayBuffer(44 + n * 2));
+  const w = (o, s) => [...s].forEach((c, k) => dv.setUint8(o + k, c.charCodeAt(0)));
+  w(0, 'RIFF'); dv.setUint32(4, 36 + n * 2, true); w(8, 'WAVEfmt '); dv.setUint32(16, 16, true);
+  dv.setUint16(20, 1, true); dv.setUint16(22, 1, true); dv.setUint32(24, rate, true);
+  dv.setUint32(28, rate * 2, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true);
+  w(36, 'data'); dv.setUint32(40, n * 2, true);
+  let o = 44;
+  for (const b of bufs) for (const s of b) { dv.setInt16(o, Math.max(-1, Math.min(1, s)) * 0x7fff, true); o += 2; }
+  return new Blob([dv], { type: 'audio/wav' });
+}
+
+async function start() {
+  $('go').disabled = true;
+  // The microphone first: its permission prompt must not eat the captcha's time.
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 } });
+  } catch (e) { msg('Нет доступа к микрофону', 'bad'); $('go').disabled = false; return; }
+  msg('Получаю фразу…');
+  const r = await fetch('verify.php?captcha=1&k=' + encodeURIComponent(KEY), { cache: 'no-store' });
+  if (!r.ok) { msg('Фраза не пришла: ' + r.status + ' ' + (await r.text()).slice(0, 200), 'bad'); $('go').disabled = false; return; }
+  $('capImg').src = URL.createObjectURL(await r.blob());
+  $('cap').style.display = 'block';
+  ctx = new AudioContext();
+  const src = ctx.createMediaStreamSource(stream);
+  proc = ctx.createScriptProcessor(4096, 1, 1);
+  proc.onaudioprocess = e => {
+    if (!recording) return;
+    const d = e.inputBuffer.getChannelData(0);
+    bufs.push(new Float32Array(d));
+    let peak = 0; for (const s of d) peak = Math.max(peak, Math.abs(s));
+    $('level').style.width = Math.min(100, peak * 100) + '%';
+  };
+  src.connect(proc); proc.connect(ctx.destination);
+  bufs = []; recording = true;
+  msg('Идёт запись — читайте фразу');
+  $('go').textContent = 'Отправить'; $('go').onclick = send; $('go').disabled = false;
+}
+
+async function send() {
+  recording = false; $('go').disabled = true;
+  stream.getTracks().forEach(t => t.stop());
+  // Down to ~16 kHz by averaging (48k -> 16k): the proxy in front rejects bodies over ~1 MB,
+  // which a 48 kHz take passes after ~10 s.
+  const f = Math.max(1, Math.floor(ctx.sampleRate / 16000)), all = new Float32Array(bufs.reduce((s, b) => s + b.length, 0));
+  let o = 0; for (const b of bufs) { all.set(b, o); o += b.length; }
+  const out = new Float32Array(Math.floor(all.length / f));
+  for (let i = 0; i < out.length; i++) { let s = 0; for (let k = 0; k < f; k++) s += all[i * f + k]; out[i] = s / f; }
+  const blob = wavBlob([out], ctx.sampleRate / f);
+  ctx.close();
+  msg('Отправляю…');
+  const r = await fetch('verify.php?k=' + encodeURIComponent(KEY), { method: 'POST', body: blob });
+  const j = await r.json().catch(() => ({}));
+  if (j.verified) {
+    msg(j.train === 200 ? 'Голос подтверждён, обучение запущено. Можно закрывать страницу.' : 'Голос подтверждён, но обучение не запустилось — я посмотрю.', 'ok');
+    $('go').style.display = 'none';
+  } else {
+    msg('Не подтвердилось: ' + ((j.el && j.el.detail && j.el.detail.message) || r.status) + '. Можно попробовать ещё раз.', 'bad');
+    $('go').textContent = 'Показать фразу и записать'; $('go').onclick = start; $('go').disabled = false;
+    $('cap').style.display = 'none';
+  }
+}
+$('go').onclick = start;
+</script>
+</body>
+</html>
