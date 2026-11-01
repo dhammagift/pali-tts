@@ -29,7 +29,7 @@ button:disabled{opacity:.5;cursor:default}
 <main>
 <h1>Подтверждение голоса</h1>
 <div class="card">
-  <p>ElevenLabs проверяет, что голос ваш: покажет фразу, её нужно сразу прочитать вслух. Время ограничено, поэтому запись начнётся сама, как только фраза появится. Прочитайте и нажмите «Отправить».</p>
+  <p>ElevenLabs проверяет, что голос ваш: покажет фразу, её нужно сразу прочитать вслух. Время ограничено, поэтому запись начнётся сама, как только фраза появится. Прочитайте и нажмите «Отправить», через 15 секунд запись уйдёт сама. Каждый показ фразы — одна попытка из пяти, поэтому нажимайте, только когда готовы читать.</p>
   <div id="cap"><img id="capImg" alt="Фраза для чтения"></div>
   <div class="meter"><div id="level"></div></div>
   <button id="go">Показать фразу и записать</button>
@@ -39,7 +39,7 @@ button:disabled{opacity:.5;cursor:default}
 <script>
 const KEY = new URLSearchParams(location.search).get('k') || '', $ = id => document.getElementById(id);
 const msg = (t, cls = '') => { $('msg').textContent = t; $('msg').className = cls; };
-let ctx, stream, proc, bufs = [], recording = false;
+let ctx, stream, proc, timer, bufs = [], recording = false;
 
 function wavBlob(bufs, rate) {
   const n = bufs.reduce((s, b) => s + b.length, 0), dv = new DataView(new ArrayBuffer(44 + n * 2));
@@ -76,12 +76,20 @@ async function start() {
   };
   src.connect(proc); proc.connect(ctx.destination);
   bufs = []; recording = true;
-  msg('Идёт запись — читайте фразу');
+  // ElevenLabs refused a take sent 29 s after the phrase was fetched (2026-11-01): count down and send by itself at 15 s.
+  const t0 = Date.now();
+  timer = setInterval(() => {
+    const left = 15 - Math.floor((Date.now() - t0) / 1000);
+    if (left <= 0) return send();
+    msg('Идёт запись — читайте фразу и жмите «Отправить». Осталось ' + left + ' с');
+  }, 250);
+  msg('Идёт запись — читайте фразу и жмите «Отправить». Осталось 15 с');
   $('go').textContent = 'Отправить'; $('go').onclick = send; $('go').disabled = false;
 }
 
 async function send() {
-  recording = false; $('go').disabled = true;
+  if (!recording) return;
+  clearInterval(timer); recording = false; $('go').disabled = true;
   stream.getTracks().forEach(t => t.stop());
   // Down to ~16 kHz by averaging (48k -> 16k): the proxy in front rejects bodies over ~1 MB,
   // which a 48 kHz take passes after ~10 s.
