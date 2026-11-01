@@ -39,7 +39,7 @@ button:disabled{opacity:.5;cursor:default}
 <script>
 const KEY = new URLSearchParams(location.search).get('k') || '', $ = id => document.getElementById(id);
 const msg = (t, cls = '') => { $('msg').textContent = t; $('msg').className = cls; };
-let ctx, stream, proc, timer, bufs = [], recording = false;
+let ctx, stream, proc, timer, rec, started = 0, chunks = [], bufs = [], recording = false;
 
 function wavBlob(bufs, rate) {
   const n = bufs.reduce((s, b) => s + b.length, 0), dv = new DataView(new ArrayBuffer(44 + n * 2));
@@ -76,8 +76,19 @@ async function start() {
   };
   src.connect(proc); proc.connect(ctx.destination);
   bufs = []; recording = true;
+  // A compressed take (opus/aac, ~30 kbit/s): the owner's phone took 21 s to upload a 220 KB WAV,
+  // which ran past ElevenLabs' time limit (2026-11-01). The WAV stays as the fallback.
+  chunks = []; rec = null;
+  if (window.MediaRecorder) {
+    try {
+      const type = ['audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/mp4'].find(t => MediaRecorder.isTypeSupported(t));
+      rec = new MediaRecorder(stream, type ? { mimeType: type, audioBitsPerSecond: 32000 } : {});
+      rec.ondataavailable = e => e.data.size && chunks.push(e.data);
+      rec.start();
+    } catch (e) { rec = null; }
+  }
   // ElevenLabs refused a take sent 29 s after the phrase was fetched (2026-11-01): count down and send by itself at 15 s.
-  const t0 = Date.now();
+  const t0 = started = Date.now();
   timer = setInterval(() => {
     const left = 15 - Math.floor((Date.now() - t0) / 1000);
     if (left <= 0) return send();
@@ -88,8 +99,10 @@ async function start() {
 }
 
 async function send() {
-  if (!recording) return;
+  // A second tap on the start button lands here once it turns into Send: the first try went out empty at 1.8 s.
+  if (!recording || Date.now() - started < 2500) return;
   clearInterval(timer); recording = false; $('go').disabled = true;
+  if (rec) await new Promise(res => { rec.onstop = res; rec.stop(); });
   stream.getTracks().forEach(t => t.stop());
   // Down to ~16 kHz by averaging (48k -> 16k): the proxy in front rejects bodies over ~1 MB,
   // which a 48 kHz take passes after ~10 s.
@@ -97,10 +110,10 @@ async function send() {
   let o = 0; for (const b of bufs) { all.set(b, o); o += b.length; }
   const out = new Float32Array(Math.floor(all.length / f));
   for (let i = 0; i < out.length; i++) { let s = 0; for (let k = 0; k < f; k++) s += all[i * f + k]; out[i] = s / f; }
-  const blob = wavBlob([out], ctx.sampleRate / f);
+  const blob = rec && chunks.length ? new Blob(chunks, { type: rec.mimeType }) : wavBlob([out], ctx.sampleRate / f);
   ctx.close();
   msg('Отправляю…');
-  const r = await fetch('verify.php?k=' + encodeURIComponent(KEY), { method: 'POST', body: blob });
+  const r = await fetch('verify.php?k=' + encodeURIComponent(KEY), { method: 'POST', body: blob, headers: { 'Content-Type': blob.type } });
   const j = await r.json().catch(() => ({}));
   if (j.verified) {
     msg(j.train === 200 ? 'Голос подтверждён, обучение запущено. Можно закрывать страницу.' : 'Голос подтверждён, но обучение не запустилось — я посмотрю.', 'ok');

@@ -31,12 +31,16 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 header('Content-Type: application/json; charset=utf-8');
-$wav = file_get_contents('php://input', false, null, 0, 4 * 1024 * 1024);
-if (strlen($wav) < 1000 || substr($wav, 0, 4) !== 'RIFF') { http_response_code(400); exit('{"error":"not a wav"}'); }
-$tmp = tempnam(sys_get_temp_dir(), 'pvc') . '.wav';
-file_put_contents($tmp, $wav);
-copy($tmp, '/var/www/pali-tts/takes-sn/captcha-' . time() . '.wav');  // keep the try, to see what was sent
-[$code, $body] = el("$base/captcha", $key, ['recording' => new CURLFile($tmp, 'audio/wav', 'captcha.wav')]);
+// The page sends opus (webm/ogg) or aac (mp4) from MediaRecorder, a WAV where there is none.
+$types = ['audio/webm' => 'webm', 'audio/ogg' => 'ogg', 'audio/mp4' => 'm4a', 'audio/wav' => 'wav'];
+$type = strtolower(trim(explode(';', $_SERVER['CONTENT_TYPE'] ?? '')[0]));
+$ext = $types[$type] ?? null;
+$audio = file_get_contents('php://input', false, null, 0, 4 * 1024 * 1024);
+if (!$ext || strlen($audio) < 1000) { http_response_code(400); exit('{"error":"not audio"}'); }
+$tmp = tempnam(sys_get_temp_dir(), 'pvc') . ".$ext";
+file_put_contents($tmp, $audio);
+copy($tmp, '/var/www/pali-tts/takes-sn/captcha-' . time() . ".$ext");  // keep the try, to see what was sent
+[$code, $body] = el("$base/captcha", $key, ['recording' => new CURLFile($tmp, $type, "captcha.$ext")]);
 unlink($tmp);
 if ($code !== 200) { http_response_code($code); exit(json_encode(['verified' => false, 'el' => json_decode($body, true)])); }
 [$tcode, $tbody] = el("$base/train", $key, json_encode(['model_id' => 'eleven_multilingual_v2']), true);
