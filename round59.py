@@ -1,38 +1,34 @@
-"""Round 59 (owner 2026-11-03, SN 35.28:1.1): pratham reads gayāyaṁ as «гее». Our phonemes are ɡʌjjˈaːjən (tune doubles
-y between vowels): the model runs ʌjjaː together. gayāyaṁ and gayāsīse spelt four ways in the whole line: as it is /
-one y / the stress on ga / ai before the y («гай-я»). 0.7x, one take each, blind.
+"""Round 59 (owner 2026-11-03, SN 35.28:1.1): pratham read gayāyaṁ as «гее» - the short a before y melts into e (Hindi
+ay), as dhārayāmīti in rounds 50/52. Four spellings by ear were all bad (owner); then the phoneme recogniser
+(wav2vec2-lv-60-espeak) picked the open a with one j, «гай-» in 8 of 8 takes (as it is 0 of 8): now the rule after g.
+Only the new reading, on the two lines where the word stands. 0.7x.
 Usage (on f3): .venv/bin/python round59.py -> out/r59/; then build_page.py with ROUND = 'r59'
 """
 import json
 import os
+import shutil
 import subprocess
 
 from round31 import SR
 from round56 import ipa, synth
 
 OUT = 'out/r59'
-TEXT = 'Ekaṁ samayaṁ bhagavā gayāyaṁ viharati gayāsīse saddhiṁ bhikkhusahassena.'
-LINE = ipa(TEXT)
-WORDS = ('ɡʌjjˈaːjən', 'ɡʌjjaːsˈiːseː')
-VARIANTS = [('a', 'как сейчас', WORDS),
-            ('b', 'одно y', ('ɡʌjˈaːjən', 'ɡʌjaːsˈiːseː')),
-            ('c', 'ударение на ga', ('ɡˈʌjjaːjən', 'ɡˈʌjjaːsiːseː')),
-            ('d', 'ай перед y', ('ɡʌɪjˈaːjən', 'ɡʌɪjaːsˈiːseː'))]
+LINES = [('sn', 'Ekaṁ samayaṁ bhagavā gayāyaṁ viharati gayāsīse saddhiṁ bhikkhusahassena.'),
+         ('th', 'Itthaṁ sudaṁ āyasmā gayākassapo thero imā gāthāyo abhāsitthāti.')]
 
 if __name__ == '__main__':
-    assert all(w in LINE for w in WORDS), LINE
-    os.makedirs(OUT, exist_ok=True)
-    vs = []
-    for vid, label, (w1, w2) in VARIANTS:
-        f = f'g.{vid}.mp3'
+    shutil.rmtree(OUT, ignore_errors=True)
+    os.makedirs(OUT)
+    phrases = []
+    for pid, text in LINES:
+        f = f'{pid}.a.mp3'
+        assert 'ɡaj' in ipa(text), ipa(text)
         subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-f', 'f32le', '-ar', str(SR), '-ac', '1', '-i', '-',
-                        '-q:a', '7', f'{OUT}/{f}'],
-                       input=synth(LINE.replace(WORDS[0], w1).replace(WORDS[1], w2)).tobytes(), check=True)
-        vs.append({'id': vid, 'label': label, 'file': f, 'sent': ''})
-    phrases = [{'id': 'g', 'text': TEXT, 'ipa': '', 'script': '', 'variants': vs,
-                'note': '★ лучше всех; ✓ правильно (гаяям, гаясисе); ✗ неправильно (что слышно)'}]
+                        '-q:a', '7', f'{OUT}/{f}'], input=synth(ipa(text)).tobytes(), check=True)
+        phrases.append({'id': pid, 'text': text, 'ipa': '', 'script': '', 'note': '✓ правильно (гаяям, гаясисе, гаякассапо); ✗ неправильно (что слышно)',
+                        'variants': [{'id': 'a', 'label': 'новое правило', 'file': f, 'sent': ''}]})
     json.dump({'round': 'r59', 'title': 'Pali TTS — раунд 59: gayāyaṁ',
-               'intro': 'Pratham читает gayāyaṁ как «гее» (СН 35.28). Четыре варианта вслепую, 0.7x.',
-               'sections': [{'id': 'g', 'title': 'gayāyaṁ, gayāsīse', 'multi_best': False, 'phrases': phrases}]},
+               'intro': 'Pratham читал gayāyaṁ как «гее» (СН 35.28). Новое правило, проверено распознавателем; 0.7x.',
+               'sections': [{'id': 'g', 'title': 'gayā-', 'multi_best': False, 'phrases': phrases}]},
               open(f'{OUT}/index.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     print('ok')

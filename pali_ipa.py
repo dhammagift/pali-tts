@@ -169,6 +169,9 @@ PRATHAM_RULES = [
     (re.compile(r'(?<![^ ,])mˈʌmʌ(?=[ ,.?!:;]|$)'), 'mˈʌma'),
     # rounds 50, 52: dhārayāmīti «дхареямити» - the short a before y melts into e (Hindi ay); an open a with one j best + ok
     (re.compile(r'(?<=ɾ)ʌjj(?=aː)'), 'aj'),  # only after r: paccayā (round 41) keeps ʌjj
+    # round 59: gayāyaṁ, gayāsīse «гее» (all 4 takes); the same open a with one j: «гай-» in 8 of 8 takes by the phoneme
+    # recogniser (as it is 0 of 8)
+    (re.compile(r'(?<=ɡ)ʌjj(?=ˈ?aː)'), 'aj'),
     # round 52: pucchāmi «паччхами» - its u heard as a; a long uː best + ok (tense u and the current bad in both takes)
     (re.compile(r'pʊccʰ'), 'puːccʰ'),
     # round 53: bhikkhusammutiyā «самматья», the i before yā lost; jj ok in both takes (tense u, i and the current: bad)

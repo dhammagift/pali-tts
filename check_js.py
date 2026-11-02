@@ -13,7 +13,7 @@ from pali_ipa import export, to_ipa, tune
 
 TR = os.environ.get('SC_TR', '/var/www/html/suttacentral.net/sc-data/sc_bilara_data/translation')  # f3: a copy
 
-ROOT = '/var/www/html/suttacentral.net/sc-data/sc_bilara_data/root/pli/ms'
+ROOT = os.environ.get('SC_ROOT', '/var/www/html/suttacentral.net/sc-data/sc_bilara_data/root/pli/ms')
 NODE = '''
 import { makePali } from './web/pali-tts.js';
 import { readFileSync } from 'fs';
