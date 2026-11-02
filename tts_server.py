@@ -62,7 +62,7 @@ VOICES = {
     'puriso': ('ru_puriso2-medium', 'ru', 'Puriso ♂'),  # v2 (2026-10-17): retrained on M1 clips read with our stress marks
     # the owner's timbre: Piper fine-tuned from ruslan on ~1300 lines (1.85 h) of his ElevenLabs PVC, 149 epochs
     # (kaggle-ru-owner; round rown1: ok in 6 of 6, Puriso bad in 6 of 6); replaced ru_dg2 from a Chatterbox clone (owner 2026-11-03)
-    'dgru': ('ru_owner-medium', 'ru', 'Cūḷa DG ♂ · beta'),
+    'dgru': ('ru_owner-medium', 'ru', 'Cūḷa DG ♂'),
     'irina': ('ru_RU-irina-medium', 'ru', 'Irina ♀'),
 }
 # dgru (ru_owner) comes out ~5 dB under puriso (-30.8 vs -25.9 LUFS): brought to its level (pali-tts.js gets it in the offer).
