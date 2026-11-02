@@ -170,8 +170,10 @@ PRATHAM_RULES = [
     # rounds 50, 52: dhārayāmīti «дхареямити» - the short a before y melts into e (Hindi ay); an open a with one j best + ok
     (re.compile(r'(?<=ɾ)ʌjj(?=aː)'), 'aj'),  # only after r: paccayā (round 41) keeps ʌjj
     # round 59: gayāyaṁ, gayāsīse «гее» (all 4 takes); the same open a with one j: «гай-» in 8 of 8 takes by the phoneme
-    # recogniser (as it is 0 of 8)
-    (re.compile(r'(?<=ɡ)ʌjj(?=ˈ?aː)'), 'aj'),
+    # recogniser (as it is 0 of 8). Where yā is not stressed (gayākassapo, owner: still «гее») the open a keeps jj and
+    # yā gets a stress of its own: «гай-я» in 5 of 5 (with one j 2 of 3)
+    (re.compile(r'(?<=ɡ)ʌjj(?=ˈaː)'), 'aj'),
+    (re.compile(r'(?<=ɡ)ʌjj(?=aː)'), 'ajjˈ'),
     # round 52: pucchāmi «паччхами» - its u heard as a; a long uː best + ok (tense u and the current bad in both takes)
     (re.compile(r'pʊccʰ'), 'puːccʰ'),
     # round 53: bhikkhusammutiyā «самматья», the i before yā lost; jj ok in both takes (tense u, i and the current: bad)

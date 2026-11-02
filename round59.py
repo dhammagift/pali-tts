@@ -1,6 +1,7 @@
 """Round 59 (owner 2026-11-03, SN 35.28:1.1): pratham read gayāyaṁ as «гее» - the short a before y melts into e (Hindi
 ay), as dhārayāmīti in rounds 50/52. Four spellings by ear were all bad (owner); then the phoneme recogniser
 (wav2vec2-lv-60-espeak) picked the open a with one j, «гай-» in 8 of 8 takes (as it is 0 of 8): now the rule after g.
+Owner: SN right, gayākassapo still «гее» - there yā is unstressed; jj and a stress on yā: «гай-я» 5 of 5.
 Only the new reading, on the two lines where the word stands. 0.7x.
 Usage (on f3): .venv/bin/python round59.py -> out/r59/; then build_page.py with ROUND = 'r59'
 """
