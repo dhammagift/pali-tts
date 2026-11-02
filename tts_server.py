@@ -60,13 +60,14 @@ VOICES = {
     'kathleen': ('en_US-kathleen-low', 'en', 'Kathleen ♀ · US (low)'),
     # Supertonic M1 ("male 1") taught to Piper from ruslan; replaced Ruslan (owner 2026-10-17), named puriso, "man"; the Russian default (owner 2026-10-21)
     'puriso': ('ru_puriso2-medium', 'ru', 'Puriso ♂'),  # v2 (2026-10-17): retrained on M1 clips read with our stress marks
-    # the owner's timbre: Piper fine-tuned from ruslan on 1 h read by a Chatterbox clone of his voice (2026-10-07)
-    'dgru': ('ru_dg2-medium', 'ru', 'Cūḷa DG ♂ · beta'),
+    # the owner's timbre: Piper fine-tuned from ruslan on ~1300 lines (1.85 h) of his ElevenLabs PVC, 149 epochs
+    # (kaggle-ru-owner; round rown1: ok in 6 of 6, Puriso bad in 6 of 6); replaced ru_dg2 from a Chatterbox clone (owner 2026-11-03)
+    'dgru': ('ru_owner-medium', 'ru', 'Cūḷa DG ♂ · beta'),
     'irina': ('ru_RU-irina-medium', 'ru', 'Irina ♀'),
 }
-# dgru came out ~6 dB under ruslan/irina (RMS -29 vs -23 dB): brought to their level (pali-tts.js gets it in the offer).
+# dgru (ru_owner) comes out ~5 dB under puriso (-30.8 vs -25.9 LUFS): brought to its level (pali-tts.js gets it in the offer).
 # miles and kathleen ~12 dB under alan (-30 vs -17.6 LUFS, owner 2026-10-26: "Yojanāni sounds quiet"): as far as their peaks allow
-GAIN = {'dgru': 2.0, 'miles': 3.0, 'kathleen': 3.5}
+GAIN = {'dgru': 1.75, 'miles': 3.0, 'kathleen': 3.5}
 TEST_ONLY = set()  # in the menus of test.dhamma.gift only, never offered offline
 TEST_ORIGIN = 'https://test.dhamma.gift'
 CACHE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cache', 'tts')
@@ -389,7 +390,8 @@ def memo_mp3(segments, vid, rate, delay, end_delay, sound):
         return open(f.name, 'rb').read()
 
 
-OWN_VOICES = {'dg', 'dgru'}  # the owner's timbre: downloadable offline under CC BY-NC-SA 4.0 (owner, 2026-10-10)
+# real people's voices: downloadable offline, all rights reserved (owner 2026-11-02; was CC BY-NC-SA 4.0 from 2026-10-10)
+OWN_VOICES = {'dg', 'dgru', 'miles'}
 # piper's own espeak-ng-data, in packs a device downloads once: core with the first en/ru voice, then its language
 ESPEAK_DATA = os.path.join(os.path.dirname(os.path.abspath(__import__('piper').__file__)), 'espeak-ng-data')
 ESPEAK_PACKS = {'core': ['phontab', 'phonindex', 'phondata', 'intonations'],
@@ -460,7 +462,7 @@ class Handler(BaseHTTPRequestHandler):
                                                **{pack: len(espeak_pack(pack)) for pack in ESPEAK_PACKS},
                                                'gz': {pack: len(espeak_pack(pack, gz=True)) for pack in ESPEAK_PACKS}}, 'voices': {
                 vid: {'label': VOICES[vid][2], 'lang': VOICES[vid][1], 'bytes': os.path.getsize(model(vid)),
-                      **({'license': 'CC BY-NC-SA 4.0'} if vid in OWN_VOICES else {}), **({'gain': GAIN[vid]} if vid in GAIN else {}),
+                      **({'license': 'All rights reserved'} if vid in OWN_VOICES else {}), **({'gain': GAIN[vid]} if vid in GAIN else {}),
                       'tag': f'{int(os.path.getmtime(model(vid)))}'} for vid in offered}})
         m = re.fullmatch(r'([a-z]+)\.onnx(\.json)?', name)
         if name == 'pali-tts.js':
