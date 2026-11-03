@@ -55,7 +55,7 @@ VOICES = {
     # sound - its .onnx.json "tail" saves it (with_tail). en_miles2 (from joe, 3 h, ends whole but worse) kept in models/
     # now (2026-10-26): from kusal on miles2 (2250 ElevenLabs lines in Miles's cloned voice), 28 epochs, then ~70 more with 699
     # short lines x3 (make_en_miles_short.py, kaggle-yojanani-*): a word alone heard right 59 of 66 (whisper-small)
-    'miles': ('en_miles-medium', 'en', 'Yojanāni DG ♂'),  # owner: Miles in Pali, freely (yojana, plural); first = the English default (owner 2026-10-29)
+    'miles': ('en_miles-medium', 'en', 'Yojanāni DG ♂ · US'),  # owner: Miles in Pali, freely (yojana, plural); first = the English default (owner 2026-10-29)
     'alan': ('en_GB-alan-medium', 'en', 'Alan ♂ · UK'),
     'kathleen': ('en_US-kathleen-low', 'en', 'Kathleen ♀ · US (low)'),
     # Supertonic M1 ("male 1") taught to Piper from ruslan; replaced Ruslan (owner 2026-10-17), named puriso, "man"; the Russian default (owner 2026-10-21)
