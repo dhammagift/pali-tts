@@ -96,8 +96,15 @@ RU_ACCENT.update({w.replace('́', '').replace('ё', 'е'): w for w in (  # the k
     'соприкаса́ние', 'одержи́м', 'оку́ривает', 'ни́зок', 'стои́шь', 'несо́бранный', 'наставля́ю', 'по́стриг',
     'зубо́в', 'снима́ющим', 'мысля́', 'житие́м', 'исче́рпать', 'прома́чивающими', 'приве́тствующего', 'омы́в',
     'мила́', 'зо́лотом', 'осознаю́т',
+    # Trello «Баги» (owner 2026-11-03..06): espeak's взращива́ние, несуществованию read вО-ван-ю; сто́роны (plural) - the genitive
+    # стороны́ after с/со/из/от... is RU_STORONY's
+    *[f'взра́щивани{e}' for e in _NOUN_NIE], *[f'несуществова́ни{e}' for e in _NOUN_NIE], 'сто́роны',
 )})
 RU_NAME = re.compile(r'[А-Яа-яЁё]+')
+# стороны́, the genitive singular (owner 2026-11-06: «с правой сторОны вместо сторонЫ»): after с/со/из/от/до/без/для/у/вдоль,
+# maybe with one word in -ой/-ей/-ого/-его between (с правой, с одной, со всякой); elsewhere сто́роны, the plural (во все,
+# на четыре, обе). Runs after RU_ACCENT, on its сто́роны
+RU_STORONY = re.compile(r'(?<![а-яёА-ЯЁ])((?:[Сс]о?|[Ии]з|[Оо]т|[Дд]о|[Бб]ез|[Дд]ля|[Уу]|[Вв]доль)\s+(?:[а-яё]+(?:ой|ей|ого|его)\s+)?[Сс])то́роны(?![а-яё])')
 # все printed for всё (owner 2026-10-23): only in the set phrases where it is всё (DG's texts: все же 169, все остальное 47,
 # все это 43, все, что 16 ...); all else stays все - mostly the plural (все они 460, все те 265)
 RU_VSYO = re.compile(r'(?<![а-яёА-ЯЁ])([Вв])се(?=(?:\s+|-)(?:же|это|остальное|прочее|равно|еще|ещё|время|таки|дорогое|будет|то)'
@@ -253,6 +260,7 @@ def ru_phonemes(voice, text):
     """Phoneme lists (one per sentence) for a Piper Russian voice, with the soft sign restored."""
     text = RU_NAME.sub(lambda m: _case(m.group(), RU_ACCENT[m.group().lower()]) if m.group().lower() in RU_ACCENT else m.group(),
                        RU_BOLSH.sub('\\1о\u0301льш', RU_VSYO.sub(r'\1сё', respell(ru_refs(text), 'ru'))))
+    text = RU_STORONY.sub('\\1тороны\u0301', text)
     # a hyphenated compound is one word to espeak, so RU_STRESS never saw its parts (с-прямым-видением-памятованием): apart
     text = RU_COMPOUND.sub(lambda m: m.group().replace('-', ' ') if any(w.lower() in RU_STRESS for w in m.group().split('-'))
                            else m.group(), text)
@@ -336,7 +344,7 @@ def export():
             'en_pali_words': sorted(EN_PALI_WORDS), 'en_pali_long': EN_PALI_LONG, 'en_ipa_rx': EN_IPA_RX.pattern, 'en_ipa': dict(EN_IPA),
             'en_abbr': [[rx.pattern, full] for rx, full in EN_ABBR], 'en_books': EN_BOOKS, 'en_ref': EN_REF.pattern,
             'ru_soften': {k: list(v) for k, v in RU_SOFTEN.items()}, 'ru_word': RU_WORD.pattern, 'ru_stress': RU_STRESS,
-            'ru_accent': RU_ACCENT, 'ru_vsyo': RU_VSYO.pattern, 'ru_bolsh': RU_BOLSH.pattern, 'en_penult': sorted(EN_PENULT), 'nucleus': NUCLEUS.pattern}
+            'ru_accent': RU_ACCENT, 'ru_vsyo': RU_VSYO.pattern, 'ru_bolsh': RU_BOLSH.pattern, 'ru_storony': RU_STORONY.pattern, 'en_penult': sorted(EN_PENULT), 'nucleus': NUCLEUS.pattern}
 
 
 def _case(src, out):
@@ -407,6 +415,9 @@ if __name__ == '__main__':
     assert ru_stress_marks(_W, 'самому')[-2:] == 'у\u0301'
     assert RU_VSYO.sub(r'\1сё', 'Все же все они, все это, все-таки все, что') == 'Всё же все они, всё это, всё-таки всё, что'
     assert RU_BOLSH.sub('\\1о\u0301льш', 'Большая часть, большую половину; Большая глава, большая масса') == 'Бо\u0301льшая часть, бо\u0301льшую половину; Большая глава, большая масса'
+    _st = lambda t: RU_STORONY.sub('\\1тороны\u0301', RU_NAME.sub(lambda m: _case(m.group(), RU_ACCENT.get(m.group().lower(), m.group())), t))
+    assert _st('С правой стороны, со стороны; во все стороны') == 'С правой стороны\u0301, со стороны\u0301; во все сто\u0301роны'
+    assert RU_ACCENT['взращивание'] == 'взра\u0301щивание' and RU_ACCENT['несуществованию'] == 'несуществова\u0301нию'
     assert RU_ACCENT['уже'] == 'уже\u0301' and RU_ACCENT['памятующий'] == 'па\u0301мятующий'
     assert RU_ACCENT['скапливания'] == 'ска\u0301пливания' and RU_ACCENT['вовлеченности'] == 'вовлечённости'
     assert RU_STRESS['колеса'].count('ˈ') == 1 and RU_STRESS['колеса'].endswith('ˈɑ')

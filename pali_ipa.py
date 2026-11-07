@@ -174,6 +174,11 @@ PRATHAM_RULES = [
     # yā gets a stress of its own: «гай-я» in 5 of 5 (with one j 2 of 3)
     (re.compile(r'(?<=ɡ)ʌjj(?=ˈaː)'), 'aj'),
     (re.compile(r'(?<=ɡ)ʌjj(?=aː)'), 'ajjˈ'),
+    # Trello «Баги» (owner 2026-11-03, MN 44): ayye read «ахи» - the jj before e heard as h (3 of 3 takes by the phoneme
+    # recogniser, also ʌjeː, ajjeː, ʌjːeː); the Hindi spelling of आइये, a long a, ɪ, one j: «айе» in 6 of 6
+    (re.compile(r'(?<![^ ,])ˈʌjjeː(?=[ ,.?!:;]|$)'), 'ˈaːɪjeː'),
+    # the same card, pañhaṁ «паньан»: the h after ɲj lost (3 of 3); hh keeps it: «паньхан» in 6 of 6
+    (re.compile(r'ɲjh(?!h)'), 'ɲjhh'),
     # round 52: pucchāmi «паччхами» - its u heard as a; a long uː best + ok (tense u and the current bad in both takes)
     (re.compile(r'pʊccʰ'), 'puːccʰ'),
     # round 53: bhikkhusammutiyā «самматья», the i before yā lost; jj ok in both takes (tense u, i and the current: bad)
@@ -308,4 +313,6 @@ if __name__ == '__main__':
     assert tune(to_ipa('Tasmātiha, bhikkhave', full_a=True)) == 'tʌsmˈaːtɪhaː, bʰˈɪkkʰʌʋeː'  # round 39
     assert tune(to_ipa('Tiṇṇaṁ saṅgati', full_a=True)) == 'tˈɪɳːən sˈʌŋɡatɪ'  # round 38
     assert tune(to_ipa('evaṁ me sutaṁ cakkhuṁ', full_a=True)) == 'ˈeːʋən mˈeː sˈʊtən cˈʌkkʰu\u0303'  # round 29
+    assert tune(to_ipa('kho, ayye, sādhayye', full_a=True)).split(', ')[1] == 'ˈaːɪjeː'  # Trello «Баги» 2026-11-03
+    assert 'ɲjhhʌ' in tune(to_ipa('pañhaṁ', full_a=True))
     print('ok')
