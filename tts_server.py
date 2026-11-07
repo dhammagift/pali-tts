@@ -58,10 +58,10 @@ VOICES = {
     'miles': ('en_miles-medium', 'en', 'Yojanāni DG ♂ · US'),  # owner: Miles in Pali, freely (yojana, plural); first = the English default (owner 2026-10-29)
     'alan': ('en_GB-alan-medium', 'en', 'Alan ♂ · UK'),
     'kathleen': ('en_US-kathleen-low', 'en', 'Kathleen ♀ · US (low)'),
-    # the owner's timbre: Piper fine-tuned from ruslan on ~1300 lines (1.85 h) of his ElevenLabs PVC, 149 epochs
-    # (kaggle-ru-owner; round rown1: ok in 6 of 6, Puriso bad in 6 of 6); replaced ru_dg2 from a Chatterbox clone (owner 2026-11-03);
-    # first = the Russian default (owner 2026-11-06)
-    'dgru': ('ru_owner-medium', 'ru', 'Cūḷa DG ♂'),
+    # the owner's timbre: Piper fine-tuned on his ElevenLabs PVC. h3 (2026-11-07): from denis (CC0) on data4 (1463 lines, 2.21 h),
+    # 144 epochs; round 62: ok in 8 of 12 against 4 for v1 (ru_owner-medium, from ruslan, 149 epochs, 2026-11-03), line ends
+    # cut-like 14 of 240 against 30 (whisper-small); its misses are still cut line ends. First = the Russian default (owner 2026-11-06)
+    'dgru': ('ru_owner_h3-medium', 'ru', 'Cūḷa DG ♂'),
     # Supertonic M1 ("male 1") taught to Piper from ruslan; replaced Ruslan (owner 2026-10-17), named puriso, "man"; the Russian default 2026-10-21…11-06
     'puriso': ('ru_puriso2-medium', 'ru', 'Puriso ♂'),  # v2 (2026-10-17): retrained on M1 clips read with our stress marks
     'irina': ('ru_RU-irina-medium', 'ru', 'Irina ♀'),
