@@ -131,6 +131,9 @@ PRATHAM_RULES = [
     # and before every vowel - f heard in 18 of 44 (pratham, priyamvada) as pʰ, 3 of 44 as p + a separate h, all 3 in a
     # doubled pph; pph as a single p + h: f in 0 of 12 (a long pː + h: 1 of 12, a vowel slipped in)
     (re.compile(r'p?pʰ'), 'ph'),
+    # Trello «Баги» (owner 2026-11-13): khuppipāsā read «куппипипаса», the model repeats pi after a doubled pp before i + p
+    # (also nippipāso, sappipāyāsa). Snp 3.2 line, 0.7x, 3 takes, pratham and priyamvada: a single p clean in 6 of 6
+    (re.compile(r'pp(?=ˈ?ɪp)'), 'p'),
     # round 24: viharati read "viharti" once the open-a rule was gone; an open a in the verb ending
     # -ati (word-final) brought it back, without the swallowing the general rule caused (round 22)
     (re.compile(r'ʌ(?=tɪ(?=[ ,.?!:;]|$))'), 'a'),
@@ -297,6 +300,7 @@ if __name__ == '__main__':
     assert tune(to_ipa('pharitvā', full_a=True)) == 'phʌɾˈɪtʋaː'  # every ph as p + h (owner 2026-11-08)
     assert tune(to_ipa('phassassa phassaṁ', full_a=True)).count('ph') == 2  # owner 2026-11-08: «фасса»
     assert 'pʰ' not in tune(to_ipa('supupphite mahapphalaṁ samphasso phoṭṭhabba', full_a=True))
+    assert tune(to_ipa('khuppipāsā nippipāso', full_a=True)) == 'kʰʊpɪpˈaːsaː nɪpɪpˈaːsoː'  # «куппипипаса»
     assert tune(to_ipa('vimucciṁsūti', full_a=True)) == 'ʋɪmʊccɪmsˈuːtɪ'  # round 57
     assert tune(to_ipa('arahaṁ ahaṁ', full_a=True)) == 'ˈʌɾʌhʌn ˈʌhʌn'  # round 32
     assert tune(to_ipa('Ātāpī sampajāno satimā.', full_a=True)) == 'aːtˈaːpiː sʌmpʌɟɟˈaːnoːoːoː sˈʌtɪmaː.'  # round 40
