@@ -1,0 +1,8 @@
+// A one-screen app for the emulator in .github/workflows/gtts.yml: reads assets/lines.tsv (id<TAB>text) and saves
+// each line as files/out/<id>.wav with Google's TTS engine in the voice given in assets/voice.txt (a locale such as sa-IN)
+plugins { id 'com.android.application' version '8.5.2' }
+android {
+    namespace 'gift.dhamma.gtts'
+    compileSdk 34
+    defaultConfig { applicationId 'gift.dhamma.gtts'; minSdk 26; targetSdk 34; versionCode 1; versionName '1' }
+}
