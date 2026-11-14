@@ -14,6 +14,12 @@ Pali text-to-speech with the Piper voice hi_IN-pratham-medium and a pronunciatio
 
 Recommended settings (what Dhamma.Gift uses): length_scale 1.15, noise_scale 0.6, noise_scale_w 0.7.
 
+v2 (2026-11-14): the lexicon rebuilt on the phonemizer's rules r72 (13,859 entries changed since v1: every ph as p + h,
+khuppipāsā and a few others from blind listening rounds). Checked on stock sherpa-onnx 2.0.1 (pip, with #4055 and #4075):
+for 28 of 37 canon sentences (SN 56.11, SN 48.39, MN 10) the phonemes sherpa feeds the model are the same as
+Dhamma.Gift's own server's. The other 9 differ only in the known limit below and in punctuation (a colon or semicolon
+kept at the end, a dash dropped).
+
 Known limit: entries are written as a word inside a phrase, so a word-final o is held long (as it should be mid-sentence);
 right before a full stop it comes out longer than Dhamma.Gift's own server makes it. Pauses that depend on the next
 word (a one-syllable word before a vowel: "so, evamāha") cannot be expressed in a per-word lexicon.
