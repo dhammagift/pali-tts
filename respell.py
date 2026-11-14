@@ -99,8 +99,15 @@ RU_ACCENT.update({w.replace('́', '').replace('ё', 'е'): w for w in (  # the k
     # Trello «Баги» (owner 2026-11-03..06): espeak's взращива́ние, несуществованию read вО-ван-ю; сто́роны (plural) - the genitive
     # стороны́ after с/со/из/от... is RU_STORONY's
     *[f'взра́щивани{e}' for e in _NOUN_NIE], *[f'несуществова́ни{e}' for e in _NOUN_NIE], 'сто́роны',
+    # owner 2026-11-14: «волосы головы» read голо́вы; DG's texts have the genitive головы́ in most places (волосы головы,
+    # с головы, до головы); the plural голо́вы (отрубают головы, моют свои головы) is RU_GOLOVY's
+    'головы́',
 )})
 RU_NAME = re.compile(r'[А-Яа-яЁё]+')
+# голо́вы, the plural: after свои/наши/их/отрубают/моют/вымыли/омыли/дэвы... or before отрубают/склоняют/были (DG's texts:
+# these are all its plural places). Runs after RU_ACCENT, on its головы́
+RU_GOLOVY = re.compile(r'(?<![а-яёА-ЯЁ])((?:свои|наши|ваши|их|отрубают|отрубали|моют|мыли|вымыли|омыли|дэвы)\s+[Гг]|'
+                       r'[Гг](?=оловы́\s+(?:отрубают|склоняют|были)))оловы́(?![а-яё])')
 # стороны́, the genitive singular (owner 2026-11-06: «с правой сторОны вместо сторонЫ»): after с/со/из/от/до/без/для/у/вдоль,
 # maybe with one word in -ой/-ей/-ого/-его between (с правой, с одной, со всякой); elsewhere сто́роны, the plural (во все,
 # на четыре, обе). Runs after RU_ACCENT, on its сто́роны
@@ -260,7 +267,7 @@ def ru_phonemes(voice, text):
     """Phoneme lists (one per sentence) for a Piper Russian voice, with the soft sign restored."""
     text = RU_NAME.sub(lambda m: _case(m.group(), RU_ACCENT[m.group().lower()]) if m.group().lower() in RU_ACCENT else m.group(),
                        RU_BOLSH.sub('\\1о\u0301льш', RU_VSYO.sub(r'\1сё', respell(ru_refs(text), 'ru'))))
-    text = RU_STORONY.sub('\\1тороны\u0301', text)
+    text = RU_GOLOVY.sub('\\1оло\u0301вы', RU_STORONY.sub('\\1тороны\u0301', text))
     # a hyphenated compound is one word to espeak, so RU_STRESS never saw its parts (с-прямым-видением-памятованием): apart
     text = RU_COMPOUND.sub(lambda m: m.group().replace('-', ' ') if any(w.lower() in RU_STRESS for w in m.group().split('-'))
                            else m.group(), text)
@@ -344,7 +351,7 @@ def export():
             'en_pali_words': sorted(EN_PALI_WORDS), 'en_pali_long': EN_PALI_LONG, 'en_ipa_rx': EN_IPA_RX.pattern, 'en_ipa': dict(EN_IPA),
             'en_abbr': [[rx.pattern, full] for rx, full in EN_ABBR], 'en_books': EN_BOOKS, 'en_ref': EN_REF.pattern,
             'ru_soften': {k: list(v) for k, v in RU_SOFTEN.items()}, 'ru_word': RU_WORD.pattern, 'ru_stress': RU_STRESS,
-            'ru_accent': RU_ACCENT, 'ru_vsyo': RU_VSYO.pattern, 'ru_bolsh': RU_BOLSH.pattern, 'ru_storony': RU_STORONY.pattern, 'en_penult': sorted(EN_PENULT), 'nucleus': NUCLEUS.pattern}
+            'ru_accent': RU_ACCENT, 'ru_vsyo': RU_VSYO.pattern, 'ru_bolsh': RU_BOLSH.pattern, 'ru_storony': RU_STORONY.pattern, 'ru_golovy': RU_GOLOVY.pattern, 'en_penult': sorted(EN_PENULT), 'nucleus': NUCLEUS.pattern}
 
 
 def _case(src, out):
