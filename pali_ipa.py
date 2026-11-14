@@ -199,6 +199,10 @@ PRATHAM_RULES = [
     (re.compile(r'ŋ(?=sˈuːtɪ)'), 'm'),
     # rounds 46-47: paṭipadā read «пратипада» (ʈ between vowels as Hindi's flap); a doubled ʈʈ ok 5 of 6, as now 3 of 6
     (re.compile(r'(?<=pʌ)ʈ(?=ˈ?ɪpʌd)'), 'ʈʈ'),
+    # Trello «Баги» (owner 2026-11-13: «dukkhā, atītānāgatā - между а а фиксит», sutvā amutra «склеивает а а»): a word-final
+    # ā before a word starting with a ran the two into one word. A comma between them: vowels the recogniser missed
+    # 145 of 783 against 165 (11 canon lines x 3 takes, sn35.11 4 -> 0, mn62 9 -> 3)
+    (re.compile(r'aː (?=ˈ?ʌ)'), 'aː, '),  # not before ā: āyasmā ānando was fine as it is (round 17)
 ]
 
 
@@ -266,6 +270,8 @@ if __name__ == '__main__':
     assert no('cakkhusamphasso') == 'cəkkʰʊsəmpʰəssoː', no('cakkhusamphasso')
     assert no('dhamma') == 'dʰəmmə'
     assert no('evaṁ me sutaṁ') == 'eːʋəŋ meː sʊtəŋ'
+    assert ', ʌtiːt' in tune(to_ipa('dukkhā atītānāgatā', full_a=True)), tune(to_ipa('dukkhā atītānāgatā', full_a=True))
+    assert 'sˈʊtʋaː, ʌm' in tune(to_ipa('sutvā amutra', full_a=True)), tune(to_ipa('sutvā amutra', full_a=True))
     assert no('saṃgha') == 'səŋɡʰə' and no('saṅgha') == 'səŋɡʰə'
     assert no('mettā') == 'mettaː' and no('sotthi') == 'sottʰɪ'
     assert no('ñāṇa') == 'ɲaːɳə'
