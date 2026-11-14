@@ -100,11 +100,11 @@ RU_ACCENT.update({w.replace('́', '').replace('ё', 'е'): w for w in (  # the k
     # стороны́ after с/со/из/от... is RU_STORONY's
     *[f'взра́щивани{e}' for e in _NOUN_NIE], *[f'несуществова́ни{e}' for e in _NOUN_NIE], 'сто́роны',
     # owner 2026-11-14: «волосы головы» read голо́вы; DG's texts have the genitive головы́ in most places (волосы головы,
-    # с головы, до головы); the plural голо́вы (отрубают головы, моют свои головы) is RU_GOLOVY's
+    # с головы, до головы); the plural го́ловы (отрубают головы, моют свои головы) is RU_GOLOVY's (owner: го́ловы, not голо́вы)
     'головы́',
 )})
 RU_NAME = re.compile(r'[А-Яа-яЁё]+')
-# голо́вы, the plural: after свои/наши/их/отрубают/моют/вымыли/омыли/дэвы... or before отрубают/склоняют/были (DG's texts:
+# го́ловы, the plural: after свои/наши/их/отрубают/моют/вымыли/омыли/дэвы... or before отрубают/склоняют/были (DG's texts:
 # these are all its plural places). Runs after RU_ACCENT, on its головы́
 RU_GOLOVY = re.compile(r'(?<![а-яёА-ЯЁ])((?:свои|наши|ваши|их|отрубают|отрубали|моют|мыли|вымыли|омыли|дэвы)\s+[Гг]|'
                        r'[Гг](?=оловы́\s+(?:отрубают|склоняют|были)))оловы́(?![а-яё])')
@@ -267,7 +267,7 @@ def ru_phonemes(voice, text):
     """Phoneme lists (one per sentence) for a Piper Russian voice, with the soft sign restored."""
     text = RU_NAME.sub(lambda m: _case(m.group(), RU_ACCENT[m.group().lower()]) if m.group().lower() in RU_ACCENT else m.group(),
                        RU_BOLSH.sub('\\1о\u0301льш', RU_VSYO.sub(r'\1сё', respell(ru_refs(text), 'ru'))))
-    text = RU_GOLOVY.sub('\\1оло\u0301вы', RU_STORONY.sub('\\1тороны\u0301', text))
+    text = RU_GOLOVY.sub('\\1о\u0301ловы', RU_STORONY.sub('\\1тороны\u0301', text))
     # a hyphenated compound is one word to espeak, so RU_STRESS never saw its parts (с-прямым-видением-памятованием): apart
     text = RU_COMPOUND.sub(lambda m: m.group().replace('-', ' ') if any(w.lower() in RU_STRESS for w in m.group().split('-'))
                            else m.group(), text)
