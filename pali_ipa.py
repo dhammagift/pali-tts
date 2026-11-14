@@ -157,6 +157,12 @@ PRATHAM_RULES = [
     # rounds 20, 41: ṭṭh came out as an affricate (sammādiṭṭhi «дичи», diṭṭhupādānaṁ «диччупадана»); a long ʈː
     # was the best spelling in both rounds (r20: 3 best 5 ok; r41: ok/ok, the only one with no bad take)
     (re.compile(r'ʈʈʰ'), 'ʈːʰ'),
+    # Trello «Баги» (owner 2026-11-14): natthi yiṭṭhaṁ read «иччхам», paduṭṭhamanasaṅkappo near it. After u a long ʈː
+    # with a separate h (as ph): the owner's «нормально»; after (j)i every ʈ + h spelling stayed «ч» (also by the
+    # recogniser, 4 of 4 takes), a retroflex ʈ released into a dental tʰ did not (0 of 4; owner: «более менее»).
+    # Elsewhere (diṭṭhi, aṭṭha) ʈːʰ as rounds 20 and 41 chose it.
+    (re.compile(r'(?<=ʊ)ʈːʰ'), 'ʈːh'),
+    (re.compile(r'(?<=jˈɪ)ʈːʰ|(?<=jɪ)ʈːʰ'), 'ʈtʰ'),
     # round 41: the a after r in saṅkhāra- compounds was swallowed («санкхарпаччая»); a long aː won (best + ok)
     (re.compile(r'(?<=kʰaːɾ)ʌ(?=[^ ,.?!:;ˈʌaeoiuɪʊː])'), 'aː'),
     # round 42: pana before a comma read «пан» (now: ok/bad); an open a, aː and ʌː were all ok/ok - the open a, the
@@ -271,6 +277,8 @@ if __name__ == '__main__':
     assert no('dhamma') == 'dʰəmmə'
     assert no('evaṁ me sutaṁ') == 'eːʋəŋ meː sʊtəŋ'
     assert ', ʌtiːt' in tune(to_ipa('dukkhā atītānāgatā', full_a=True)), tune(to_ipa('dukkhā atītānāgatā', full_a=True))
+    assert 'jˈɪʈtʰ' in tune(to_ipa('yiṭṭhaṁ', full_a=True)), tune(to_ipa('yiṭṭhaṁ', full_a=True))
+    assert 'ʊʈːh' in tune(to_ipa('paduṭṭha', full_a=True)) and 'ʈːʰ' in tune(to_ipa('diṭṭhi', full_a=True))
     assert 'sˈʊtʋaː, ʌm' in tune(to_ipa('sutvā amutra', full_a=True)), tune(to_ipa('sutvā amutra', full_a=True))
     assert no('saṃgha') == 'səŋɡʰə' and no('saṅgha') == 'səŋɡʰə'
     assert no('mettā') == 'mettaː' and no('sotthi') == 'sottʰɪ'
