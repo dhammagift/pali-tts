@@ -27,7 +27,8 @@ def pratham(text):  # as round_pisa1's (which reads sys.argv on import): the liv
 
 def google_text(text):
     # our r73 in the text: a comma between a word-final ā and a word starting with a (Google reads sutavā ariya as one word too)
-    return to_script(re.sub(r'ā (?=[aA])', 'ā, ', text))
+    # quotes out: to_script turns them into commas (“Iti → ,इति; bhaveyyā’ti → भवेय्या,ति), and ’ti is one word with what it follows
+    return to_script(re.sub(r'ā (?=[aA])', 'ā, ', re.sub('[“”‘’"]', '', text)))
 
 
 if sys.argv[1] == 'lines':
