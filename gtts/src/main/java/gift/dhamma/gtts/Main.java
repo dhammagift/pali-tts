@@ -27,6 +27,7 @@ public class Main extends Activity {
     int next = 0;
     int retries = 0;  // the voice comes notInstalled: Google TTS fetches it on first use, so a failed line is retried
     String pickName;
+    long lastStart = System.currentTimeMillis();  // a line that never calls back (no onDone, no onError) would stall the run
 
     @Override
     protected void onCreate(Bundle b) {
@@ -88,6 +89,18 @@ public class Main extends Activity {
             }
         });
         speakNext();
+        watchdog();
+    }
+
+    // every 30 s: a line busy for over 2 min is given up and the next one started
+    void watchdog() {
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            if (next > 0 && next < lines.size() && System.currentTimeMillis() - lastStart > 120000) {
+                log("stall " + lines.get(next - 1)[0] + ", skipped");
+                speakNext();
+            }
+            if (next < lines.size()) watchdog();
+        }, 30000);
     }
 
     synchronized void speakNext() {
@@ -97,6 +110,7 @@ public class Main extends Activity {
             return;
         }
         String[] p = lines.get(next++);
+        lastStart = System.currentTimeMillis();
         tts.synthesizeToFile(p[1], null, new File(out, p[0] + ".wav"), p[0]);
     }
 
