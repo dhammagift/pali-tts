@@ -2,6 +2,8 @@ package gift.dhamma.gtts;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.speech.tts.Voice;
@@ -23,6 +25,8 @@ public class Main extends Activity {
     final List<String[]> lines = new ArrayList<>();
     File out;
     int next = 0;
+    int retries = 0;  // the voice comes notInstalled: Google TTS fetches it on first use, so a failed line is retried
+    String pickName;
 
     @Override
     protected void onCreate(Bundle b) {
@@ -56,6 +60,7 @@ public class Main extends Activity {
             if (tts.getAvailableLanguages() != null) sb.append("languages ").append(tts.getAvailableLanguages()).append('\n');
             int lang = tts.setLanguage(want);
             sb.append("setLanguage ").append(lang).append(" pick ").append(pick == null ? "none" : pick.getName()).append('\n');
+            if (pick != null) pickName = pick.getName();
             if (pick != null) sb.append("setVoice ").append(tts.setVoice(pick)).append('\n');
             write("voices.txt", sb.toString());
             log(sb.toString());
@@ -65,7 +70,16 @@ public class Main extends Activity {
         tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
             public void onStart(String id) {}
             public void onDone(String id) { speakNext(); }
-            public void onError(String id) { log("error " + id); speakNext(); }
+            public void onError(String id) {
+                if (retries++ < 60) {  // 15 min at most, every 15 s
+                    log("error " + id + ", retry " + retries + " " + pickFeatures());
+                    next--;
+                    new Handler(Looper.getMainLooper()).postDelayed(Main.this::retry, 15000);
+                } else {
+                    log("error " + id);
+                    speakNext();
+                }
+            }
         });
         speakNext();
     }
@@ -78,6 +92,23 @@ public class Main extends Activity {
         }
         String[] p = lines.get(next++);
         tts.synthesizeToFile(p[1], null, new File(out, p[0] + ".wav"), p[0]);
+    }
+
+    // the picked voice as the engine now lists it (its features show notInstalled until the data is there)
+    Voice pickNow() {
+        if (pickName != null && tts.getVoices() != null) for (Voice v : tts.getVoices()) if (v.getName().equals(pickName)) return v;
+        return null;
+    }
+
+    String pickFeatures() {
+        Voice v = pickNow();
+        return v == null ? "no voice" : String.valueOf(v.getFeatures());
+    }
+
+    void retry() {
+        Voice v = pickNow();
+        if (v != null) tts.setVoice(v);
+        speakNext();
     }
 
     void write(String name, String text) {

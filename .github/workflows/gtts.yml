@@ -8,9 +8,9 @@ on:
 jobs:
   gtts:
     runs-on: ubuntu-latest
-    strategy:  # the Google TTS of api 34's image (2023-01) has no Sanskrit: newer images
+    strategy:  # the Google TTS of api 34's (2023-01) and 35's images has no Sanskrit; 36's (2024-11) has sa-IN
       fail-fast: false
-      matrix: {api: ['35', '36']}
+      matrix: {api: ['36']}
     timeout-minutes: 340
     steps:
       - uses: actions/checkout@v4
