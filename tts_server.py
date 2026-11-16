@@ -29,6 +29,7 @@ import tempfile
 import shutil
 import threading
 import time
+import urllib.parse
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -163,6 +164,56 @@ def rate_limited(ip):
         hits[ip] = (minute, count)
         return count > RATE_LIMIT
 os.makedirs(CACHE, exist_ok=True)
+# Who uses the service (owner 2026-11-16: «мы должны знать, кто этим пользуется»): counts only, no IPs, by day,
+# what (synth:<voice>, memo, offline:<file>), the calling site (Origin/Referer host), the Android app
+# (X-Requested-With: the WebView's package) and a coarse client kind. Log only, nothing is refused yet: the week of
+# counts shows every real client before any key is required. usage/<day>.json, merged every minute.
+USAGE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'usage')
+usage, usage_lock = {}, threading.Lock()
+
+
+def ua_kind(ua):
+    low = ua.lower()
+    for tool in ('curl', 'wget', 'python', 'okhttp', 'node', 'axios', 'go-http', 'java', 'bot', 'spider'):
+        if tool in low:
+            return tool
+    if 'android' in low:
+        return 'android-webview' if '; wv)' in low else 'android'
+    if 'iphone' in low or 'ipad' in low:
+        return 'ios'
+    return next((name for mark, name in (('windows', 'windows'), ('mac os', 'mac'), ('linux', 'linux')) if mark in low),
+                'other' if ua else '-')
+
+
+def count_use(headers, what):
+    src = headers.get('origin') or headers.get('referer') or ''
+    host = urllib.parse.urlsplit(src).netloc or src[:40] or '-'
+    key = '|'.join((time.strftime('%Y-%m-%d'), what, host, headers.get('x-requested-with') or '-',
+                    ua_kind(headers.get('user-agent') or '')))
+    with usage_lock:
+        usage[key] = usage.get(key, 0) + 1
+
+
+def flush_usage():
+    # ponytail: up to a minute of counts is lost on a restart; fine for knowing who calls
+    os.makedirs(USAGE_DIR, exist_ok=True)
+    while True:
+        time.sleep(60)
+        with usage_lock:
+            batch = dict(usage)
+            usage.clear()
+        days = {}
+        for key, n in batch.items():
+            day, rest = key.split('|', 1)
+            days.setdefault(day, {})[rest] = n
+        for day, counts in days.items():
+            path = os.path.join(USAGE_DIR, day + '.json')
+            old = json.load(open(path)) if os.path.exists(path) else {}
+            for rest, n in counts.items():
+                old[rest] = old.get(rest, 0) + n
+            tmp = path + '.tmp'
+            json.dump(old, open(tmp, 'w'), indent=0, sort_keys=True)
+            os.replace(tmp, path)
 
 
 def get_voice(vid):
@@ -446,6 +497,7 @@ class Handler(BaseHTTPRequestHandler):
             return self.reply(200, {'voices': [{'id': vid, 'lang': lang[:2], 'label': label}
                                                for vid, (_, lang, label) in VOICES.items() if test or vid not in TEST_ONLY]})
         if self.path.startswith('/offline/'):
+            count_use(self.headers, 'offline:' + self.path[len('/offline/'):].split('?')[0][:60])
             return self.offline(self.path[len('/offline/'):])
         self.reply(404, {'error': {'message': 'not found'}})
 
@@ -544,6 +596,7 @@ class Handler(BaseHTTPRequestHandler):
             ip = self.client_ip()
             if any(rate_limited(ip) for _ in range(10)):
                 return self.reply(429, {'error': {'message': 'Too many requests, try again shortly'}})
+            count_use(self.headers, 'memo')
             return self.memo()
         if self.path != '/synthesize':
             return self.reply(404, {'error': {'message': 'not found'}})
@@ -554,6 +607,7 @@ class Handler(BaseHTTPRequestHandler):
             text = str(req.get('text', ''))[:MAX_CHARS]
             rate = min(max(float(req.get('rate', 1.0)), 0.25), 3.0)
             vid = str(req.get('voice') or 'pratham')
+            count_use(self.headers, 'synth:' + vid[:30])
         except (ValueError, TypeError):
             return self.reply(400, {'error': {'message': 'bad request'}})
         if vid not in VOICES:
@@ -579,4 +633,5 @@ class Handler(BaseHTTPRequestHandler):
 
 
 prune_cache(CACHE, args.cache_mb * 2 ** 20, args.min_free_mb * 2 ** 20)
+threading.Thread(target=flush_usage, daemon=True).start()
 ThreadingHTTPServer((args.host, args.port), Handler).serve_forever()
