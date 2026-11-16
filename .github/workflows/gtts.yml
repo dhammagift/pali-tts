@@ -5,6 +5,8 @@ on:
   workflow_dispatch:
     inputs:
       minutes: {description: 'how long to wait for the app', default: '30'}
+      lines: {description: 'the lines file', default: 'gtts/lines.tsv'}
+      rate: {description: 'speech rate instead of gtts/rate.txt (empty: the file)', default: ''}
       shards: {description: 'parallel emulators: line k goes to shard k mod shards (1-8)', default: '8'}
 jobs:
   gtts:
@@ -23,7 +25,8 @@ jobs:
         run: |
           mkdir -p gtts/src/main/assets && cp gtts/voice.txt gtts/rate.txt gtts/src/main/assets/
           # this job's share of the lines (owner 2026-11-16: progress has to be seen - each shard's artifact lands when it is done)
-          awk -v n=${{ inputs.shards }} -v k=${{ matrix.shard }} '(NR - 1) % n == k' gtts/lines.tsv > gtts/src/main/assets/lines.tsv
+          awk -v n=${{ inputs.shards }} -v k=${{ matrix.shard }} '(NR - 1) % n == k' ${{ inputs.lines }} > gtts/src/main/assets/lines.tsv
+          if [ -n '${{ inputs.rate }}' ]; then echo '${{ inputs.rate }}' > gtts/src/main/assets/rate.txt; fi
           if [ ${{ matrix.shard }} -ge ${{ inputs.shards }} ]; then : > gtts/src/main/assets/lines.tsv; fi
           wc -l gtts/src/main/assets/lines.tsv
           cd gtts && gradle -q assembleDebug
