@@ -446,7 +446,7 @@ def memo_mp3(segments, vid, rate, delay, end_delay, sound):
 OWN_VOICES = {'dg', 'dgru', 'miles'}
 # public ids for the API docs: no person's name in an id (owner 2026-11-16); the old id keeps working for DG's own
 # clients (their settings and offline downloads are keyed by it)
-ALIAS = {'yojanani': 'miles'}
+ALIAS = {'dgen': 'miles'}  # dg + en, as dgru (owner 2026-11-16)
 # piper's own espeak-ng-data, in packs a device downloads once: core with the first en/ru voice, then its language
 ESPEAK_DATA = os.path.join(os.path.dirname(os.path.abspath(__import__('piper').__file__)), 'espeak-ng-data')
 ESPEAK_PACKS = {'core': ['phontab', 'phonindex', 'phondata', 'intonations'],
