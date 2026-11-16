@@ -12,19 +12,26 @@ import sys
 
 INPUT = os.environ.get('INPUT', '/kaggle/input')
 SMOKE = False  # smoke run 2026-11-16: 2352 clips, 88 steps an epoch at 0.38 it/s (~4 min), export ok
-MAX_TIME = '00:00:08:00' if SMOKE else os.environ.get('MAX_TIME', '00:03:00:00')
+MAX_TIME = '00:00:08:00' if SMOKE else os.environ.get('MAX_TIME', '00:08:00:00')
 W = os.environ.get('WORK', '/kaggle/working')
 T = os.path.dirname(glob.glob(f'{INPUT}/**/texts.csv', recursive=True)[0])
-TAR = glob.glob(f'{INPUT}/**/gsa-data.tar', recursive=True)[0]
-SCORES = glob.glob(f'{INPUT}/**/scores.tsv', recursive=True)[0]
+# run 2 (owner 2026-11-16 «обучим»): every part (gsa-data: s00000-s02399, gsa-data-b0..b3: s02400-s14399, ~25 h)
+TARS = sorted(glob.glob(f'{INPUT}/**/gsa-data*.tar', recursive=True))
+SCORES = sorted(glob.glob(f'{INPUT}/**/*scores.tsv', recursive=True))
 # from scores.tsv of run 1 (2389 clips: whole median 0.86, p5 0.73): 2352 kept; the worst ones are repeats Google
 # misread or swallowed (mano ca pāpako, sassaṁghātaṁ)
 WHOLE_MIN, TAIL_MIN = 0.6, 0.5
-DATA = f'{W}/data'
+# ~25 h of wavs plus Piper's cache (audio and spectrogram tensors, several times the wavs) do not fit the 20 GB of
+# /kaggle/working: both go to the big scratch disk
+TMP = os.environ.get('TMPWORK', '/tmp/gsa')
+DATA = f'{TMP}/data'
 SAMPLES = [
     'Evaṁ me sutaṁ — ekaṁ samayaṁ bhagavā bārāṇasiyaṁ viharati isipatane migadāye.',
     'Itthirūpaṁ, bhikkhave, purisassa cittaṁ pariyādāya tiṭṭhatī”ti.',
     'Mettāsahagatena cetasā ekaṁ disaṁ pharitvā viharati.',
+    'Tiṭṭhatu, bhikkhave, ekaṁ vassaṁ.',
+    'Yāyaṁ taṇhā ponobbhavikā nandīrāgasahagatā.',
+    'Paṭhamaṁ.',
     'Imasmiñca pana veyyākaraṇasmiṁ bhaññamāne tassa bhikkhusahassassa anupādāya āsavehi cittāni vimucciṁsūti.',
     'Idamavoca bhagavā.',
 ]
@@ -43,15 +50,21 @@ def sh(cmd):
 
 def cleanup():
     # thousands of files make the kernel output listing hit Kaggle's API rate limit: keep only out/
-    subprocess.run(f'rm -rf {W}/cache {W}/piper1-gpl {DATA} {W}/train', shell=True)
+    subprocess.run(f'rm -rf {TMP} {W}/piper1-gpl {W}/train', shell=True)
 
 
-sh('nvidia-smi --query-gpu=name,memory.total --format=csv')
-sh(f'tar -xf {TAR} -C {W}')
+sh('nvidia-smi --query-gpu=name,memory.total --format=csv; df -h /tmp /kaggle/working')
+print('tars', TARS, 'scores', SCORES, flush=True)
+meta = []
+for k, tar in enumerate(TARS):  # each tar holds data/{wavs,metadata.csv,phonemes.json}: merged into one data/
+    sh(f'mkdir -p {TMP}/part{k} {DATA}/wavs && tar -xf {tar} -C {TMP}/part{k} && cp {TMP}/part{k}/data/phonemes.json {DATA}/'
+       f' && find {TMP}/part{k}/data/wavs -name "*.wav" -exec mv -t {DATA}/wavs {{}} +')
+    meta += [m for m in open(f'{TMP}/part{k}/data/metadata.csv', encoding='utf-8').read().split('\n') if m]
+    sh(f'rm -rf {TMP}/part{k}')
 # the clips the recogniser heard as the text: whole and last quarter (a cut or garbled end is left out)
-good = {r.split('\t')[0] for r in open(SCORES, encoding='utf-8').read().split('\n')[1:] if r
+good = {r.split('\t')[0] for f in SCORES for r in open(f, encoding='utf-8').read().split('\n')[1:] if r
         and float(r.split('\t')[1]) >= WHOLE_MIN and float(r.split('\t')[2]) >= TAIL_MIN}
-meta = [m for m in open(f'{DATA}/metadata.csv', encoding='utf-8').read().split('\n') if m and m.split('|')[0] in good]
+meta = [m for m in meta if m.split('|')[0] in good]
 open(f'{DATA}/metadata.csv', 'w', encoding='utf-8').write('\n'.join(meta) + '\n')
 print('clips kept', len(meta), flush=True)
 sh(f'git clone -q --depth 1 https://github.com/OHF-Voice/piper1-gpl.git {W}/piper1-gpl')
@@ -62,7 +75,9 @@ src = open(main_py).read()
 open(main_py, 'w').write(re.sub(r'\n\s*ModelCheckpoint\(\s*monitor="val_mos".*?\),(?=\n)', '', src, flags=re.S))
 sh("pip install -q cython scikit-build 'cmake<4' ninja onnx onnxscript -e '.[train]'")
 sh('bash build_monotonic_align.sh && python setup.py build_ext --inplace -q')
-BASE = glob.glob(f'{INPUT}/**/pratham.ckpt', recursive=True)[0]
+# run 2 goes on from run 1 (44 epochs on 2352 clips); pratham.ckpt only if run1.ckpt is missing
+BASE = (glob.glob(f'{INPUT}/**/run1.ckpt', recursive=True) or glob.glob(f'{INPUT}/**/pratham.ckpt', recursive=True))[0]
+print('base', BASE, flush=True)
 os.makedirs(f'{W}/out', exist_ok=True)
 sh(' '.join([
     'python -m piper.train fit',
@@ -71,7 +86,7 @@ sh(' '.join([
     f'--data.audio_dir {DATA}/wavs',
     '--model.sample_rate 22050',
     '--data.espeak_voice hi',
-    f'--data.cache_dir {W}/cache',
+    f'--data.cache_dir {TMP}/cache',
     f'--data.config_path {W}/out/pali_gsa-medium.onnx.json',
     '--data.batch_size 24',
     '--data.num_workers 2',
