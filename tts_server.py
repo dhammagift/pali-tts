@@ -444,6 +444,9 @@ def memo_mp3(segments, vid, rate, delay, end_delay, sound):
 
 # real people's voices: downloadable offline, all rights reserved (owner 2026-11-02; was CC BY-NC-SA 4.0 from 2026-10-10)
 OWN_VOICES = {'dg', 'dgru', 'miles'}
+# public ids for the API docs: no person's name in an id (owner 2026-11-16); the old id keeps working for DG's own
+# clients (their settings and offline downloads are keyed by it)
+ALIAS = {'yojanani': 'miles'}
 # piper's own espeak-ng-data, in packs a device downloads once: core with the first en/ru voice, then its language
 ESPEAK_DATA = os.path.join(os.path.dirname(os.path.abspath(__import__('piper').__file__)), 'espeak-ng-data')
 ESPEAK_PACKS = {'core': ['phontab', 'phonindex', 'phondata', 'intonations'],
@@ -557,6 +560,7 @@ class Handler(BaseHTTPRequestHandler):
             req = json.loads(self.rfile.read(min(int(self.headers.get('content-length', 0)), 256 * 1024)))
             segs = [str(x).strip()[:MAX_CHARS] for x in req.get('segments', []) if str(x).strip()]
             vid = str(req.get('voice') or 'pratham')
+            vid = ALIAS.get(vid, vid)
             rate = min(max(float(req.get('rate', 1.0)), 0.25), 3.0)
             delay = max(float(req.get('delay', 2)), 0)
             end_delay = max(float(req.get('end_delay', 0)), 0)
@@ -607,6 +611,7 @@ class Handler(BaseHTTPRequestHandler):
             text = str(req.get('text', ''))[:MAX_CHARS]
             rate = min(max(float(req.get('rate', 1.0)), 0.25), 3.0)
             vid = str(req.get('voice') or 'pratham')
+            vid = ALIAS.get(vid, vid)
             count_use(self.headers, 'synth:' + vid[:30])
         except (ValueError, TypeError):
             return self.reply(400, {'error': {'message': 'bad request'}})
