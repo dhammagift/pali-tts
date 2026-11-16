@@ -25,6 +25,8 @@ public class Main extends Activity {
     final List<String[]> lines = new ArrayList<>();
     File out;
     int next = 0;
+    int rebinds = 0;
+    boolean watching = false;
     int retries = 0;  // the voice comes notInstalled: Google TTS fetches it on first use, so a failed line is retried
     String pickName;
     long lastStart = System.currentTimeMillis();  // a line that never calls back (no onDone, no onError) would stall the run
@@ -89,7 +91,10 @@ public class Main extends Activity {
             }
         });
         speakNext();
-        watchdog();
+        if (!watching) {  // onInit runs again after a rebind: one watchdog is enough
+            watching = true;
+            watchdog();
+        }
     }
 
     // every 30 s: a line busy for over 2 min is given up and the next one started
@@ -111,7 +116,15 @@ public class Main extends Activity {
         }
         String[] p = lines.get(next++);
         lastStart = System.currentTimeMillis();
-        tts.synthesizeToFile(p[1], null, new File(out, p[0] + ".wav"), p[0]);
+        if (tts.synthesizeToFile(p[1], null, new File(out, p[0] + ".wav"), p[0]) != TextToSpeech.SUCCESS && rebinds < 50) {
+            // Google's TTS process died (DeadObjectException in the 12,000-line run: every later line failed at once,
+            // 3,700 lines lost): bind to the engine again and redo this line
+            rebinds++;
+            log("engine gone at " + p[0] + ", rebind " + rebinds);
+            next--;
+            try { tts.shutdown(); } catch (Exception e) { log("shutdown: " + e); }
+            tts = new TextToSpeech(this, this::onInit, "com.google.android.tts");
+        }
     }
 
     // the picked voice as the engine now lists it (its features show notInstalled until the data is there)
