@@ -1,0 +1,1 @@
+{"id": "dhammagift/gsa-voice-train", "title": "gsa-voice-train", "code_file": "train.py", "language": "python", "kernel_type": "script", "is_private": true, "enable_gpu": true, "enable_internet": true, "dataset_sources": ["dhammagift/gsa-texts", "dhammagift/pratham-ckpt"], "competition_sources": [], "kernel_sources": ["dhammagift/gsa-data"]}

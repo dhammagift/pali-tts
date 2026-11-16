@@ -1,0 +1,1 @@
+{"id": "dhammagift/gsa-data", "title": "gsa-data", "code_file": "vc.py", "language": "python", "kernel_type": "script", "is_private": true, "enable_gpu": true, "enable_internet": true, "dataset_sources": ["dhammagift/gsa-texts", "dhammagift/gsa-google-a"], "competition_sources": [], "kernel_sources": []}
