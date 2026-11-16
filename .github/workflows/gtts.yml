@@ -20,7 +20,7 @@ jobs:
         with: {gradle-version: '8.7'}
       - name: Build the app with the lines inside
         run: |
-          mkdir -p gtts/src/main/assets && cp gtts/lines.tsv gtts/voice.txt gtts/src/main/assets/
+          mkdir -p gtts/src/main/assets && cp gtts/lines.tsv gtts/voice.txt gtts/rate.txt gtts/src/main/assets/
           cd gtts && gradle -q assembleDebug
       - name: Enable KVM
         run: |

@@ -59,6 +59,12 @@ public class Main extends Activity {
             // every language the engine has, to see whether an image's Google TTS knows Sanskrit at all
             if (tts.getAvailableLanguages() != null) sb.append("languages ").append(tts.getAvailableLanguages()).append('\n');
             int lang = tts.setLanguage(want);
+            try {  // assets/rate.txt: the engine's own speech rate (1 = its normal pace), to match pratham's
+                float rate = Float.parseFloat(new BufferedReader(new InputStreamReader(getAssets().open("rate.txt"), "UTF-8")).readLine().trim());
+                sb.append("setSpeechRate ").append(rate).append(' ').append(tts.setSpeechRate(rate)).append('\n');
+            } catch (java.io.IOException e) {
+                sb.append("no rate.txt\n");
+            }
             sb.append("setLanguage ").append(lang).append(" pick ").append(pick == null ? "none" : pick.getName()).append('\n');
             if (pick != null) pickName = pick.getName();
             if (pick != null) sb.append("setVoice ").append(tts.setVoice(pick)).append('\n');
