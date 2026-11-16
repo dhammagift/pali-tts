@@ -52,6 +52,8 @@ public class Main extends Activity {
                   .append(" features=").append(v.getFeatures()).append(" quality=").append(v.getQuality()).append('\n');
                 if (pick == null || (pick.isNetworkConnectionRequired() && !v.isNetworkConnectionRequired())) pick = v;
             }
+            // every language the engine has, to see whether an image's Google TTS knows Sanskrit at all
+            if (tts.getAvailableLanguages() != null) sb.append("languages ").append(tts.getAvailableLanguages()).append('\n');
             int lang = tts.setLanguage(want);
             sb.append("setLanguage ").append(lang).append(" pick ").append(pick == null ? "none" : pick.getName()).append('\n');
             if (pick != null) sb.append("setVoice ").append(tts.setVoice(pick)).append('\n');
