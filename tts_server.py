@@ -51,6 +51,9 @@ VOICES = {
     'dg': ('pali_dg-medium', 'pi-own', 'Cūḷa DG ♂ · beta'),
     # female Pali voice (round 44: ok 20 of 22 with pratham's rules, as they are)
     'priyamvada': ('hi_IN-priyamvada-medium', 'pi', 'Priyamvada ♀ · Piper'),
+    # test only (owner 2026-11-17): pratham fine-tuned on Google's sa-IN readings in pratham's timbre (gsa run 2,
+    # /root/gsa); Google's ToS: DG's own site only - never offline, never published. Fed gsa_fixes, not pratham's tune
+    'gsa': ('pali_gsa-medium', 'pi-gsa', 'Pratham G ♂ · test'),
     # Miles (an English reader of the record-en script): from en_US-ryan on his own takes; replaced norman (owner 2026-10-17)
     # back to v1 (round miles5, Miles 2026-10-21: «much higher quality»; A 3 of 3): from ryan, which cuts a sentence's last
     # sound - its .onnx.json "tail" saves it (with_tail). en_miles2 (from joe, 3 h, ends whole but worse) kept in models/
@@ -70,7 +73,7 @@ VOICES = {
 # dgru (ru_owner) comes out ~5 dB under puriso (-30.8 vs -25.9 LUFS): brought to its level (pali-tts.js gets it in the offer).
 # miles and kathleen ~12 dB under alan (-30 vs -17.6 LUFS, owner 2026-10-26: "Yojanāni sounds quiet"): as far as their peaks allow
 GAIN = {'dgru': 1.75, 'miles': 3.0, 'kathleen': 3.5}
-TEST_ONLY = set()  # in the menus of test.dhamma.gift only, never offered offline
+TEST_ONLY = {'gsa'}  # in the menus of test.dhamma.gift only, never offered offline
 TEST_ORIGIN = 'https://test.dhamma.gift'
 CACHE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cache', 'tts')
 SENTENCE = re.compile(r'(?<=[.?!;:])\s+')
@@ -330,6 +333,20 @@ def sanskrit_pcm(text, rate):
     return (np.concatenate(parts) if parts else np.zeros(sr // 4, dtype=np.float32)), sr
 
 
+GSA_END = r'(?=[\s,.;:?!]|$)'
+GSA_H = re.compile('(?<=[aʌɪiʊueoː])(ˈ?)h(ˈ?)(?=[aʌɪiʊueoː])')
+
+
+def gsa_fixes(ipa):
+    """The gsa voice learned Google's reading, which drops a word-final short vowel (pana -> pan) and an h between
+    vowels (sahagatā -> sagatā): word-final a/i/u long (the owner's own fix for Google in memo.js), that h long.
+    Rounds gsa1-gsa3, round_gsa2.fixes."""
+    ipa = re.sub('ʌ' + GSA_END, 'aː', ipa)
+    ipa = re.sub('ɪ' + GSA_END, 'iː', ipa)
+    ipa = re.sub('ʊ' + GSA_END, 'uː', ipa)
+    return GSA_H.sub(lambda m: m.group(1) + 'hh' + m.group(2), ipa)
+
+
 def synth_pcm(text, vid, rate):
     """Sentence by sentence (VITS degrades on very long inputs), short pauses between."""
     if vid == 'sanskrit':
@@ -337,14 +354,14 @@ def synth_pcm(text, vid, rate):
     voice, lang = get_voice(vid), VOICES[vid][1]
     sr = voice.config.sample_rate
     # pratham: our tuned pace (length 1.15 at rate 1); own voice and translations: the recorded pace
-    cfg = SynthesisConfig(length_scale=(1.15 if lang == 'pi' else 1.0) / rate, noise_scale=0.6, noise_w_scale=0.7)
+    cfg = SynthesisConfig(length_scale=(1.15 if lang in ('pi', 'pi-gsa') else 1.0) / rate, noise_scale=0.6, noise_w_scale=0.7)
     parts = []
     if lang == 'en':  # before the sentence split, or "Ven." ends a sentence and is never expanded (owner 2026-10-17)
         text = en_expand(text)
     for sent, pause in pieces(text):
         if lang.startswith('pi'):
             ipa = to_ipa(sent, full_a=True)
-            ipa = tune(ipa) if lang == 'pi' else ipa  # pratham's fixes would only confuse the own voice
+            ipa = tune(ipa) if lang == 'pi' else gsa_fixes(ipa) if lang == 'pi-gsa' else ipa  # pratham's fixes would only confuse the own voice
             phonemes = [list(ipa)] if ipa.strip(' ,.?!') else []
         elif lang == 'en':  # Pali words in an English translation get our phonemes (dhamma, sutta)
             phonemes = [p for p in [en_phonemes(voice, sent)] if p]
