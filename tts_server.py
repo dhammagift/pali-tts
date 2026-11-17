@@ -39,7 +39,7 @@ from piper import PiperVoice, SynthesisConfig
 from pali_ipa import export, to_ipa, to_script, tune
 from respell import en_expand, en_phonemes, export as respell_export, respell, ru_phonemes
 
-RULES_VERSION = 'r78'  # bump when pali_ipa rules change, so cached mp3 are not reused (r77: Ана́тхапиндика; r78: Russian stress from ru-accent)
+RULES_VERSION = 'r79'  # bump when pali_ipa rules change, so cached mp3 are not reused (r77: Ана́тхапиндика; r79: Russian stress by context, ru_stress_ctx.json)
 MAX_CHARS = 2000
 RATE_LIMIT = 60  # requests per client IP per minute
 # id -> (model file, language, menu label). Sites build their voice menus from GET /voices (in this order; the first

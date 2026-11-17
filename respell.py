@@ -4,10 +4,10 @@ The en/ru voices phonemize with espeak, which reads IAST as English/Russian lett
 Tathāgata -> "th" as in "think", phassa -> "f"). Russian: Pali in Latin -> Cyrillic by Pali sound.
 English: diacritics off, aspirates folded into plain stops (an English voice can't aspirate on cue).
 """
+import json
 import os
 import re
 import unicodedata
-import urllib.request
 
 from pali_ipa import to_ipa
 
@@ -264,36 +264,29 @@ def ru_soften(word, phonemes):
     return out
 
 
-# Stress from context (owner 2026-11-17: MN 129 full of wrong stress - дела, руки, одурманивающим: espeak has no context,
-# ~4% of the words of 2+ syllables differ from ruaccent): ru_accent_server.py on this box (unit deploy/ru-accent.service).
-# Unset or down: espeak's own stress, as before.
-RU_ACCENT_URL = os.environ.get('DG_RU_ACCENT_URL', 'http://127.0.0.1:3016/')
+# Stress from context (owner 2026-11-17, MN 129: дела, руки, бо́льшим, бла́гом - espeak has no context; the October audit
+# found ~1400 such words and only ~75 were fixed by hand). ru_stress_ctx.json, built by build_ru_stress_ctx.py from
+# RUAccent over every Russian line DG shows (Kaggle ru-accent): "word" - a word RUAccent always stresses one way, unlike
+# espeak; "ctx" - a homograph by its neighbours, "prev word next". The same table goes to web/pali-tts.js (export), so
+# the app offline reads as the service does. Words with a stress of ours (names list, RU_STRESS, ё, го́ловы...) come first.
+_CTX_FILE = os.path.join(os.path.dirname(__file__), 'ru_stress_ctx.json')
+RU_CTX = json.load(open(_CTX_FILE, encoding='utf-8')) if os.path.exists(_CTX_FILE) else {'word': {}, 'ctx': {}}
 RU_LETTERS = re.compile('[А-Яа-яЁё\u0301]+')
 
 
-def ru_accent(text):
-    """text with U+0301 after each stressed vowel the accent service gives, in words of 2+ syllables that carry no mark
-    of ours yet (names list, ё, го́ловы...) and are not in RU_ACCENT / RU_STRESS: ours come first."""
-    if not RU_ACCENT_URL or not RU_LETTERS.search(text):
-        return text
-    try:
-        plain = text.replace('\u0301', '')
-        r = urllib.request.urlopen(urllib.request.Request(RU_ACCENT_URL, plain.encode()), timeout=3)
-        marked = r.read().decode()
-    except Exception:
-        return text
-    src = list(RU_LETTERS.finditer(text))
-    dst = re.findall('[А-Яа-яЁё+]+', marked)
-    if [m.group().replace('\u0301', '') for m in src] != [w.replace('+', '') for w in dst]:
-        return text  # the service changed the words (its own normalising): no marks rather than misplaced ones
+def ru_context_stress(text):
+    """text with U+0301 on the words RU_CTX knows: by neighbours first, then the word alone."""
+    words = list(RU_LETTERS.finditer(text))
+    low = [m.group().lower().replace('\u0301', '') for m in words]
     out, last = [], 0
-    for m, w in zip(src, dst):
-        word, low = m.group(), m.group().lower()
-        if ('+' in w and '\u0301' not in word and 'ё' not in low and sum(c in RU_VOWELS for c in low) > 1
-                and low not in RU_ACCENT and low not in RU_STRESS
-                and not re.search('[ое]го$|сегодн', low)):  # marked, espeak reads его́ with a г; unmarked it says ево
-            word = re.sub('\\+(.)', '\\1\u0301', w)
-        out += [text[last:m.start()], word]
+    for i, m in enumerate(words):
+        w = m.group()
+        if '\u0301' not in w and 'ё' not in low[i]:
+            key = f"{low[i - 1] if i else ''} {low[i]} {low[i + 1] if i + 1 < len(low) else ''}"
+            form = RU_CTX['ctx'].get(key) or RU_CTX['word'].get(low[i])
+            if form:
+                w = _case(w, form)
+        out += [text[last:m.start()], w]
         last = m.end()
     return ''.join(out) + text[last:]
 
@@ -302,7 +295,7 @@ def ru_phonemes(voice, text):
     """Phoneme lists (one per sentence) for a Piper Russian voice, with the soft sign restored."""
     text = RU_NAME.sub(lambda m: _case(m.group(), RU_ACCENT[m.group().lower()]) if m.group().lower() in RU_ACCENT else m.group(),
                        RU_BOLSH.sub('\\1о\u0301льш', RU_VSYO.sub(r'\1сё', respell(ru_refs(text), 'ru'))))
-    text = ru_accent(RU_GOLOVY.sub('\\1о\u0301ловы', RU_STORONY.sub('\\1тороны\u0301', text)))
+    text = ru_context_stress(RU_GOLOVY.sub('\\1о\u0301ловы', RU_STORONY.sub('\\1тороны\u0301', text)))
     # a hyphenated compound is one word to espeak, so RU_STRESS never saw its parts (с-прямым-видением-памятованием): apart
     text = RU_COMPOUND.sub(lambda m: m.group().replace('-', ' ') if any(w.lower() in RU_STRESS for w in m.group().split('-'))
                            else m.group(), text)
@@ -386,7 +379,7 @@ def export():
             'en_pali_words': sorted(EN_PALI_WORDS), 'en_pali_long': EN_PALI_LONG, 'en_ipa_rx': EN_IPA_RX.pattern, 'en_ipa': dict(EN_IPA),
             'en_abbr': [[rx.pattern, full] for rx, full in EN_ABBR], 'en_books': EN_BOOKS, 'en_ref': EN_REF.pattern,
             'ru_soften': {k: list(v) for k, v in RU_SOFTEN.items()}, 'ru_word': RU_WORD.pattern, 'ru_stress': RU_STRESS,
-            'ru_accent': RU_ACCENT, 'ru_vsyo': RU_VSYO.pattern, 'ru_bolsh': RU_BOLSH.pattern, 'ru_storony': RU_STORONY.pattern, 'ru_golovy': RU_GOLOVY.pattern, 'en_penult': sorted(EN_PENULT), 'nucleus': NUCLEUS.pattern}
+            'ru_accent': RU_ACCENT, 'ru_ctx': RU_CTX, 'ru_vsyo': RU_VSYO.pattern, 'ru_bolsh': RU_BOLSH.pattern, 'ru_storony': RU_STORONY.pattern, 'ru_golovy': RU_GOLOVY.pattern, 'en_penult': sorted(EN_PENULT), 'nucleus': NUCLEUS.pattern}
 
 
 def _case(src, out):

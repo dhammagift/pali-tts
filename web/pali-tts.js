@@ -194,10 +194,29 @@ export function makeTranslation(d, pali, espeak) {
   // respell.py RU_REF / ru_refs: a sutta ref at the end of a title or sentence, 4.200 -> «4, 200»
   const ruRefs = text => text.replace(/(?<![\d.])(\d+)(?:\.(\d+))?(?:[-–](\d+))?(?=[^\p{L}\p{N}_\s]|\s*$)/gu,
     (_, a, b, c) => a + (b ? `, ${b}` : '') + (c ? ` — ${c}` : ''));
+  // respell.ru_context_stress: RU_CTX (RUAccent over DG's texts) - a homograph by its neighbours, else the word alone
+  function ruContextStress(text) {
+    const ctx = d.ru_ctx || { word: {}, ctx: {} };
+    const ms = [...text.matchAll(/[А-Яа-яЁё\u0301]+/g)];
+    const low = ms.map(m => m[0].toLowerCase().replace(/\u0301/g, ''));
+    let out = '', last = 0;
+    ms.forEach((m, i) => {
+      let w = m[0];
+      if (!w.includes('\u0301') && !low[i].includes('ё')) {
+        const key = `${i ? low[i - 1] : ''} ${low[i]} ${i + 1 < low.length ? low[i + 1] : ''}`;
+        const form = has(ctx.ctx, key) ? ctx.ctx[key] : has(ctx.word, low[i]) ? ctx.word[low[i]] : null;
+        if (form) w = cased(w, form);
+      }
+      out += text.slice(last, m.index) + w;
+      last = m.index + m[0].length;
+    });
+    return out + text.slice(last);
+  }
   function ruPhonemes(voice, text) {
     text = respell(ruRefs(text), 'ru').replace(new RegExp(d.ru_vsyo, 'gu'), '$1сё').replace(new RegExp(d.ru_bolsh || '(?!)', 'gu'), '$1о\u0301льш').replace(/[А-Яа-яЁё]+/g, w => has(d.ru_accent, w.toLowerCase()) ? cased(w, d.ru_accent[w.toLowerCase()]) : w)
       .replace(new RegExp(d.ru_storony || '(?!)', 'gu'), '$1тороны\u0301')  // respell.RU_STORONY: стороны́ after с/со/из...
       .replace(new RegExp(d.ru_golovy || '(?!)', 'gu'), '$1о\u0301ловы');  // respell.RU_GOLOVY: the plural го́ловы
+    text = ruContextStress(text);
     // respell.RU_COMPOUND: a hyphenated compound is one word to espeak, so ru_stress never saw its parts: apart
     text = text.replace(/[а-яё\u0301]+(?:-[а-яё\u0301]+)+/giu, m => m.split('-').some(w => has(d.ru_stress, w.toLowerCase())) ? m.replace(/-/g, ' ') : m);
     const words = text.toLowerCase().match(RU_WORD) || [];
