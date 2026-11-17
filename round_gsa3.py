@@ -2,10 +2,12 @@
 so far (round_gsa2.fixes: final a/i/u long, intervocalic h long) against the same plus double consonants long (kk -> kːk)
 and ariya with a long i (round_gsa2.fixes2). SN 56.11 / SN 12.2 / AN lines full of doubles. Blind A/B/C; C also plain i for ɪ (owner: piyo «пыйо»).
 Usage: round_gsa3.py build"""
+import base64
 import json
 import os
 import subprocess
 import sys
+import urllib.request
 import wave
 
 sys.path.insert(0, '/root/gsa/texts')
@@ -48,12 +50,17 @@ if __name__ == '__main__' and sys.argv[1:] == ['build']:
             subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-i', wav, '-q:a', '5', wav[:-4] + '.mp3'], check=True)
             os.remove(wav)
             vs.append({'id': vid, 'label': label, 'file': f'p{i:02d}.{vid}.mp3', 'sent': ipa})
+        # owner: «добавь наш голос, как он читает двойные» - pratham as DG reads it now (live service, 0.7x)
+        r = urllib.request.Request('http://127.0.0.1:3011/synthesize', json.dumps({'text': text, 'voice': 'pratham', 'rate': 0.7}).encode(),
+                                   {'Content-Type': 'application/json'})
+        open(f'{OUT}/p{i:02d}.pratham.mp3', 'wb').write(base64.b64decode(json.loads(urllib.request.urlopen(r, timeout=300).read())['audioContent']))
+        vs.append({'id': 'pratham', 'label': 'pratham на сайте сейчас', 'file': f'p{i:02d}.pratham.mp3', 'sent': ''})
         phrases.append({'id': f'p{i:02d}', 'text': text, 'ipa': '', 'script': '', 'variants': vs,
                         'note': f'{seg}. Слушайте двойные согласные (bhikkhave, sammā, passati, puggalā), ariya и «и» (piyo, visayo). ★ лучший; ✓ правильно; ✗ неправильно'})
     json.dump({'round': 'gsa3', 'title': 'Новый голос: двойные согласные',
                'intro': 'Новый голос с фиксами pana/tena и sahagatā. В каждой фразе '
-                        'три варианта вслепую: как сейчас; двойные согласные чуть удлинены (bhikkhave, sammā, passati) и ariya с долгим i; '
-                        'то же плюс чистое «и» вместо «ы» (piyo, visayo). Какой правильнее?',
+                        'четыре варианта вслепую: как сейчас; двойные согласные чуть удлинены (bhikkhave, sammā, passati) и ariya с долгим i; '
+                        'то же плюс чистое «и» вместо «ы» (piyo, visayo); и pratham, как сайт читает сейчас. Какой правильнее?',
                'sections': [{'id': 'p', 'title': 'Двойные согласные', 'multi_best': False, 'phrases': phrases}]},
               open(f'{OUT}/index.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     print('ok', len(phrases))
