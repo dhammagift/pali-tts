@@ -7,6 +7,7 @@ English: diacritics off, aspirates folded into plain stops (an English voice can
 import os
 import re
 import unicodedata
+import urllib.request
 
 from pali_ipa import to_ipa
 
@@ -263,15 +264,49 @@ def ru_soften(word, phonemes):
     return out
 
 
+# Stress from context (owner 2026-11-17: MN 129 full of wrong stress - дела, руки, одурманивающим: espeak has no context,
+# ~4% of the words of 2+ syllables differ from ruaccent): ru_accent_server.py on this box (unit deploy/ru-accent.service).
+# Unset or down: espeak's own stress, as before.
+RU_ACCENT_URL = os.environ.get('DG_RU_ACCENT_URL', 'http://127.0.0.1:3016/')
+RU_LETTERS = re.compile('[А-Яа-яЁё\u0301]+')
+
+
+def ru_accent(text):
+    """text with U+0301 after each stressed vowel the accent service gives, in words of 2+ syllables that carry no mark
+    of ours yet (names list, ё, го́ловы...) and are not in RU_ACCENT / RU_STRESS: ours come first."""
+    if not RU_ACCENT_URL or not RU_LETTERS.search(text):
+        return text
+    try:
+        plain = text.replace('\u0301', '')
+        r = urllib.request.urlopen(urllib.request.Request(RU_ACCENT_URL, plain.encode()), timeout=3)
+        marked = r.read().decode()
+    except Exception:
+        return text
+    src = list(RU_LETTERS.finditer(text))
+    dst = re.findall('[А-Яа-яЁё+]+', marked)
+    if [m.group().replace('\u0301', '') for m in src] != [w.replace('+', '') for w in dst]:
+        return text  # the service changed the words (its own normalising): no marks rather than misplaced ones
+    out, last = [], 0
+    for m, w in zip(src, dst):
+        word, low = m.group(), m.group().lower()
+        if ('+' in w and '\u0301' not in word and 'ё' not in low and sum(c in RU_VOWELS for c in low) > 1
+                and low not in RU_ACCENT and low not in RU_STRESS
+                and not re.search('[ое]го$|сегодн', low)):  # marked, espeak reads его́ with a г; unmarked it says ево
+            word = re.sub('\\+(.)', '\\1\u0301', w)
+        out += [text[last:m.start()], word]
+        last = m.end()
+    return ''.join(out) + text[last:]
+
+
 def ru_phonemes(voice, text):
     """Phoneme lists (one per sentence) for a Piper Russian voice, with the soft sign restored."""
     text = RU_NAME.sub(lambda m: _case(m.group(), RU_ACCENT[m.group().lower()]) if m.group().lower() in RU_ACCENT else m.group(),
                        RU_BOLSH.sub('\\1о\u0301льш', RU_VSYO.sub(r'\1сё', respell(ru_refs(text), 'ru'))))
-    text = RU_GOLOVY.sub('\\1о\u0301ловы', RU_STORONY.sub('\\1тороны\u0301', text))
+    text = ru_accent(RU_GOLOVY.sub('\\1о\u0301ловы', RU_STORONY.sub('\\1тороны\u0301', text)))
     # a hyphenated compound is one word to espeak, so RU_STRESS never saw its parts (с-прямым-видением-памятованием): apart
     text = RU_COMPOUND.sub(lambda m: m.group().replace('-', ' ') if any(w.lower() in RU_STRESS for w in m.group().split('-'))
                            else m.group(), text)
-    words = RU_WORD.findall(text.lower())
+    words = [w.replace('\u0301', '') for w in RU_WORD.findall(text.lower())]  # RU_STRESS, ru_soften: the plain word
     sents = [list(s) for s in voice.phonemize(text) if s]
     flat = [p for s in sents for p in s + [' ']]  # a space between sentences too, or their edge words merge
     tokens, cur = [], []
