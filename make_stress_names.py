@@ -23,8 +23,8 @@ NUCLEUS = re.compile(r'[əaɪiʊueoʌ]ː?')  # our Pali IPA, unstressed
 EN_NUCLEUS = re.compile(r'[ɑɐəɪiʊuɛeæʌɒɔoɜaɚ]+[ːʊɪə]*')  # an English vowel with its glide or length
 EXTRA = [('ru', 'бе́лок'),  # «место кормления белок»: squirrels, not protein
          ('en', 'mantāniputta')]  # owner's list; SC writes Mantāṇiputta
-# the owner's own stress where the penult is wrong (round rustress3, 2026-11-17: Анатхапи́ндика best, -пинди́ки bad)
-OWNER = {'анатхапиндик': 'анатхапи́ндик'}
+# the owner's own stress where the penult is wrong (rounds rustress3-4, 2026-11-17: the long ā, Ана́тхапиндика; -пинди́ки and -пи́нди- bad)
+OWNER = {'анатхапиндик': 'ана́тхапиндик'}
 
 
 def ru_stem(w):
