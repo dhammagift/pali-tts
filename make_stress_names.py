@@ -23,6 +23,8 @@ NUCLEUS = re.compile(r'[əaɪiʊueoʌ]ː?')  # our Pali IPA, unstressed
 EN_NUCLEUS = re.compile(r'[ɑɐəɪiʊuɛeæʌɒɔoɜaɚ]+[ːʊɪə]*')  # an English vowel with its glide or length
 EXTRA = [('ru', 'бе́лок'),  # «место кормления белок»: squirrels, not protein
          ('en', 'mantāniputta')]  # owner's list; SC writes Mantāṇiputta
+# the owner's own stress where the penult is wrong (round rustress3, 2026-11-17: Анатхапи́ндика best, -пинди́ки bad)
+OWNER = {'анатхапиндик': 'анатхапи́ндик'}
 
 
 def ru_stem(w):
@@ -59,7 +61,7 @@ if __name__ == '__main__':
     ru = collections.Counter(w.lower() for t in texts('ru') for w in caps(t, r'\b[А-ЯЁ][а-яё]+'))
     ru = {w for w in ru if len(ru_stem(w)) >= 3 and ru_stem(w) in pstems and len(re.findall(f'[{RU_VOW}]', w)) >= 2}
     ru -= russian(sorted(ru))
-    rows = [('ru', ru_accent(w)) for w in sorted(ru)]
+    rows = [('ru', next((w.replace(k, v) for k, v in OWNER.items() if w.startswith(k)), None) or ru_accent(w)) for w in sorted(ru)]
 
     plain = {unicodedata.normalize('NFD', w.lower()).encode('ascii', 'ignore').decode(): w.lower() for w in pali}
     en = collections.Counter(w.lower() for t in texts('en') for w in caps(t, r'\b[A-ZĀĪŪÑṬḌṄṆḶ][A-Za-z' + respell.PALI_CHARS + ']+'))
