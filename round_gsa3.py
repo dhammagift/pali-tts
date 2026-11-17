@@ -1,6 +1,6 @@
 """Round gsa3 (owner 2026-11-17: «двойные как-то сокращает», puggalā strange): the Google-trained pratham with the fixes
 so far (round_gsa2.fixes: final a/i/u long, intervocalic h long) against the same plus double consonants long (kk -> kːk)
-and ariya with a long i (round_gsa2.fixes2). SN 56.11 / SN 12.2 / AN lines full of doubles. Blind A/B.
+and ariya with a long i (round_gsa2.fixes2). SN 56.11 / SN 12.2 / AN lines full of doubles. Blind A/B/C; C also plain i for ɪ (owner: piyo «пыйо»).
 Usage: round_gsa3.py build"""
 import json
 import os
@@ -24,8 +24,12 @@ TEXTS = [
     ('sn12.2:3.2', 'Yā tesaṁ tesaṁ sattānaṁ tamhi tamhi sattanikāye jarā jīraṇatā khaṇḍiccaṁ pāliccaṁ valittacatā.'),
     ('sn22.87:3.2', 'Yo kho, vakkali, dhammaṁ passati so maṁ passati.'),
     ('an4.85', 'Cattārome, bhikkhave, puggalā santo saṁvijjamānā lokasmiṁ.'),
+    ('an5.250:3.3', 'Yo kho myāyaṁ puggalo piyo manāpo so kālaṅkato.'),
+    ('sn47.6:4.3', 'Ko ca, bhikkhave, bhikkhuno gocaro sako pettiko visayo?'),
 ]
-VARIANTS = {'now': ('как сейчас', fixes), 'double': ('двойные долгие + ariya', fixes2)}
+VARIANTS = {'now': ('как сейчас', fixes), 'double': ('двойные долгие + ariya', fixes2),
+            # owner on gsa2: piyo «пыйо», visayo «высайо» - the short ɪ sounds like ы; plain i instead
+            'double_i': ('двойные долгие + ariya + чистое и', lambda s: fixes2(s).replace('ɪ', 'i'))}
 
 if __name__ == '__main__' and sys.argv[1:] == ['build']:
     os.makedirs(OUT, exist_ok=True)
@@ -45,10 +49,11 @@ if __name__ == '__main__' and sys.argv[1:] == ['build']:
             os.remove(wav)
             vs.append({'id': vid, 'label': label, 'file': f'p{i:02d}.{vid}.mp3', 'sent': ipa})
         phrases.append({'id': f'p{i:02d}', 'text': text, 'ipa': '', 'script': '', 'variants': vs,
-                        'note': f'{seg}. Слушайте двойные согласные (bhikkhave, sammā, passati, puggalā) и ariya. ★ лучший; ✓ правильно; ✗ неправильно'})
+                        'note': f'{seg}. Слушайте двойные согласные (bhikkhave, sammā, passati, puggalā), ariya и «и» (piyo, visayo). ★ лучший; ✓ правильно; ✗ неправильно'})
     json.dump({'round': 'gsa3', 'title': 'Новый голос: двойные согласные',
-               'intro': 'Новый голос с фиксами pana/tena и sahagatā. В каждой фразе два варианта вслепую: '
-                        'в одном двойные согласные удлинены (bhikkhave, sammā, passati) и ariya с долгим i. Какой правильнее?',
+               'intro': 'Новый голос с фиксами pana/tena и sahagatā. В каждой фразе '
+                        'три варианта вслепую: как сейчас; двойные согласные удлинены (bhikkhave, sammā, passati) и ariya с долгим i; '
+                        'то же плюс чистое «и» вместо «ы» (piyo, visayo). Какой правильнее?',
                'sections': [{'id': 'p', 'title': 'Двойные согласные', 'multi_best': False, 'phrases': phrases}]},
               open(f'{OUT}/index.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     print('ok', len(phrases))
