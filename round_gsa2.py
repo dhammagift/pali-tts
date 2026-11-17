@@ -48,6 +48,12 @@ def fixes2(ipa):
     return GEM.sub(r'\1ː', fixes(ipa)).replace('ɾɪjʌ', 'ɾiːjʌ')
 
 
+def fixes3(ipa):
+    # owner on gsa3: kːk is overdone («слишком утрированно»): half-long first consonant (ˑ) - the recogniser still hears
+    # sammā, passati, pabba, bhikkhave double; half-long on stops only lost sammā and passati
+    return GEM.sub(r'\1ˑ', fixes(ipa)).replace('ɾɪjʌ', 'ɾiːjʌ')
+
+
 VARIANTS = {
     'now': ('как сейчас', lambda s: s),
     'long_o': ('долгое конечное o', lambda s: re.sub('oː' + B, 'oːo', s)),

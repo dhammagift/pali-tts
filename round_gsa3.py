@@ -12,7 +12,7 @@ sys.path.insert(0, '/root/gsa/texts')
 from pali_ipa import to_ipa  # noqa: E402
 from piper import PiperVoice  # noqa: E402
 from piper.config import SynthesisConfig  # noqa: E402
-from round_gsa2 import MODEL, fixes, fixes2  # noqa: E402
+from round_gsa2 import MODEL, fixes, fixes3  # noqa: E402
 
 OUT = 'out/gsa3'
 TEXTS = [
@@ -27,9 +27,9 @@ TEXTS = [
     ('an5.250:3.3', 'Yo kho myāyaṁ puggalo piyo manāpo so kālaṅkato.'),
     ('sn47.6:4.3', 'Ko ca, bhikkhave, bhikkhuno gocaro sako pettiko visayo?'),
 ]
-VARIANTS = {'now': ('как сейчас', fixes), 'double': ('двойные долгие + ariya', fixes2),
+VARIANTS = {'now': ('как сейчас', fixes), 'mild': ('двойные полудолгие + ariya', fixes3),
             # owner on gsa2: piyo «пыйо», visayo «высайо» - the short ɪ sounds like ы; plain i instead
-            'double_i': ('двойные долгие + ariya + чистое и', lambda s: fixes2(s).replace('ɪ', 'i'))}
+            'mild_i': ('двойные полудолгие + ariya + чистое и', lambda s: fixes3(s).replace('ɪ', 'i'))}
 
 if __name__ == '__main__' and sys.argv[1:] == ['build']:
     os.makedirs(OUT, exist_ok=True)
@@ -52,7 +52,7 @@ if __name__ == '__main__' and sys.argv[1:] == ['build']:
                         'note': f'{seg}. Слушайте двойные согласные (bhikkhave, sammā, passati, puggalā), ariya и «и» (piyo, visayo). ★ лучший; ✓ правильно; ✗ неправильно'})
     json.dump({'round': 'gsa3', 'title': 'Новый голос: двойные согласные',
                'intro': 'Новый голос с фиксами pana/tena и sahagatā. В каждой фразе '
-                        'три варианта вслепую: как сейчас; двойные согласные удлинены (bhikkhave, sammā, passati) и ariya с долгим i; '
+                        'три варианта вслепую: как сейчас; двойные согласные чуть удлинены (bhikkhave, sammā, passati) и ariya с долгим i; '
                         'то же плюс чистое «и» вместо «ы» (piyo, visayo). Какой правильнее?',
                'sections': [{'id': 'p', 'title': 'Двойные согласные', 'multi_best': False, 'phrases': phrases}]},
               open(f'{OUT}/index.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
