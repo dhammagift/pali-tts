@@ -53,6 +53,7 @@ header = [
     '# Phones: Dhamma.Gift IAST->IPA rules (pali_ipa.py to_ipa(full_a=True) + tune), tuned in blind listening rounds.',
     f'# Source: every word form of the Pali Tipiṭaka (Mahāsaṅgīti, bilara-data root/pli/ms: {", ".join(f"{k} {v}" for k, v in sorted(parts.items()))} tokens)',
     f'# Entries: {len(lines)}',
+    '# License: MIT, Copyright (c) 2026 Dhamma.Gift (https://github.com/dhammagift/pali-tts/blob/main/LICENSE)',
     '#',
 ]
 open(out, 'w', encoding='utf-8').write('\n'.join(header + lines) + '\n')
