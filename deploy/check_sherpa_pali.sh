@@ -1,14 +1,11 @@
 #!/usr/bin/env bash
 # Daily from cron on f3 (owner 2026-11-17: no Claude session or model tokens for a watch): once sherpa-onnx publishes a
-# release after v2.0.1 (the first with PR #4203), tell the owner in the admin Telegram chat (the dgift bot, as
+# release (v2.0.1 got the Pali APKs on 2026-11-18, PR #4203), tell the owner in the admin Telegram chat (the dgift bot, as
 # scripts/seo-weekly.py does) - any release, with or without Pali in it (owner: «а вдруг они выпустят релиз, а нашего там
 # не будет»); then once more when its Pali TTS-engine APK is on Hugging Face, or a week on without it. Flag files in
 # cache/; no release yet: nothing (owner: «пока нет релиза, можешь ничего не присылать»).
 set -euo pipefail
 cd "$(dirname "$0")/.."
-FOUND=cache/sherpa-pali-found
-MISSING=cache/sherpa-pali-missing
-[ -e "$FOUND" ] && exit 0
 comment() {  # to the admin chat of the dgift bot; the token never leaves the config file
   python3 - "$1" <<'PY'
 import json, sys, urllib.parse, urllib.request
@@ -18,9 +15,14 @@ urllib.request.urlopen(f"https://api.telegram.org/bot{c['TOKEN']}/sendMessage",
                        urllib.parse.urlencode({'chat_id': admin, 'text': sys.argv[1]}).encode(), timeout=30)
 PY
 }
-rel=$(curl -fsS https://api.github.com/repos/k2-fsa/sherpa-onnx/releases/latest)
+# the newest vX.Y.Z release: «latest» is often a model or demo upload (react-fa, apk-fa, fa-models)
+rel=$(curl -fsS "https://api.github.com/repos/k2-fsa/sherpa-onnx/releases?per_page=30" | python3 -c '
+import json, re, sys
+print(json.dumps(next(r for r in json.load(sys.stdin) if re.fullmatch(r"v\d+(\.\d+)+", r["tag_name"]))))')
 ver=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["tag_name"].lstrip("v"))' <<<"$rel")
-[ "$ver" = "2.0.1" ] && exit 0
+FOUND=cache/sherpa-pali-found-$ver
+MISSING=cache/sherpa-pali-missing-$ver
+[ -e "$FOUND" ] && exit 0
 apk="https://huggingface.co/csukuangfj2/sherpa-onnx-apk/resolve/main/tts-engine-new/$ver/sherpa-onnx-$ver-arm64-v8a-pli-tts-engine-vits-piper-hi_IN-pratham-medium.apk"
 lex=$(curl -s -o /dev/null -w '%{http_code}' -IL https://github.com/dhammagift/pali-tts/releases/download/sherpa-pi-pratham-v2/lexicon-pi.txt)
 has=$(curl -s -o /dev/null -w '%{http_code}' -IL "$apk")
