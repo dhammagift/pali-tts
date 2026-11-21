@@ -103,6 +103,8 @@ RU_ACCENT.update({w.replace('́', '').replace('ё', 'е'): w for w in (  # the k
     # owner 2026-11-14: «волосы головы» read голо́вы; DG's texts have the genitive головы́ in most places (волосы головы,
     # с головы, до головы); the plural го́ловы (отрубают головы, моют свои головы) is RU_GOLOVY's (owner: го́ловы, not голо́вы)
     'головы́',
+    # owner 2026-11-21, MN 152 «умом явление распознав» read у́мом: «нет кейса, когда нужно читать у́мом»
+    'умо́м',
 )})
 RU_NAME = re.compile(r'[А-Яа-яЁё]+')
 # го́ловы, the plural: after свои/наши/их/отрубают/моют/вымыли/омыли/дэвы... or before отрубают/склоняют/были (DG's texts:
@@ -113,6 +115,9 @@ RU_GOLOVY = re.compile(r'(?<![а-яёА-ЯЁ])((?:свои|наши|ваши|и�
 # maybe with one word in -ой/-ей/-ого/-его between (с правой, с одной, со всякой); elsewhere сто́роны, the plural (во все,
 # на четыре, обе). Runs after RU_ACCENT, on its сто́роны
 RU_STORONY = re.compile(r'(?<![а-яёА-ЯЁ])((?:[Сс]о?|[Ии]з|[Оо]т|[Дд]о|[Бб]ез|[Дд]ля|[Уу]|[Вв]доль)\s+(?:[а-яё]+(?:ой|ей|ого|его)\s+)?[Сс])то́роны(?![а-яё])')
+# воды́, the genitive, as the first part of a hyphen compound (owner 2026-11-21, MN 152 «воды-капли» read во́ды): DG's
+# texts have only воды-капли, воды-капель, воды-протяжённость, all of water; espeak says во́ды
+RU_VODY = re.compile(r'(?<![а-яёА-ЯЁ])([Вв])оды(?=-[а-яё])')
 # все printed for всё (owner 2026-10-23): only in the set phrases where it is всё (DG's texts: все же 169, все остальное 47,
 # все это 43, все, что 16 ...); all else stays все - mostly the plural (все они 460, все те 265)
 RU_VSYO = re.compile(r'(?<![а-яёА-ЯЁ])([Вв])се(?=(?:\s+|-)(?:же|это|остальное|прочее|равно|еще|ещё|время|таки|дорогое|будет|то)'
@@ -295,7 +300,7 @@ def ru_phonemes(voice, text):
     """Phoneme lists (one per sentence) for a Piper Russian voice, with the soft sign restored."""
     text = RU_NAME.sub(lambda m: _case(m.group(), RU_ACCENT[m.group().lower()]) if m.group().lower() in RU_ACCENT else m.group(),
                        RU_BOLSH.sub('\\1о\u0301льш', RU_VSYO.sub(r'\1сё', respell(ru_refs(text), 'ru'))))
-    text = ru_context_stress(RU_GOLOVY.sub('\\1о\u0301ловы', RU_STORONY.sub('\\1тороны\u0301', text)))
+    text = ru_context_stress(RU_VODY.sub('\\1оды\u0301', RU_GOLOVY.sub('\\1о\u0301ловы', RU_STORONY.sub('\\1тороны\u0301', text))))
     # a hyphenated compound is one word to espeak, so RU_STRESS never saw its parts (с-прямым-видением-памятованием): apart
     text = RU_COMPOUND.sub(lambda m: m.group().replace('-', ' ') if any(w.lower() in RU_STRESS for w in m.group().split('-'))
                            else m.group(), text)
@@ -379,7 +384,7 @@ def export():
             'en_pali_words': sorted(EN_PALI_WORDS), 'en_pali_long': EN_PALI_LONG, 'en_ipa_rx': EN_IPA_RX.pattern, 'en_ipa': dict(EN_IPA),
             'en_abbr': [[rx.pattern, full] for rx, full in EN_ABBR], 'en_books': EN_BOOKS, 'en_ref': EN_REF.pattern,
             'ru_soften': {k: list(v) for k, v in RU_SOFTEN.items()}, 'ru_word': RU_WORD.pattern, 'ru_stress': RU_STRESS,
-            'ru_accent': RU_ACCENT, 'ru_ctx': RU_CTX, 'ru_vsyo': RU_VSYO.pattern, 'ru_bolsh': RU_BOLSH.pattern, 'ru_storony': RU_STORONY.pattern, 'ru_golovy': RU_GOLOVY.pattern, 'en_penult': sorted(EN_PENULT), 'nucleus': NUCLEUS.pattern}
+            'ru_accent': RU_ACCENT, 'ru_ctx': RU_CTX, 'ru_vsyo': RU_VSYO.pattern, 'ru_bolsh': RU_BOLSH.pattern, 'ru_storony': RU_STORONY.pattern, 'ru_golovy': RU_GOLOVY.pattern, 'ru_vody': RU_VODY.pattern, 'en_penult': sorted(EN_PENULT), 'nucleus': NUCLEUS.pattern}
 
 
 def _case(src, out):
@@ -452,6 +457,8 @@ if __name__ == '__main__':
     assert RU_BOLSH.sub('\\1о\u0301льш', 'Большая часть, большую половину; Большая глава, большая масса') == 'Бо\u0301льшая часть, бо\u0301льшую половину; Большая глава, большая масса'
     _st = lambda t: RU_STORONY.sub('\\1тороны\u0301', RU_NAME.sub(lambda m: _case(m.group(), RU_ACCENT.get(m.group().lower(), m.group())), t))
     assert _st('С правой стороны, со стороны; во все стороны') == 'С правой стороны\u0301, со стороны\u0301; во все сто\u0301роны'
+    assert RU_VODY.sub('\\1оды\u0301', 'воды-капли, Воды-капель; воды ганга') == 'воды\u0301-капли, Воды\u0301-капель; воды ганга'
+    assert RU_ACCENT['умом'] == 'умо\u0301м'
     assert RU_ACCENT['взращивание'] == 'взра\u0301щивание' and RU_ACCENT['несуществованию'] == 'несуществова\u0301нию'
     assert RU_ACCENT['уже'] == 'уже\u0301' and RU_ACCENT['памятующий'] == 'па\u0301мятующий'
     assert RU_ACCENT['скапливания'] == 'ска\u0301пливания' and RU_ACCENT['вовлеченности'] == 'вовлечённости'

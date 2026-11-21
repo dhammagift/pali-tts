@@ -215,7 +215,8 @@ export function makeTranslation(d, pali, espeak) {
   function ruPhonemes(voice, text) {
     text = respell(ruRefs(text), 'ru').replace(new RegExp(d.ru_vsyo, 'gu'), '$1сё').replace(new RegExp(d.ru_bolsh || '(?!)', 'gu'), '$1о\u0301льш').replace(/[А-Яа-яЁё]+/g, w => has(d.ru_accent, w.toLowerCase()) ? cased(w, d.ru_accent[w.toLowerCase()]) : w)
       .replace(new RegExp(d.ru_storony || '(?!)', 'gu'), '$1тороны\u0301')  // respell.RU_STORONY: стороны́ after с/со/из...
-      .replace(new RegExp(d.ru_golovy || '(?!)', 'gu'), '$1о\u0301ловы');  // respell.RU_GOLOVY: the plural го́ловы
+      .replace(new RegExp(d.ru_golovy || '(?!)', 'gu'), '$1о\u0301ловы')  // respell.RU_GOLOVY: the plural го́ловы
+      .replace(new RegExp(d.ru_vody || '(?!)', 'gu'), '$1оды\u0301');  // respell.RU_VODY: воды́- in a compound
     text = ruContextStress(text);
     // respell.RU_COMPOUND: a hyphenated compound is one word to espeak, so ru_stress never saw its parts: apart
     text = text.replace(/[а-яё\u0301]+(?:-[а-яё\u0301]+)+/giu, m => m.split('-').some(w => has(d.ru_stress, w.toLowerCase())) ? m.replace(/-/g, ' ') : m);
